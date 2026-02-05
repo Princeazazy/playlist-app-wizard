@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Search, Star, Tv, Menu, X, Play, Calendar, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Calendar, Heart, Loader2 } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
 import { useWeather } from '@/hooks/useWeather';
@@ -8,6 +8,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { getCountryInfo, getCountryFlagUrl, getCategoryEmoji, mergeAndSortGroups, normalizeGroupName, translateGroupName } from '@/lib/countryUtils';
 import { EPGGuide } from './EPGGuide';
 import { WeatherIcon } from './shared/WeatherIcon';
+import Hls from 'hls.js';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Select,
   SelectContent,
@@ -15,6 +17,198 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
+// Live Preview Channel Tile with video preview on hover
+const LivePreviewChannelTile = memo(({
+  channel,
+  isActive,
+  isFocused,
+  isFavorite,
+  onClick,
+  onToggleFavorite,
+  onHover,
+}: {
+  channel: Channel;
+  isActive?: boolean;
+  isFocused?: boolean;
+  isFavorite?: boolean;
+  onClick: () => void;
+  onToggleFavorite: () => void;
+  onHover: (channel: Channel | null) => void;
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewReady, setPreviewReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const streamProxyUrl = useMemo(() => {
+    const supabaseUrl = (supabase as any).supabaseUrl as string | undefined;
+    if (!supabaseUrl) return '';
+    return new URL('functions/v1/stream-proxy', supabaseUrl).toString();
+  }, []);
+
+  // Start preview after hover delay
+  useEffect(() => {
+    if (!isHovered) {
+      cleanupHls();
+      setPreviewReady(false);
+      return;
+    }
+    
+    hoverTimeoutRef.current = setTimeout(() => {
+      loadPreview();
+    }, 600);
+    
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    };
+  }, [isHovered]);
+
+  const loadPreview = async () => {
+    const video = videoRef.current;
+    if (!video || !channel.url) return;
+
+    setIsPreviewLoading(true);
+
+    let sourceUrl = channel.url;
+    if (!channel.isLocal && streamProxyUrl) {
+      sourceUrl = `${streamProxyUrl}?url=${encodeURIComponent(channel.url)}`;
+    }
+
+    const isHlsStream = sourceUrl.includes('.m3u8') || channel.url.includes('.m3u8');
+
+    try {
+      if (isHlsStream && Hls.isSupported()) {
+        const hls = new Hls({
+          maxBufferLength: 5,
+          maxMaxBufferLength: 10,
+          enableWorker: true,
+          lowLatencyMode: true,
+        });
+
+        hlsRef.current = hls;
+        hls.loadSource(sourceUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.muted = true;
+          video.play().then(() => {
+            setPreviewReady(true);
+            setIsPreviewLoading(false);
+          }).catch(() => setIsPreviewLoading(false));
+        });
+
+        hls.on(Hls.Events.ERROR, () => setIsPreviewLoading(false));
+      } else {
+        video.src = sourceUrl;
+        video.muted = true;
+        await video.play();
+        setPreviewReady(true);
+        setIsPreviewLoading(false);
+      }
+    } catch {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  const cleanupHls = () => {
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.src = '';
+    }
+    setIsPreviewLoading(false);
+  };
+
+  return (
+    <motion.button
+      onClick={onClick}
+      onMouseEnter={() => { setIsHovered(true); onHover(channel); }}
+      onMouseLeave={() => { setIsHovered(false); onHover(null); }}
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 10 }}
+      whileHover={{ scale: 1.01 }}
+      className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all group mb-1 ${
+        isActive
+          ? 'bg-card border-l-4 border-l-accent shadow-lg shadow-accent/10'
+          : isFocused
+          ? 'bg-card/70'
+          : 'hover:bg-card/50'
+      }`}
+    >
+      {/* Channel Logo / Preview */}
+      <div className="w-24 h-16 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+        {/* Static logo */}
+        {channel.logo && !previewReady ? (
+          <img
+            src={channel.logo}
+            alt={channel.name}
+            loading="lazy"
+            className="w-full h-full object-cover"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+        ) : !previewReady && !channel.logo ? (
+          <span className="text-xl font-bold text-muted-foreground">{channel.name.charAt(0)}</span>
+        ) : null}
+
+        {/* Live Preview Video */}
+        <video
+          ref={videoRef}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${previewReady ? 'opacity-100' : 'opacity-0'}`}
+          playsInline
+          muted
+        />
+        
+        {/* Loading indicator */}
+        {isPreviewLoading && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <Loader2 className="w-5 h-5 text-primary animate-spin" />
+          </div>
+        )}
+
+        {/* Play overlay when not previewing */}
+        {!previewReady && !isPreviewLoading && (
+          <div className="absolute inset-0 bg-primary/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Play className="w-5 h-5 text-white fill-white" />
+          </div>
+        )}
+
+        {/* Live indicator */}
+        <div className="absolute top-1 left-1">
+          <span className="px-1.5 py-0.5 rounded bg-red-500/90 text-[9px] font-bold text-white uppercase">Live</span>
+        </div>
+      </div>
+
+      {/* Channel Name */}
+      <div className="flex-1 text-left min-w-0">
+        <h3 className="text-foreground font-medium truncate group-hover:text-primary transition-colors">
+          {channel.name}
+        </h3>
+        {channel.group && (
+          <p className="text-xs text-muted-foreground truncate">{channel.group}</p>
+        )}
+      </div>
+
+      {/* Badges & Favorite */}
+      <div className="flex items-center gap-2">
+        <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded">HD</span>
+        <motion.button
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <Star className={`w-5 h-5 ${isFavorite ? 'fill-accent text-accent' : 'text-muted-foreground hover:text-accent'}`} />
+        </motion.button>
+      </div>
+    </motion.button>
+  );
+});
 
 interface MiLiveTVListProps {
   channels: Channel[];
@@ -58,6 +252,7 @@ export const MiLiveTVList = ({
   const [hoveredChannel, setHoveredChannel] = useState<Channel | null>(null);
   const [showEPG, setShowEPG] = useState(false);
   const [localShowFavoritesOnly, setLocalShowFavoritesOnly] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const weather = useWeather();
   const isMobile = useIsMobile();
@@ -228,14 +423,34 @@ export const MiLiveTVList = ({
         <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Left Sidebar - Country/Category List */}
-      <div className={`
-        ${isMobile 
-          ? `fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
-          : 'w-56 flex-shrink-0'
-        } 
-        flex flex-col border-r border-border/30 bg-background
-      `}>
+      {/* Left Sidebar - Country/Category List with Collapse Toggle */}
+      <motion.div 
+        animate={{ width: isMobile ? 256 : sidebarCollapsed ? 72 : 224 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className={`
+          ${isMobile 
+            ? `fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+            : 'flex-shrink-0 relative'
+          } 
+          flex flex-col border-r border-border/30 bg-background
+        `}
+      >
+        {/* Collapse toggle button - Desktop only */}
+        {!isMobile && (
+          <motion.button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="absolute -right-3 top-20 z-10 w-6 h-6 rounded-full bg-card border border-border/30 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors shadow-md"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </motion.button>
+        )}
+        
         {/* Back Button & Title */}
         <div className="flex items-center gap-3 p-4">
           {isMobile ? (
@@ -247,18 +462,31 @@ export const MiLiveTVList = ({
               <ChevronLeft className="w-5 h-5 text-muted-foreground" />
             </button>
           )}
-          <h1 className="text-lg font-semibold text-foreground">{getCategoryTitle(category)}</h1>
+          <AnimatePresence>
+            {(!sidebarCollapsed || isMobile) && (
+              <motion.h1 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="text-lg font-semibold text-foreground whitespace-nowrap overflow-hidden"
+              >
+                {getCategoryTitle(category)}
+              </motion.h1>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Category List */}
         <div className="flex-1 overflow-y-auto px-2 space-y-1 mi-scrollbar">
           {groups.map((group) => (
-            <button
+            <motion.button
               key={group.name}
               onClick={() => handleGroupSelect(group.name)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+              whileHover={{ scale: 1.02, x: 2 }}
+              whileTap={{ scale: 0.98 }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                 selectedGroup === group.name
-                  ? 'bg-card text-foreground'
+                  ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
@@ -269,15 +497,24 @@ export const MiLiveTVList = ({
                   <span className="text-base">{getCategoryEmoji(group.displayName)}</span>
                 )}
               </div>
-              <div className="flex-1 text-left min-w-0">
-                <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
-                  {translateGroupName(group.displayName)}
-                </p>
-                {selectedGroup === group.name && (
-                  <p className="text-xs text-muted-foreground">{group.count} Channels</p>
+              <AnimatePresence>
+                {(!sidebarCollapsed || isMobile) && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="flex-1 text-left min-w-0"
+                  >
+                    <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
+                      {translateGroupName(group.displayName)}
+                    </p>
+                    {selectedGroup === group.name && (
+                      <p className="text-xs text-muted-foreground">{group.count} Channels</p>
+                    )}
+                  </motion.div>
                 )}
-              </div>
-            </button>
+              </AnimatePresence>
+            </motion.button>
           ))}
         </div>
 
@@ -293,7 +530,7 @@ export const MiLiveTVList = ({
             <Heart className={`w-5 h-5 ${localShowFavoritesOnly ? 'fill-white text-white' : ''}`} />
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Center - Channel List */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -378,65 +615,20 @@ export const MiLiveTVList = ({
           </div>
         </div>
 
-        {/* Channel Rows */}
+        {/* Channel Rows with Live Preview */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-2 mi-scrollbar" onScroll={onScroll}>
           <AnimatePresence mode="popLayout">
             {visibleChannels.map((channel, index) => (
-              <motion.button
+              <LivePreviewChannelTile
                 key={channel.id}
+                channel={channel}
+                isActive={currentChannel?.id === channel.id}
+                isFocused={focusedIndex === index}
+                isFavorite={favorites.has(channel.id)}
                 onClick={() => onChannelSelect(channel)}
-                onMouseEnter={() => setHoveredChannel(channel)}
-                onMouseLeave={() => setHoveredChannel(null)}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all group mb-1 ${
-                  currentChannel?.id === channel.id
-                    ? 'bg-card border-l-4 border-l-accent'
-                    : focusedIndex === index
-                    ? 'bg-card/70'
-                    : 'hover:bg-card/50'
-                }`}
-              >
-                {/* Channel Logo */}
-                <div className="w-20 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-                  {channel.logo ? (
-                    <img
-                      src={channel.logo}
-                      alt={channel.name}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <span className="text-xl font-bold text-muted-foreground">{channel.name.charAt(0)}</span>
-                  )}
-                  {/* Play overlay on hover */}
-                  <div className="absolute inset-0 bg-primary/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Play className="w-5 h-5 text-white fill-white" />
-                  </div>
-                </div>
-
-                {/* Channel Name */}
-                <div className="flex-1 text-left min-w-0">
-                  <h3 className="text-foreground font-medium truncate group-hover:text-primary transition-colors">
-                    {channel.name}
-                  </h3>
-                </div>
-
-                {/* Badges & Favorite */}
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded">HD</span>
-                  <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded">EPG</span>
-                  <motion.button
-                    onClick={(e) => { e.stopPropagation(); onToggleFavorite(channel.id); }}
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <Star className={`w-5 h-5 ${favorites.has(channel.id) ? 'fill-accent text-accent' : 'text-muted-foreground hover:text-accent'}`} />
-                  </motion.button>
-                </div>
-              </motion.button>
+                onToggleFavorite={() => onToggleFavorite(channel.id)}
+                onHover={setHoveredChannel}
+              />
             ))}
           </AnimatePresence>
 
