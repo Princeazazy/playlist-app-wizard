@@ -29,7 +29,7 @@ interface MiHomeScreenProps {
   onChannelSelect?: (channel: Channel) => void;
 }
 
-// Mi Player Pro style tile card
+// Enhanced animated tile card with glow effects
 const TileCard = ({
   children,
   onClick,
@@ -37,6 +37,7 @@ const TileCard = ({
   size = 'normal',
   delay = 0,
   bgImage,
+  glowColor = 'primary',
 }: {
   children: React.ReactNode;
   onClick?: () => void;
@@ -44,6 +45,7 @@ const TileCard = ({
   size?: 'large' | 'normal' | 'small';
   delay?: number;
   bgImage?: string;
+  glowColor?: 'primary' | 'accent' | 'emerald';
 }) => {
   const sizeClasses = {
     large: 'col-span-1 row-span-2',
@@ -51,27 +53,63 @@ const TileCard = ({
     small: 'col-span-1 row-span-1',
   };
 
+  const glowColors = {
+    primary: 'group-hover:shadow-primary/30',
+    accent: 'group-hover:shadow-accent/30',
+    emerald: 'group-hover:shadow-emerald-500/30',
+  };
+
   return (
     <motion.button
       onClick={onClick}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: delay * 0.1, duration: 0.3 }}
-      whileHover={{ scale: 1.02 }}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ 
+        delay: delay * 0.08, 
+        duration: 0.4,
+        type: 'spring',
+        stiffness: 100,
+      }}
+      whileHover={{ 
+        scale: 1.03, 
+        y: -4,
+        transition: { duration: 0.2 }
+      }}
       whileTap={{ scale: 0.98 }}
-      className={`${sizeClasses[size]} relative rounded-2xl overflow-hidden transition-all duration-300 group ${className}`}
+      className={`${sizeClasses[size]} relative rounded-2xl overflow-hidden transition-all duration-300 group shadow-xl ${glowColors[glowColor]} ${className}`}
       style={{
         background: bgImage 
           ? `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${bgImage}) center/cover`
           : 'linear-gradient(145deg, hsl(260 30% 18%) 0%, hsl(260 30% 12%) 100%)',
       }}
     >
+      {/* Animated border glow */}
+      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 via-transparent to-accent/20 blur-xl" />
+      </div>
+      
+      {/* Shine effect on hover */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+      
+      {/* Top highlight */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+      
       {/* Hover glow effect */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-primary/20 to-transparent pointer-events-none" />
       
       {/* Content */}
-      <div className="relative h-full flex flex-col p-5 text-left">
+      <div className="relative h-full flex flex-col p-5 text-left z-10">
         {children}
+      </div>
+      
+      {/* Corner accents on hover */}
+      <div className="absolute top-0 right-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+        <div className="absolute top-2 right-2 w-1.5 h-6 rounded-full bg-primary/40" />
+        <div className="absolute top-2 right-2 w-6 h-1.5 rounded-full bg-primary/40" />
+      </div>
+      <div className="absolute bottom-0 left-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+        <div className="absolute bottom-2 left-2 w-1.5 h-6 rounded-full bg-accent/40" />
+        <div className="absolute bottom-2 left-2 w-6 h-1.5 rounded-full bg-accent/40" />
       </div>
     </motion.button>
   );
