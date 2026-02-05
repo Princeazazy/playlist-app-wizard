@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useIPTV, Channel } from '@/hooks/useIPTV';
 import { useAppNavigation, Screen } from '@/hooks/useAppNavigation';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { MiHomeScreen } from '@/components/MiHomeScreen';
 import { MiLiveTVList } from '@/components/MiLiveTVList';
 import { MiMediaGrid } from '@/components/MiMediaGrid';
@@ -15,6 +16,7 @@ import { GlobalSearchModal } from '@/components/GlobalSearchModal';
 import { BackgroundMusic } from '@/components/BackgroundMusic';
 import { MiCatchUpPage } from '@/components/MiCatchUpPage';
 import { TMDBDetailModal } from '@/components/TMDBDetailModal';
+import { MobileBrowseScreen } from '@/components/MobileBrowseScreen';
 import { TMDBItem } from '@/hooks/useTMDB';
 import arabiaLogo from '@/assets/arabia-logo.png';
 
@@ -24,6 +26,8 @@ const Index = () => {
   const [showIntro, setShowIntro] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [useMobileBrowse, setUseMobileBrowse] = useState(true);
+  const isMobile = useIsMobile();
 
   const nav = useAppNavigation();
 
@@ -240,6 +244,18 @@ const Index = () => {
   const renderScreen = () => {
     switch (nav.currentScreen) {
       case 'home':
+        // Use new mobile browse screen on mobile
+        if (isMobile && useMobileBrowse) {
+          return (
+            <MobileBrowseScreen
+              channels={channels}
+              onTMDBSelect={handleTMDBSelect}
+              onChannelSelect={(channel) => nav.handleItemSelect(channel, 'home')}
+              onNavigate={nav.handleNavigate}
+              onSearchClick={() => nav.setIsSearchOpen(true)}
+            />
+          );
+        }
         return (
           <MiHomeScreen
             channelCount={liveCount}
