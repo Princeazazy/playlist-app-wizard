@@ -122,12 +122,12 @@ export const MiMovieDetail = ({
         <div className="flex gap-10">
           {/* Poster */}
           <div className="w-[350px] flex-shrink-0">
-            <div className="rounded-2xl overflow-hidden shadow-2xl">
+            <div className="rounded-2xl overflow-hidden shadow-2xl bg-card">
               {item.logo ? (
                 <img 
                   src={posterUrl}
                   alt={item.name}
-                  className="w-full aspect-[2/3] object-cover"
+                  className="w-full object-contain"
                 />
               ) : (
                 <div className="w-full aspect-[2/3] bg-card flex items-center justify-center">

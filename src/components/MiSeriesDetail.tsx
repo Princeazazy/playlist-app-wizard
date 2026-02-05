@@ -221,16 +221,17 @@ export const MiSeriesDetail = ({
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 px-10 py-4 flex gap-10 h-[calc(100vh-120px)]">
+      <main className="relative z-10 px-10 py-4 flex gap-10 h-[calc(100vh-120px)] overflow-hidden">
         {/* Left Side - Poster & Info */}
-        <div className="w-[320px] flex-shrink-0 flex flex-col">
+        <ScrollArea className="w-[320px] flex-shrink-0">
+          <div className="flex flex-col pr-2">
           {/* Poster */}
-          <div className="rounded-2xl overflow-hidden shadow-2xl mb-6">
+          <div className="rounded-2xl overflow-hidden shadow-2xl mb-6 bg-card">
             {posterUrl ? (
               <img 
                 src={posterUrl}
                 alt={item.name}
-                className="w-full aspect-[2/3] object-cover"
+                className="w-full object-contain"
               />
             ) : (
               <div className="w-full aspect-[2/3] bg-card flex items-center justify-center">
@@ -286,7 +287,8 @@ export const MiSeriesDetail = ({
               </span>
             </button>
           </div>
-        </div>
+          </div>
+        </ScrollArea>
 
         {/* Right Side - Seasons & Episodes */}
         <div className="flex-1 flex flex-col min-w-0">
