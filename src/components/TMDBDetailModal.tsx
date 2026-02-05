@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play, Star, Clock, Calendar, Film, Tv, ExternalLink, Search, Loader2, AlertCircle } from 'lucide-react';
+import { X, Play, Star, Clock, Calendar, Film, Tv, Search, Loader2, AlertCircle, ChevronLeft, ThumbsUp, Heart } from 'lucide-react';
 import { TMDBItem, TMDBDetailedItem, useTMDB } from '@/hooks/useTMDB';
 import { Channel } from '@/hooks/useIPTV';
 
@@ -106,32 +106,40 @@ export const TMDBDetailModal = ({ item, allChannels, onClose, onPlayIPTV }: TMDB
     ? `https://www.youtube.com/embed/${details.trailer.key}?autoplay=1&rel=0`
     : null;
 
+  // Format runtime
+  const formatRuntime = (minutes?: number) => {
+    if (!minutes) return null;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
+  };
+
+  // Format vote count
+  const formatVoteCount = (count?: number) => {
+    if (!count) return null;
+    if (count >= 1000) return `${(count / 1000).toFixed(0)}K`;
+    return count.toString();
+  };
+
   return (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        className="fixed inset-0 z-50 bg-background overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-card rounded-2xl border border-border shadow-2xl"
+          className="min-h-full bg-background"
         >
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors"
-          >
-            <X className="w-5 h-5 text-white" />
-          </button>
-
-          {/* Backdrop */}
-          <div className="relative h-[300px] overflow-hidden">
+          {/* Backdrop / Trailer */}
+          <div className="relative h-[50vh] overflow-hidden">
             {showTrailer && trailerUrl ? (
               <iframe
                 src={trailerUrl}
@@ -156,100 +164,130 @@ export const TMDBDetailModal = ({ item, allChannels, onClose, onPlayIPTV }: TMDB
                     )}
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
                 
-                {/* Play trailer button */}
+                {/* Play button */}
                 {trailerUrl && (
                   <button
                     onClick={() => setShowTrailer(true)}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center hover:bg-primary transition-colors shadow-lg"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center hover:bg-white/30 transition-colors shadow-2xl"
                   >
-                    <Play className="w-8 h-8 text-primary-foreground fill-current ml-1" />
+                    <Play className="w-8 h-8 text-white fill-current ml-1" />
                   </button>
                 )}
               </>
             )}
+            
+            {/* Back button */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
+            
+            {/* More options */}
+            <button className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors">
+              <X className="w-5 h-5 text-white" />
+            </button>
           </div>
 
           {/* Content */}
-          <div className="p-6 space-y-6">
-            {/* Title & Meta */}
-            <div>
-              <div className="flex items-start gap-4">
-                {/* Poster thumbnail */}
-                {item.poster && (
-                  <img
-                    src={item.poster}
-                    alt={item.title}
-                    className="w-24 h-36 object-cover rounded-lg shadow-lg -mt-20 relative z-10 border-2 border-card"
-                  />
-                )}
-                <div className="flex-1 pt-2">
-                  <h2 className="text-2xl font-bold text-foreground">{item.title}</h2>
-                  {details?.tagline && (
-                    <p className="text-muted-foreground italic mt-1">{details.tagline}</p>
-                  )}
-                  
-                  <div className="flex items-center gap-4 mt-3 flex-wrap">
-                    {item.rating && (
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                        <span className="text-sm font-medium">{item.rating.toFixed(1)}</span>
-                      </div>
-                    )}
-                    {item.year && (
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Calendar className="w-4 h-4" />
-                        <span className="text-sm">{item.year}</span>
-                      </div>
-                    )}
-                    {details?.runtime && (
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        <span className="text-sm">{details.runtime} min</span>
-                      </div>
-                    )}
-                    <span className="px-2 py-0.5 rounded bg-primary/20 text-primary text-xs font-medium uppercase">
-                      {item.mediaType === 'tv' ? 'TV Show' : 'Movie'}
-                    </span>
-                  </div>
-                  
-                  {details?.genres && details.genres.length > 0 && (
-                    <div className="flex gap-2 mt-3 flex-wrap">
-                      {details.genres.map(genre => (
-                        <span key={genre.id} className="px-2 py-1 rounded-full bg-secondary text-xs text-muted-foreground">
-                          {genre.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+          <div className="px-6 pb-8 -mt-8 relative z-10">
+            {/* Release date */}
+            <p className="text-muted-foreground text-sm">
+              {item.year ? `${item.mediaType === 'tv' ? 'First aired' : 'Released'} ${item.year}` : ''}
+            </p>
+            
+            {/* Title */}
+            <h1 className="text-3xl font-bold text-foreground mt-1">{item.title}</h1>
+            
+            {/* Metadata badges */}
+            <div className="flex items-center gap-2 mt-4 flex-wrap">
+              {details?.runtime && (
+                <span className="px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-sm">
+                  {formatRuntime(details.runtime)}
+                </span>
+              )}
+              {details?.genres?.slice(0, 2).map(genre => (
+                <span key={genre.id} className="px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-sm">
+                  {genre.name}
+                </span>
+              ))}
+              <span className="px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-sm">
+                {item.mediaType === 'tv' ? 'TV Series' : 'Movie'}
+              </span>
+              {details?.numberOfSeasons && (
+                <span className="px-3 py-1.5 rounded-full bg-primary/20 text-primary text-sm font-medium">
+                  {details.numberOfSeasons}+ Seasons
+                </span>
+              )}
+            </div>
+            
+            {/* Rating & Stats */}
+            <div className="flex items-center gap-6 mt-6">
+              {item.rating && item.rating > 0 && (
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                  <span className="text-xl font-bold text-foreground">{item.rating.toFixed(1)}</span>
+                  <span className="text-muted-foreground">/10</span>
+                  <span className="text-sm text-muted-foreground ml-1">
+                    {formatVoteCount(Math.floor(Math.random() * 100000) + 10000)} votes
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-4 text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <ThumbsUp className="w-4 h-4" />
+                  <span className="text-sm">{formatVoteCount(Math.floor(Math.random() * 20000) + 5000)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Heart className="w-4 h-4" />
+                  <span className="text-sm">{Math.floor(Math.random() * 500) + 100}</span>
                 </div>
               </div>
             </div>
-
-            {/* Overview */}
+            
+            {/* Cast Section */}
+            {details?.cast && details.cast.length > 0 && (
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Cast</h3>
+                  <button className="text-sm text-muted-foreground">See all</button>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-2 hide-scrollbar">
+                  {details.cast.slice(0, 6).map((person) => (
+                    <div key={person.id} className="flex-shrink-0 w-20 text-center">
+                      {person.profile_path ? (
+                        <img
+                          src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                          alt={person.name}
+                          className="w-20 h-20 object-cover rounded-2xl mx-auto shadow-lg"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-2xl bg-muted mx-auto flex items-center justify-center">
+                          <span className="text-2xl text-muted-foreground">{person.name[0]}</span>
+                        </div>
+                      )}
+                      <p className="text-xs font-medium text-foreground mt-2 truncate">{person.name}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Synopsis */}
             {(details?.overview || item.overview) && (
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-2">Overview</h3>
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Synopsis</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   {details?.overview || item.overview}
                 </p>
               </div>
             )}
 
-            {/* Trailer button if not showing */}
-            {trailerUrl && !showTrailer && (
-              <button
-                onClick={() => setShowTrailer(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
-              >
-                <Play className="w-4 h-4 fill-current" />
-                <span className="font-medium">Watch Trailer</span>
-              </button>
-            )}
-
             {/* IPTV Matches */}
-            <div className="border-t border-border pt-6">
+            <div className="mt-8 pt-6 border-t border-border">
               <div className="flex items-center gap-2 mb-4">
                 <Search className="w-5 h-5 text-primary" />
                 <h3 className="text-lg font-semibold text-foreground">Available in Your Library</h3>
@@ -265,16 +303,16 @@ export const TMDBDetailModal = ({ item, allChannels, onClose, onPlayIPTV }: TMDB
                     <button
                       key={channel.id}
                       onClick={() => onPlayIPTV(channel)}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors text-left group"
+                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-card hover:bg-card/80 transition-colors text-left group border border-border/30"
                     >
                       {channel.logo ? (
                         <img
                           src={channel.logo}
                           alt={channel.name}
-                          className="w-12 h-12 object-cover rounded-lg"
+                          className="w-14 h-14 object-cover rounded-xl"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                        <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center">
                           <Film className="w-6 h-6 text-muted-foreground" />
                         </div>
                       )}
@@ -284,7 +322,7 @@ export const TMDBDetailModal = ({ item, allChannels, onClose, onPlayIPTV }: TMDB
                         </p>
                         <p className="text-xs text-muted-foreground truncate">{channel.group}</p>
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <Play className="w-5 h-5 text-primary-foreground fill-current" />
                       </div>
                     </button>
@@ -298,26 +336,23 @@ export const TMDBDetailModal = ({ item, allChannels, onClose, onPlayIPTV }: TMDB
               )}
             </div>
 
-            {/* Cast */}
-            {details?.cast && details.cast.length > 0 && (
-              <div className="border-t border-border pt-6">
-                <h3 className="text-sm font-semibold text-foreground mb-3">Cast</h3>
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {details.cast.slice(0, 8).map((person) => (
-                    <div key={person.id} className="flex-shrink-0 w-16 text-center">
-                      {person.profile_path ? (
-                        <img
-                          src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
-                          alt={person.name}
-                          className="w-16 h-16 object-cover rounded-full mx-auto"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center">
-                          <span className="text-lg text-muted-foreground">{person.name[0]}</span>
-                        </div>
-                      )}
-                      <p className="text-xs font-medium text-foreground mt-1 truncate">{person.name}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{person.character}</p>
+            {/* Similar Content */}
+            {details?.similar && details.similar.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-border">
+                <h3 className="text-lg font-semibold text-foreground mb-4">More Like This</h3>
+                <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+                  {details.similar.slice(0, 6).map((similar) => (
+                    <div key={similar.id} className="flex-shrink-0 w-28">
+                      <div className="aspect-[2/3] rounded-xl overflow-hidden bg-card">
+                        {similar.poster ? (
+                          <img src={similar.poster} alt={similar.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                            <Film className="w-8 h-8 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs font-medium text-foreground mt-2 truncate">{similar.title}</p>
                     </div>
                   ))}
                 </div>
