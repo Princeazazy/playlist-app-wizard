@@ -244,8 +244,8 @@ const Index = () => {
   const renderScreen = () => {
     switch (nav.currentScreen) {
       case 'home':
-        // Use new mobile browse screen on mobile
-        if (isMobile && useMobileBrowse) {
+        // Use new browse screen with 3D carousel for all viewports
+        if (useMobileBrowse) {
           return (
             <MobileBrowseScreen
               channels={channels}
