@@ -34,6 +34,8 @@ const cleanChannelName = (name: string): string => {
   return name
     // Remove leading country-ish prefixes (AR:, UK-|, EG |, etc.)
     .replace(/^\s*[A-Z]{2,3}\s*[:\-|]\s*\|?\s*/i, '')
+    // Remove category prefixes like "EN MOV", "AR MOV", "AR SER", "EN SER", etc.
+    .replace(/^\s*[A-Z]{2}\s+(MOV|SER|SERIES|MOVIES?)\s*[:\-|]?\s*/i, '')
     // Replace underscores/dashes with spaces
     .replace(/[_-]/g, ' ')
     // Collapse multiple spaces
