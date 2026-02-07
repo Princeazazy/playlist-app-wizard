@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic } from 'lucide-react';
 import universeLogo from '@/assets/universe-tv-logo.png';
+import universePlayLogo from '@/assets/universe-play-logo.png';
 import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ContinueWatching } from './ContinueWatching';
@@ -186,7 +187,8 @@ export const MiHomeScreen = ({
       <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <img src={universeLogo} alt="Universe TV" className="h-16 md:h-24 w-auto" />
+          <img src={universePlayLogo} alt="Universe TV" className="h-14 md:h-20 w-auto" />
+          <img src={universeLogo} alt="Universe TV" className="h-10 md:h-16 w-auto" />
         </div>
 
         {/* Search Bar */}
