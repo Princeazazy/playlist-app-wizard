@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic } from 'lucide-react';
-import arabiaLogo from '@/assets/arabia-logo-new.png';
-import arabianPalaceBg from '@/assets/arabian-palace-bg.png';
+import universeLogo from '@/assets/universe-tv-logo.png';
 import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ContinueWatching } from './ContinueWatching';
@@ -80,7 +79,7 @@ const TileCard = ({
       style={{
         background: bgImage 
           ? `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${bgImage}) center/cover`
-          : 'linear-gradient(145deg, hsl(260 30% 18%) 0%, hsl(260 30% 12%) 100%)',
+          : 'linear-gradient(145deg, hsl(265 40% 16%) 0%, hsl(265 40% 10%) 100%)',
       }}
     >
       {/* Animated border glow */}
@@ -180,17 +179,14 @@ export const MiHomeScreen = ({
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* Background Image - Arabian Palace */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-60"
-        style={{ backgroundImage: `url(${arabianPalaceBg})` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-br from-background/90 via-background/80 to-background/70" />
+      {/* Background - Cosmic space */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(260,50%,8%)] via-[hsl(270,40%,6%)] to-[hsl(250,60%,4%)]" />
+      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top,hsl(280,60%,20%),transparent_60%),radial-gradient(ellipse_at_bottom_right,hsl(200,60%,15%),transparent_50%)]" />
       {/* Header - Mi Player Pro style */}
       <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <img src={arabiaLogo} alt="Mi Player Pro" className="h-20 md:h-28 w-auto" />
+          <img src={universeLogo} alt="Universe TV" className="h-16 md:h-24 w-auto" />
         </div>
 
         {/* Search Bar */}
@@ -224,7 +220,7 @@ export const MiHomeScreen = ({
           )}
           <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-primary to-accent overflow-hidden ring-2 ring-primary/30">
             <div className="w-full h-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">A</span>
+              <span className="text-white font-bold text-lg">U</span>
             </div>
           </div>
         </div>

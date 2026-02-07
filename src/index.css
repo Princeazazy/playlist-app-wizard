@@ -6,101 +6,101 @@
 
 @layer base {
   :root {
-    /* Core background - richer deep purple */
-    --background: 260 35% 8%;
-    --foreground: 0 0% 98%;
+    /* Core background - deep cosmic space */
+    --background: 260 50% 6%;
+    --foreground: 220 20% 95%;
     
-    /* Card backgrounds - more saturated */
-    --card: 260 30% 14%;
-    --card-foreground: 0 0% 98%;
+    /* Card backgrounds - space panels */
+    --card: 265 40% 12%;
+    --card-foreground: 220 20% 95%;
     
     /* Popover */
-    --popover: 260 30% 12%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 265 40% 10%;
+    --popover-foreground: 220 20% 95%;
     
-    /* Primary - Vibrant coral red */
-    --primary: 8 90% 58%;
+    /* Primary - Cosmic cyan/blue glow */
+    --primary: 200 90% 55%;
     --primary-foreground: 0 0% 100%;
     
     /* Secondary */
-    --secondary: 260 25% 20%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 270 35% 18%;
+    --secondary-foreground: 220 20% 95%;
     
     /* Muted */
-    --muted: 260 20% 22%;
-    --muted-foreground: 220 15% 65%;
+    --muted: 265 30% 18%;
+    --muted-foreground: 230 20% 65%;
     
-    /* Accent - Bright orange */
-    --accent: 32 100% 55%;
+    /* Accent - Warm orange/gold from planet rings */
+    --accent: 30 95% 55%;
     --accent-foreground: 0 0% 100%;
     
     /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    /* Borders - more visible */
-    --border: 260 25% 25%;
-    --input: 260 25% 18%;
-    --ring: 8 90% 58%;
+    /* Borders */
+    --border: 265 30% 22%;
+    --input: 265 30% 16%;
+    --ring: 200 90% 55%;
     --radius: 1rem;
     
     /* Sidebar */
-    --sidebar-background: 260 35% 6%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 8 90% 58%;
+    --sidebar-background: 260 50% 5%;
+    --sidebar-foreground: 220 20% 95%;
+    --sidebar-primary: 200 90% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 260 30% 16%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 260 25% 22%;
-    --sidebar-ring: 8 90% 58%;
+    --sidebar-accent: 270 35% 15%;
+    --sidebar-accent-foreground: 220 20% 95%;
+    --sidebar-border: 265 30% 20%;
+    --sidebar-ring: 200 90% 55%;
     
-    /* Custom tokens for Mi Player - MORE VIBRANT */
-    --mi-bg-dark: 260 35% 8%;
-    --mi-bg-darker: 260 35% 5%;
-    --mi-card: 260 30% 14%;
-    --mi-card-hover: 260 30% 20%;
-    --mi-card-selected: 260 30% 18%;
-    --mi-red: 8 90% 58%;
-    --mi-orange: 32 100% 55%;
+    /* Custom tokens for Universe TV */
+    --mi-bg-dark: 260 50% 6%;
+    --mi-bg-darker: 260 50% 4%;
+    --mi-card: 265 40% 12%;
+    --mi-card-hover: 265 35% 18%;
+    --mi-card-selected: 265 35% 16%;
+    --mi-red: 340 80% 55%;
+    --mi-orange: 30 95% 55%;
     --mi-purple: 280 80% 60%;
-    --mi-cyan: 190 90% 50%;
+    --mi-cyan: 200 90% 55%;
     --mi-green: 160 80% 45%;
-    --mi-text: 0 0% 98%;
-    --mi-text-muted: 220 15% 65%;
-    --mi-badge-hd: 260 25% 30%;
-    --mi-badge-live: 8 90% 58%;
-    --mi-badge-epg: 260 25% 35%;
+    --mi-text: 220 20% 95%;
+    --mi-text-muted: 230 20% 65%;
+    --mi-badge-hd: 270 35% 30%;
+    --mi-badge-live: 200 90% 55%;
+    --mi-badge-epg: 270 35% 35%;
     --mi-star: 45 100% 55%;
   }
 
   .dark {
-    --background: 260 35% 8%;
-    --foreground: 0 0% 98%;
-    --card: 260 30% 14%;
-    --card-foreground: 0 0% 98%;
-    --popover: 260 30% 12%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 8 90% 58%;
+    --background: 260 50% 6%;
+    --foreground: 220 20% 95%;
+    --card: 265 40% 12%;
+    --card-foreground: 220 20% 95%;
+    --popover: 265 40% 10%;
+    --popover-foreground: 220 20% 95%;
+    --primary: 200 90% 55%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 260 25% 20%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 260 20% 22%;
-    --muted-foreground: 220 15% 65%;
-    --accent: 32 100% 55%;
+    --secondary: 270 35% 18%;
+    --secondary-foreground: 220 20% 95%;
+    --muted: 265 30% 18%;
+    --muted-foreground: 230 20% 65%;
+    --accent: 30 95% 55%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 260 25% 25%;
-    --input: 260 25% 18%;
-    --ring: 8 90% 58%;
-    --sidebar-background: 260 35% 6%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 8 90% 58%;
+    --border: 265 30% 22%;
+    --input: 265 30% 16%;
+    --ring: 200 90% 55%;
+    --sidebar-background: 260 50% 5%;
+    --sidebar-foreground: 220 20% 95%;
+    --sidebar-primary: 200 90% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 260 30% 16%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 260 25% 22%;
-    --sidebar-ring: 8 90% 58%;
+    --sidebar-accent: 270 35% 15%;
+    --sidebar-accent-foreground: 220 20% 95%;
+    --sidebar-border: 265 30% 20%;
+    --sidebar-ring: 200 90% 55%;
   }
 }
 
@@ -136,7 +136,7 @@
     background: linear-gradient(
       145deg,
       hsl(var(--card)) 0%,
-      hsl(260 30% 12%) 100%
+      hsl(265 40% 10%) 100%
     );
   }
   
@@ -144,7 +144,7 @@
     background: linear-gradient(
       145deg,
       hsl(var(--mi-card-hover)) 0%,
-      hsl(260 30% 16%) 100%
+      hsl(265 35% 14%) 100%
     );
     box-shadow: 
       0 8px 32px hsl(0 0% 0% / 0.4),
@@ -438,10 +438,10 @@
 
 @keyframes smoke-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 8px hsl(160 60% 40% / 0.4)) drop-shadow(0 0 20px hsl(160 60% 40% / 0.2));
+    filter: drop-shadow(0 0 8px hsl(200 90% 55% / 0.4)) drop-shadow(0 0 20px hsl(200 90% 55% / 0.2));
   }
   50% {
-    filter: drop-shadow(0 0 15px hsl(160 60% 50% / 0.6)) drop-shadow(0 0 35px hsl(160 60% 45% / 0.3));
+    filter: drop-shadow(0 0 15px hsl(200 90% 60% / 0.6)) drop-shadow(0 0 35px hsl(200 90% 55% / 0.3));
   }
 }
 
@@ -476,7 +476,7 @@
   right: -5%;
   width: 40%;
   height: 50%;
-  background: radial-gradient(ellipse at center, hsl(160 50% 45% / 0.15) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, hsl(200 80% 55% / 0.15) 0%, transparent 70%);
   animation: smoke-rise 2.5s ease-in-out infinite;
   pointer-events: none;
 }
