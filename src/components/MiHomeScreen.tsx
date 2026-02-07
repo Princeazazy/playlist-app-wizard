@@ -435,20 +435,6 @@ export const MiHomeScreen = ({
         )}
       </main>
 
-      {/* Bottom Bar - Desktop only */}
-      {!isMobile && (
-        <HomeBottomBar
-          channelCount={channelCount}
-          movieCount={movieCount}
-          seriesCount={seriesCount}
-          sportsCount={sportsCount}
-          loading={loading}
-          onCategoryClick={(category) => {
-            if (category === 'sports') onNavigate('sports');
-            else if (category === 'news' || category === 'world') onNavigate('live');
-          }}
-        />
-      )}
     </div>
   );
 };
