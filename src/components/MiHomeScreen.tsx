@@ -186,10 +186,7 @@ export const MiHomeScreen = ({
       {/* Header - Mi Player Pro style */}
       <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6">
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <img src={universePlayLogo} alt="Universe TV" className="h-14 md:h-20 w-auto" />
-          <img src={universeLogo} alt="Universe TV" className="h-10 md:h-16 w-auto" />
-        </div>
+        <img src={universePlayLogo} alt="Universe TV" className="h-14 md:h-20 w-auto" />
 
         {/* Search Bar */}
         {!isMobile && (
