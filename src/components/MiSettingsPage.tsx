@@ -17,7 +17,7 @@ import {
   clearLocalChannels
 } from '@/lib/localPlaylistStorage';
 import { supabase } from '@/integrations/supabase/client';
-import arabiaLogo from '@/assets/arabia-logo-new.png';
+import universeLogo from '@/assets/universe-tv-logo.png';
 import { useWeather } from '@/hooks/useWeather';
 import { getParentalControls, saveParentalControls, type ParentalControlSettings } from '@/lib/parentalControls';
 import { Switch } from '@/components/ui/switch';
@@ -210,7 +210,7 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange }: MiSettingsPageProps
 
         {/* Center Logo */}
         <div className="hidden md:flex items-center justify-center">
-          <img src={arabiaLogo} alt="Mi Player Pro" className="h-12 w-auto" />
+          <img src={universeLogo} alt="Universe TV" className="h-12 w-auto" />
         </div>
 
         {/* Time & Weather */}
