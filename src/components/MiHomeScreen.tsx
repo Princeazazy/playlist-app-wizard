@@ -182,7 +182,10 @@ export const MiHomeScreen = ({
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       {/* Background - Cosmic space image */}
       <div className="absolute inset-0">
-        <img src={cosmicBg} alt="" className="w-full h-full object-cover" style={{ imageRendering: 'auto' }} />
+        <div 
+          className="w-full h-full bg-center bg-cover bg-no-repeat" 
+          style={{ backgroundImage: `url(${cosmicBg})` }} 
+        />
         <div className="absolute inset-0 bg-black/60" />
       </div>
       {/* Header - Mi Player Pro style */}
