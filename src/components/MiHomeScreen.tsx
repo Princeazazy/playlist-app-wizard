@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic } from 'lucide-react';
-import universeLogo from '@/assets/universe-tv-logo.png';
 import universePlayLogo from '@/assets/universe-play-logo.png';
+import cosmicBg from '@/assets/cosmic-bg.png';
 import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ContinueWatching } from './ContinueWatching';
@@ -180,9 +180,11 @@ export const MiHomeScreen = ({
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* Background - Cosmic space */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(260,50%,8%)] via-[hsl(270,40%,6%)] to-[hsl(250,60%,4%)]" />
-      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top,hsl(280,60%,20%),transparent_60%),radial-gradient(ellipse_at_bottom_right,hsl(200,60%,15%),transparent_50%)]" />
+      {/* Background - Cosmic space image */}
+      <div className="absolute inset-0">
+        <img src={cosmicBg} alt="" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-background/60" />
+      </div>
       {/* Header - Mi Player Pro style */}
       <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6">
         {/* Logo */}
