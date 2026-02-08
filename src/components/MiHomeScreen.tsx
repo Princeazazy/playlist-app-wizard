@@ -183,7 +183,7 @@ export const MiHomeScreen = ({
       {/* Background - Cosmic space image */}
       <div className="absolute inset-0">
         <img src={cosmicBg} alt="" className="w-full h-full object-cover" style={{ imageRendering: 'auto' }} />
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-black/60" />
       </div>
       {/* Header - Mi Player Pro style */}
       <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6">
