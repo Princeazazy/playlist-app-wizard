@@ -228,7 +228,7 @@ export const MiHomeScreen = ({
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 px-6 md:px-10 pb-32 overflow-y-auto">
+      <main className="relative z-10 flex-1 px-6 md:px-10 pt-2 pb-32">
         {isMobile ? (
           /* Mobile Layout - Vertical stack */
           <div className="flex flex-col gap-4 pb-20">
