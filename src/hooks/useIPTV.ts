@@ -42,9 +42,9 @@ const cleanChannelName = (name: string): string => {
     // Collapse multiple spaces
     .replace(/\s+/g, ' ')
     .trim();
-  // Capitalize first letter
+  // Title-case: capitalize first letter of each word
   if (cleaned.length === 0) return cleaned;
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  return cleaned.replace(/\b\w/g, c => c.toUpperCase());
 };
 
 const normalizeChannel = (ch: Channel): Channel => ({
