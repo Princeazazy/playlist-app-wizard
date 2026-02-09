@@ -577,10 +577,11 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const {
       url,
-      maxChannels = 10000, // Reduced default for safety
+      maxChannels = 10000,
       maxBytesMB = 20,
-      maxReturnPerType = 3000, // Reduced default to prevent timeout
+      maxReturnPerType = 3000,
       preferXtreamApi = true,
+      forceXtreamApi = false, // New: force Xtream API even for get.php URLs
     } = (body ?? {}) as Record<string, unknown>;
 
     if (!url || typeof url !== 'string') {
@@ -594,19 +595,19 @@ serve(async (req) => {
     const safeMaxReturnPerType =
       typeof maxReturnPerType === 'number' && Number.isFinite(maxReturnPerType) && maxReturnPerType > 0
         ? Math.min(maxReturnPerType, XTREAM_MAX_ITEMS_PER_RESPONSE)
-        : XTREAM_MAX_ITEMS_PER_RESPONSE; // 50000 - load ALL
+        : XTREAM_MAX_ITEMS_PER_RESPONSE;
 
     const rawMaxChannels = typeof maxChannels === 'number' ? maxChannels : Number(maxChannels);
     const safeMaxChannels = Number.isFinite(rawMaxChannels)
-      ? Math.min(Math.max(rawMaxChannels, 0), 100000) // Increased from 15000 to 100000
-      : 50000; // Increased default from 10000 to 50000
+      ? Math.min(Math.max(rawMaxChannels, 0), 100000)
+      : 50000;
 
     const stopAfterChannels = Math.min(safeMaxChannels, safeMaxReturnPerType * 3);
 
     const rawMaxBytesMB = typeof maxBytesMB === 'number' ? maxBytesMB : Number(maxBytesMB);
     const safeMaxBytesMB = Number.isFinite(rawMaxBytesMB)
-      ? Math.min(Math.max(rawMaxBytesMB, 1), 50) // Increased from 20 to 50
-      : 40; // Increased default from 15 to 40
+      ? Math.min(Math.max(rawMaxBytesMB, 1), 50)
+      : 40;
 
     console.log('Processing URL:', url);
 
@@ -614,12 +615,14 @@ serve(async (req) => {
     const xtreamCreds = parseXtreamCredentials(url);
     const isGetM3U = isXtreamGetM3UUrl(url);
 
-    // If preferXtreamApi is enabled, use Xtream JSON APIs when it's safe.
-    // For Xtream get.php M3U URLs, prefer streaming M3U parsing to avoid huge JSON payloads that exceed runtime limits.
-    const canUseXtreamApi = !!xtreamCreds && preferXtreamApi && !isGetM3U;
+    // Use Xtream API when:
+    // 1. We have valid credentials AND
+    // 2. Either forceXtreamApi is set, OR (preferXtreamApi is set AND it's not a get.php URL)
+    // forceXtreamApi bypasses the get.php safety check - useful when we know Xtream API works
+    const canUseXtreamApi = !!xtreamCreds && (forceXtreamApi || (preferXtreamApi && !isGetM3U));
 
-    if (xtreamCreds && preferXtreamApi && isGetM3U) {
-      console.log('Xtream get.php detected; forcing streaming M3U parsing (override preferXtreamApi)');
+    if (xtreamCreds && preferXtreamApi && isGetM3U && !forceXtreamApi) {
+      console.log('Xtream get.php detected; forcing streaming M3U parsing (override preferXtreamApi). Use forceXtreamApi=true to override.');
     }
 
     if (canUseXtreamApi) {
