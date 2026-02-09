@@ -10,6 +10,7 @@ import { EPGGuide } from './EPGGuide';
 import { WeatherIcon } from './shared/WeatherIcon';
 import Hls from 'hls.js';
 import { supabase } from '@/integrations/supabase/client';
+import { useChannelLogo } from '@/hooks/useChannelLogo';
 import {
   Select,
   SelectContent,
@@ -42,6 +43,7 @@ const LivePreviewChannelTile = memo(({
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const resolvedLogo = useChannelLogo(channel.name, channel.logo);
 
   const streamProxyUrl = useMemo(() => {
     const supabaseUrl = (supabase as any).supabaseUrl as string | undefined;
@@ -145,15 +147,15 @@ const LivePreviewChannelTile = memo(({
       {/* Channel Logo / Preview */}
       <div className="w-24 h-16 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 relative">
         {/* Static logo */}
-        {channel.logo && !previewReady ? (
+        {resolvedLogo && !previewReady ? (
           <img
-            src={channel.logo}
+            src={resolvedLogo}
             alt={channel.name}
             loading="lazy"
             className="w-full h-full object-cover"
             onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
-        ) : !previewReady && !channel.logo ? (
+        ) : !previewReady && !resolvedLogo ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
             <Tv className="w-8 h-8 text-primary/50" />
           </div>
