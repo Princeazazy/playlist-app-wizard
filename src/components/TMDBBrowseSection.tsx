@@ -82,6 +82,7 @@ const PlaylistCard = ({ channel, onClick, index, tmdbPoster }: { channel: Channe
   const year = yearMatch ? yearMatch[0] : null;
   // Prefer TMDB poster over playlist logo (which is often a scene still)
   const posterUrl = tmdbPoster || channel.logo;
+  const isTMDBPoster = !!tmdbPoster; // true = proper poster, false = provider image (scene still)
   
   return (
     <motion.button
@@ -95,20 +96,26 @@ const PlaylistCard = ({ channel, onClick, index, tmdbPoster }: { channel: Channe
     >
       <div className="aspect-[2/3] rounded-xl overflow-hidden bg-card border border-border/30 relative">
         {posterUrl ? (
-          <img
-            src={posterUrl}
-            alt={channel.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-            loading="lazy"
-            onError={(e) => {
-              // If TMDB poster fails, try falling back to playlist logo
-              if (tmdbPoster && channel.logo && e.currentTarget.src !== channel.logo) {
-                e.currentTarget.src = channel.logo;
-              } else {
-                e.currentTarget.style.display = 'none';
-              }
-            }}
-          />
+          <>
+            {!isTMDBPoster && (
+              <div className="absolute inset-0 bg-gradient-to-b from-muted/80 to-card" />
+            )}
+            <img
+              src={posterUrl}
+              alt={channel.name}
+              className={`w-full h-full transition-transform duration-300 group-hover:scale-110 ${
+                isTMDBPoster ? 'object-cover' : 'object-contain'
+              }`}
+              loading="lazy"
+              onError={(e) => {
+                if (tmdbPoster && channel.logo && e.currentTarget.src !== channel.logo) {
+                  e.currentTarget.src = channel.logo;
+                } else {
+                  e.currentTarget.style.display = 'none';
+                }
+              }}
+            />
+          </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
             <Film className="w-10 h-10 text-primary/50" />
