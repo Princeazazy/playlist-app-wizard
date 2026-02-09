@@ -82,7 +82,7 @@ const PlaylistCard = ({ channel, onClick, index, tmdbPoster }: { channel: Channe
   const year = yearMatch ? yearMatch[0] : null;
   // Prefer TMDB poster over playlist logo (which is often a scene still)
   const posterUrl = tmdbPoster || channel.logo;
-  const isTMDBPoster = !!tmdbPoster; // true = proper poster, false = provider image (scene still)
+  
   
   return (
     <motion.button
@@ -97,15 +97,10 @@ const PlaylistCard = ({ channel, onClick, index, tmdbPoster }: { channel: Channe
       <div className="aspect-[2/3] rounded-xl overflow-hidden bg-card border border-border/30 relative">
         {posterUrl ? (
           <>
-            {!isTMDBPoster && (
-              <div className="absolute inset-0 bg-gradient-to-b from-muted/80 to-card" />
-            )}
             <img
               src={posterUrl}
               alt={channel.name}
-              className={`w-full h-full transition-transform duration-300 group-hover:scale-110 ${
-                isTMDBPoster ? 'object-cover' : 'object-contain'
-              }`}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               loading="lazy"
               onError={(e) => {
                 if (tmdbPoster && channel.logo && e.currentTarget.src !== channel.logo) {
