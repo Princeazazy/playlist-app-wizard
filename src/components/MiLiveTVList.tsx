@@ -10,7 +10,7 @@ import { EPGGuide } from './EPGGuide';
 import { WeatherIcon } from './shared/WeatherIcon';
 import Hls from 'hls.js';
 import { supabase } from '@/integrations/supabase/client';
-import { useChannelLogo } from '@/hooks/useChannelLogo';
+import { useBulkChannelLogos } from '@/hooks/useBulkChannelLogos';
 import {
   Select,
   SelectContent,
@@ -25,6 +25,7 @@ const LivePreviewChannelTile = memo(({
   isActive,
   isFocused,
   isFavorite,
+  resolvedLogo,
   onClick,
   onToggleFavorite,
   onHover,
@@ -33,6 +34,7 @@ const LivePreviewChannelTile = memo(({
   isActive?: boolean;
   isFocused?: boolean;
   isFavorite?: boolean;
+  resolvedLogo?: string;
   onClick: () => void;
   onToggleFavorite: () => void;
   onHover: (channel: Channel | null) => void;
@@ -43,7 +45,6 @@ const LivePreviewChannelTile = memo(({
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const resolvedLogo = useChannelLogo(channel.name, channel.logo);
 
   const streamProxyUrl = useMemo(() => {
     const supabaseUrl = (supabase as any).supabaseUrl as string | undefined;
@@ -260,6 +261,7 @@ export const MiLiveTVList = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const weather = useWeather();
   const isMobile = useIsMobile();
+  const { getLogoForChannel } = useBulkChannelLogos(channels);
 
   const effectiveSearchQuery = localSearchQuery || searchQuery;
 
@@ -629,6 +631,7 @@ export const MiLiveTVList = ({
                 isActive={currentChannel?.id === channel.id}
                 isFocused={focusedIndex === index}
                 isFavorite={favorites.has(channel.id)}
+                resolvedLogo={getLogoForChannel(channel.name, channel.logo)}
                 onClick={() => onChannelSelect(channel)}
                 onToggleFavorite={() => onToggleFavorite(channel.id)}
                 onHover={setHoveredChannel}
