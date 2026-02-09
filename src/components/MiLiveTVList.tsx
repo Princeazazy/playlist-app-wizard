@@ -154,7 +154,9 @@ const LivePreviewChannelTile = memo(({
             onError={(e) => { e.currentTarget.style.display = 'none'; }}
           />
         ) : !previewReady && !channel.logo ? (
-          <span className="text-xl font-bold text-muted-foreground">{channel.name.charAt(0)}</span>
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+            <Tv className="w-8 h-8 text-primary/50" />
+          </div>
         ) : null}
 
         {/* Live Preview Video */}

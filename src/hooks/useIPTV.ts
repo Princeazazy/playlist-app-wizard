@@ -31,7 +31,7 @@ export interface Channel {
 // Clean channel name by replacing underscores/dashes with spaces and stripping common IPTV prefixes
 // Examples: "AR:Al_Kahera_Wal_Nas" -> "Al Kahera Wal Nas", "UK-| BBC_News" -> "BBC News"
 const cleanChannelName = (name: string): string => {
-  return name
+  const cleaned = name
     // Remove leading country-ish prefixes (AR:, UK-|, EG |, etc.)
     .replace(/^\s*[A-Z]{2,3}\s*[:\-|]\s*\|?\s*/i, '')
     // Remove category prefixes like "EN MOV", "AR MOV", "AR SER", "EN SER", etc.
@@ -41,6 +41,9 @@ const cleanChannelName = (name: string): string => {
     // Collapse multiple spaces
     .replace(/\s+/g, ' ')
     .trim();
+  // Capitalize first letter
+  if (cleaned.length === 0) return cleaned;
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 };
 
 const normalizeChannel = (ch: Channel): Channel => ({
