@@ -5,6 +5,7 @@ import { useProgressiveList } from '@/hooks/useProgressiveList';
 import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { translateGroupName } from '@/lib/countryUtils';
+import { useTMDBPosters } from '@/hooks/useTMDBPosters';
 import {
   Select,
   SelectContent,
@@ -244,6 +245,9 @@ export const MiMediaGrid = ({
     step: 60,
   });
 
+  // Resolve TMDB posters for visible items (replaces scene stills with proper posters)
+  const { getPosterForChannel } = useTMDBPosters(visibleItems);
+
   const title = category === 'movies' ? 'Movies' : 'Series';
 
   const handleGroupSelect = (groupName: string) => {
@@ -467,21 +471,33 @@ export const MiMediaGrid = ({
               >
                 {/* Poster */}
                 <div className="mi-poster-card bg-card aspect-[2/3] relative rounded-lg overflow-hidden">
-                  {item.logo || item.backdrop_path?.[0] ? (
-                    <img
-                      src={item.backdrop_path?.[0] || item.logo}
-                      alt={item.name}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-secondary">
-                      <Film className="w-8 h-8 md:w-12 md:h-12 text-muted-foreground" />
-                    </div>
-                  )}
+                  {(() => {
+                    const tmdbPoster = getPosterForChannel(item.name);
+                    const posterSrc = tmdbPoster || item.backdrop_path?.[0] || item.logo;
+                    return posterSrc ? (
+                      <img
+                        src={posterSrc}
+                        alt={item.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback chain: TMDB poster -> backdrop -> logo -> hide
+                          const target = e.currentTarget;
+                          if (tmdbPoster && item.backdrop_path?.[0] && target.src !== item.backdrop_path[0]) {
+                            target.src = item.backdrop_path[0];
+                          } else if (item.logo && target.src !== item.logo) {
+                            target.src = item.logo;
+                          } else {
+                            target.style.display = 'none';
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-secondary">
+                        <Film className="w-8 h-8 md:w-12 md:h-12 text-muted-foreground" />
+                      </div>
+                    );
+                  })()}
                   <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-transparent group-hover:bg-foreground transition-colors" />
                 </div>
 
