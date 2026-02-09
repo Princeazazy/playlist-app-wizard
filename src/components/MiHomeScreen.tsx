@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic } from 'lucide-react';
 import universePlayLogo from '@/assets/universe-play-logo.png';
+import { getProfileInitial } from '@/lib/profileStorage';
 import cosmicBg from '@/assets/cosmic-bg.png';
 import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -224,7 +225,7 @@ export const MiHomeScreen = ({
           )}
           <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-primary to-accent overflow-hidden ring-2 ring-primary/30">
             <div className="w-full h-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">U</span>
+              <span className="text-white font-bold text-lg">{getProfileInitial()}</span>
             </div>
           </div>
         </div>
