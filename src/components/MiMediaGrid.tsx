@@ -473,21 +473,14 @@ export const MiMediaGrid = ({
                 <div className="mi-poster-card bg-card aspect-[2/3] relative rounded-lg overflow-hidden">
                   {(() => {
                     const tmdbPoster = getPosterForChannel(item.name);
-                    const isTMDBPoster = !!tmdbPoster;
                     const posterSrc = tmdbPoster || item.backdrop_path?.[0] || item.logo;
                     return posterSrc ? (
                       <>
-                        {/* Dark gradient bg for provider images (scene stills) */}
-                        {!isTMDBPoster && (
-                          <div className="absolute inset-0 bg-gradient-to-b from-muted/80 to-card z-0" />
-                        )}
                         <img
                           src={posterSrc}
                           alt={item.name}
                           loading="lazy"
-                          className={`w-full h-full relative z-[1] ${
-                            isTMDBPoster ? 'object-cover' : 'object-contain'
-                          }`}
+                          className="w-full h-full object-cover"
                           onError={(e) => {
                             const target = e.currentTarget;
                             if (tmdbPoster && item.backdrop_path?.[0] && target.src !== item.backdrop_path[0]) {

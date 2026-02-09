@@ -55,7 +55,7 @@ const setCachedPosters = (posters: Record<string, string | null>): void => {
 // Clean a channel name for TMDB search
 const cleanForSearch = (name: string): string => {
   return name
-    // Remove common IPTV prefixes
+    // Remove common IPTV prefixes like "AR:" "EG:" "AR SER:" "AR MOV:"
     .replace(/^\s*[A-Z]{2,3}\s*[:\-|]\s*\|?\s*/i, '')
     .replace(/^\s*[A-Z]{2}\s+(MOV|SER|SERIES|MOVIES?)\s*[:\-|]?\s*/i, '')
     // Remove quality tags
@@ -66,8 +66,12 @@ const cleanForSearch = (name: string): string => {
     .replace(/\bS\d+\s*E\d+\b/gi, '')
     .replace(/\bE\d+\b/gi, '')
     .replace(/\bEP?\s*\d+\b/gi, '')
+    // Remove trailing episode numbers like "01" "02" at end
+    .replace(/\s+\d{1,3}\s*$/, '')
     // Remove special chars
     .replace(/[|:]/g, ' ')
+    // Remove common IPTV suffixes
+    .replace(/\b(multi\s*sub|dubbed|subbed|dub)\b/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 };
