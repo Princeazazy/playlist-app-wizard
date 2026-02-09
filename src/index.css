@@ -622,3 +622,70 @@
     left: 0;
   }
 }
+
+/* ===== Starfield Overlay ===== */
+.stars-layer {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+}
+
+.stars-small {
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 45%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 10%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 60%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 80%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 95% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 90%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 55%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 85%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 50%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5% 65%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 35%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 95%, rgba(255,255,255,0.5) 0%, transparent 100%);
+  animation: shimmer-small 4s ease-in-out infinite alternate;
+}
+
+.stars-medium {
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 35%, rgba(200,220,255,0.9) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 60% 15%, rgba(255,200,255,0.8) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 35% 70%, rgba(200,220,255,0.7) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 75% 55%, rgba(255,220,200,0.8) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 25%, rgba(200,200,255,0.9) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 88% 40%, rgba(255,200,220,0.7) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 12% 90%, rgba(220,200,255,0.8) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 42% 50%, rgba(255,230,200,0.7) 0%, transparent 100%);
+  animation: shimmer-medium 5s ease-in-out infinite alternate;
+}
+
+.stars-large {
+  background-image:
+    radial-gradient(2px 2px at 18% 25%, rgba(255,255,255,1) 0%, rgba(200,200,255,0.3) 50%, transparent 100%),
+    radial-gradient(2px 2px at 72% 68%, rgba(255,220,255,1) 0%, rgba(255,200,255,0.3) 50%, transparent 100%),
+    radial-gradient(2.5px 2.5px at 45% 42%, rgba(255,255,255,1) 0%, rgba(200,220,255,0.4) 50%, transparent 100%),
+    radial-gradient(2px 2px at 88% 18%, rgba(255,240,200,1) 0%, rgba(255,220,150,0.3) 50%, transparent 100%),
+    radial-gradient(2px 2px at 32% 82%, rgba(200,220,255,1) 0%, rgba(180,200,255,0.3) 50%, transparent 100%);
+  animation: shimmer-large 3s ease-in-out infinite alternate;
+}
+
+@keyframes shimmer-small {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+@keyframes shimmer-medium {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+@keyframes shimmer-large {
+  0% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.8; transform: scale(1); }
+}
