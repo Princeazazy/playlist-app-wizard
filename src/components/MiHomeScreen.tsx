@@ -185,9 +185,13 @@ export const MiHomeScreen = ({
       <div className="absolute inset-0">
         <div 
           className="w-full h-full bg-center bg-cover bg-no-repeat" 
-          style={{ backgroundImage: `url(${cosmicBg})` }} 
+          style={{ 
+            backgroundImage: `url(${cosmicBg})`,
+            imageRendering: 'auto',
+            WebkitBackfaceVisibility: 'hidden',
+          }} 
         />
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-black/40" />
       </div>
       {/* Header - Mi Player Pro style */}
       <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6">
