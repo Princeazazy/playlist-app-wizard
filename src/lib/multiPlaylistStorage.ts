@@ -114,6 +114,7 @@ export const hasPlaylistSources = (): boolean => {
 const DEFAULT_PLAYLISTS: { url: string; name: string }[] = [
   { url: 'http://ui-on.me:2095/get.php?username=Ameer26&password=Azazy&type=m3u_plus&output=ts', name: 'Primary Playlist' },
   { url: 'http://btkq72.net/get.php?username=elazazyameer&password=D59DC74&type=m3u_plus&output=ts', name: 'Secondary Playlist' },
+  { url: 'http://teck-tv.com/get.php?username=3625A2C&password=95BF235&type=m3u_plus&output=mpegts', name: 'Teck TV' },
 ];
 
 // Migrate from old single-playlist storage and ensure default playlists exist
