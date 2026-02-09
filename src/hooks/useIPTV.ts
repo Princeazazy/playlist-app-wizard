@@ -39,12 +39,21 @@ const cleanChannelName = (name: string): string => {
     .replace(/^\s*[A-Z]{2}\s+(MOV|SER|SERIES|MOVIES?)\s*[:\-|]?\s*/i, '')
     // Replace underscores/dashes with spaces
     .replace(/[_-]/g, ' ')
+    // Replace pipe separators with spaced pipes for readability
+    .replace(/\s*\|\s*/g, ' | ')
     // Collapse multiple spaces
     .replace(/\s+/g, ' ')
     .trim();
-  // Title-case: capitalize first letter of each word
+  // Title-case: capitalize first letter of each word (including after pipes, dashes, etc.)
   if (cleaned.length === 0) return cleaned;
-  return cleaned.replace(/\b\w/g, c => c.toUpperCase());
+  return cleaned
+    .split(/(\s+)/)
+    .map(word => {
+      if (word.trim().length === 0) return word;
+      if (word === '|') return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join('');
 };
 
 const normalizeChannel = (ch: Channel): Channel => ({
