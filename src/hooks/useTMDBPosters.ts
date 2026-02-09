@@ -132,23 +132,42 @@ export const useTMDBPosters = (channels: { name: string; logo?: string }[]) => {
             return;
           }
 
-          try {
-            const { data, error } = await supabase.functions.invoke('tmdb-browse', {
-              body: { action: 'search', query: searchTerm, page: 1 },
-            });
-
-            if (!error && data?.success && data.results?.length > 0) {
-              // Find best match - prefer exact or close title match
-              const searchLower = searchTerm.toLowerCase();
-              const bestMatch = data.results.find((r: any) => 
-                r.title?.toLowerCase().includes(searchLower) || 
-                searchLower.includes(r.title?.toLowerCase())
-              ) || data.results[0];
-
-              results[name] = bestMatch.poster || null;
-            } else {
-              results[name] = null;
+        try {
+            // Try cleaned name first, then original Arabic name as fallback
+            const searchTerms = [searchTerm];
+            // Extract Arabic text from original name for fallback search
+            const arabicMatch = name.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*/);
+            if (arabicMatch && arabicMatch[0] !== searchTerm) {
+              searchTerms.push(arabicMatch[0].trim());
             }
+
+            let foundPoster: string | null = null;
+
+            for (const term of searchTerms) {
+              if (foundPoster || !term || term.length < 2) continue;
+
+              const { data, error } = await supabase.functions.invoke('tmdb-browse', {
+                body: { action: 'search', query: term, page: 1 },
+              });
+
+              if (!error && data?.success && data.results?.length > 0) {
+                // Find best match - prefer exact or close title match
+                const termLower = term.toLowerCase();
+                const bestMatch = data.results.find((r: any) => {
+                  const title = (r.title || '').toLowerCase();
+                  const origTitle = (r.original_title || r.originalTitle || '').toLowerCase();
+                  return title === termLower || origTitle === termLower ||
+                         title.includes(termLower) || termLower.includes(title) ||
+                         origTitle.includes(termLower) || termLower.includes(origTitle);
+                }) || data.results[0];
+
+                if (bestMatch.poster) {
+                  foundPoster = bestMatch.poster;
+                }
+              }
+            }
+
+            results[name] = foundPoster;
           } catch {
             results[name] = null;
           }
