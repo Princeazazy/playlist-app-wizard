@@ -110,15 +110,32 @@ export const hasPlaylistSources = (): boolean => {
   return getPlaylistSources().length > 0;
 };
 
-// Migrate from old single-playlist storage
+// Default playlist URLs
+const DEFAULT_PLAYLISTS: { url: string; name: string }[] = [
+  { url: 'http://ui-on.me:2095/get.php?username=Ameer26&password=Azazy&type=m3u_plus&output=ts', name: 'Primary Playlist' },
+  { url: 'http://btkq72.net/get.php?username=elazazyameer&password=D59DC74&type=m3u_plus&output=ts', name: 'Secondary Playlist' },
+];
+
+// Migrate from old single-playlist storage and ensure default playlists exist
 export const migrateFromLegacyStorage = (): void => {
   const sources = getPlaylistSources();
-  if (sources.length > 0) return; // Already have sources
   
-  // Check for legacy playlist URL
-  const legacyUrl = localStorage.getItem('mi-player-playlist-url');
-  if (legacyUrl) {
-    addPlaylistSource(legacyUrl, 'Primary Playlist', 'url');
-    console.log('Migrated legacy playlist URL to multi-playlist system');
+  // If no sources at all, check legacy first
+  if (sources.length === 0) {
+    const legacyUrl = localStorage.getItem('mi-player-playlist-url');
+    if (legacyUrl) {
+      addPlaylistSource(legacyUrl, 'Primary Playlist', 'url');
+      console.log('Migrated legacy playlist URL to multi-playlist system');
+    }
+  }
+  
+  // Ensure all default playlists are present
+  const currentSources = getPlaylistSources();
+  for (const def of DEFAULT_PLAYLISTS) {
+    const alreadyExists = currentSources.some(s => s.url === def.url);
+    if (!alreadyExists) {
+      addPlaylistSource(def.url, def.name, 'url');
+      console.log(`Added default playlist: ${def.name}`);
+    }
   }
 };
