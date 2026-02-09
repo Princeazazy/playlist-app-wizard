@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, User, Shield, ListVideo, Trash2, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Check, X, Upload, FileVideo, Download, Loader2 } from 'lucide-react';
+import { ChevronLeft, User, Shield, ListVideo, Trash2, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Check, X, Upload, FileVideo, Download, Loader2, Pencil } from 'lucide-react';
+import { getProfileName, setProfileName, getProfileInitial } from '@/lib/profileStorage';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -52,6 +53,8 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange }: MiSettingsPageProps
   const [isFetching, setIsFetching] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const weather = useWeather();
+  const [profileNameInput, setProfileNameInput] = useState(getProfileName());
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -235,6 +238,56 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange }: MiSettingsPageProps
                 <ChevronLeft className="w-5 h-5 text-muted-foreground" />
               </button>
               <h2 className="text-xl font-semibold text-foreground">Account</h2>
+            </div>
+
+            {/* Profile Name */}
+            <div className="flex items-center gap-4 mb-6 p-4 bg-muted/30 rounded-xl border border-border/20">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ring-2 ring-primary/30 shrink-0">
+                <span className="text-white font-bold text-xl">{getProfileInitial()}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                {isEditingProfile ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={profileNameInput}
+                      onChange={(e) => setProfileNameInput(e.target.value)}
+                      placeholder="Enter your name"
+                      className="bg-secondary border-border/50 h-10 text-foreground"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          setProfileName(profileNameInput);
+                          setIsEditingProfile(false);
+                          toast.success('Profile name saved!');
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        setProfileName(profileNameInput);
+                        setIsEditingProfile(false);
+                        toast.success('Profile name saved!');
+                      }}
+                      className="w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <p className="text-foreground font-semibold text-lg">{getProfileName() || 'Set your name'}</p>
+                      <p className="text-muted-foreground text-sm">Profile Name</p>
+                    </div>
+                    <button
+                      onClick={() => setIsEditingProfile(true)}
+                      className="ml-auto w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                    >
+                      <Pencil className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Account Details Grid */}
