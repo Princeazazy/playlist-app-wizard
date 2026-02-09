@@ -139,7 +139,7 @@ const fetchSinglePlaylist = async (
     return parseM3U(response.data);
   }
   
-  // Web: use edge function
+  // Web: use edge function - force Xtream API for proper content parsing
   const { data, error } = await supabase.functions.invoke('fetch-m3u', {
     body: { 
       url, 
@@ -147,6 +147,7 @@ const fetchSinglePlaylist = async (
       maxBytesMB: 40, 
       maxReturnPerType: 20000,
       preferXtreamApi: true,
+      forceXtreamApi: true, // Force Xtream API even for get.php URLs to get all movies/series
     }
   });
   
@@ -187,12 +188,15 @@ export const useIPTV = (m3uUrl?: string) => {
   // Use provided URL or fall back to stored URL
   const effectiveUrl = m3uUrl || getStoredPlaylistUrl();
   
-  // Get all enabled playlist URLs (multi-playlist support)
+  // Get all enabled playlist URLs (multi-playlist support) - memoize to avoid re-render loop
   const allUrls = getEnabledPlaylistUrls();
-  // If no multi-playlist sources, use the single effective URL
   const playlistUrls = allUrls.length > 0 ? allUrls : (effectiveUrl ? [effectiveUrl] : []);
-  
-  console.log(`useIPTV: ${playlistUrls.length} playlist source(s) to merge`);
+  // Stable string key for useEffect dependency
+  const playlistUrlsKey = useRef(playlistUrls.join(','));
+  // Only update the key if the URLs actually changed
+  if (playlistUrls.join(',') !== playlistUrlsKey.current) {
+    playlistUrlsKey.current = playlistUrls.join(',');
+  }
   
   // Check for local channels first (from file upload - Bocaletto approach)
   const localChannels = getLocalChannels();
@@ -374,7 +378,7 @@ export const useIPTV = (m3uUrl?: string) => {
     };
 
     fetchAllPlaylists();
-  }, [playlistUrls.join(','), refreshKey]);
+  }, [playlistUrlsKey.current, refreshKey]);
 
   return { channels, loading, error, refresh };
 };
