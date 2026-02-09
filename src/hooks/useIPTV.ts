@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getStoredPlaylistUrl } from '@/lib/playlistStorage';
 import { getLocalChannels, hasLocalChannels, LocalChannel } from '@/lib/localPlaylistStorage';
 import { getCachedChannels, setCachedChannels, clearLegacyCache } from '@/lib/channelCache';
+import { getEnabledPlaylistUrls, migrateFromLegacyStorage } from '@/lib/multiPlaylistStorage';
 
 export interface Channel {
   id: string;
@@ -57,6 +58,58 @@ const normalizeChannels = (chs: Channel[]): Channel[] => chs.map(normalizeChanne
 // Clear old localStorage cache on module load
 clearLegacyCache();
 
+// Migrate single playlist to multi-playlist system on first load
+migrateFromLegacyStorage();
+
+// Normalize a name for deduplication comparison
+const normalizeForDedup = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\u0600-\u06FF]/g, '') // keep alphanumeric + Arabic chars
+    .trim();
+};
+
+// Score a channel's metadata richness (higher = better)
+const metadataScore = (ch: Channel): number => {
+  let score = 0;
+  if (ch.logo) score += 3;
+  if (ch.rating) score += 2;
+  if (ch.plot) score += 2;
+  if (ch.year) score += 1;
+  if (ch.cast) score += 1;
+  if (ch.director) score += 1;
+  if (ch.genre) score += 1;
+  if (ch.backdrop_path?.length) score += 2;
+  if (ch.duration) score += 1;
+  // Prefer channels with actual stream URLs
+  if (ch.url && ch.url.length > 10) score += 2;
+  return score;
+};
+
+// Merge multiple channel arrays, deduplicating by name+type and keeping best quality
+const mergeAndDeduplicate = (channelArrays: Channel[][]): Channel[] => {
+  const seen = new Map<string, Channel>(); // key -> best channel
+  
+  for (const channels of channelArrays) {
+    for (const ch of channels) {
+      // Create a dedup key from normalized name + type
+      const key = `${normalizeForDedup(ch.name)}__${ch.type || 'live'}`;
+      
+      const existing = seen.get(key);
+      if (!existing) {
+        seen.set(key, ch);
+      } else {
+        // Keep the one with richer metadata
+        if (metadataScore(ch) > metadataScore(existing)) {
+          seen.set(key, { ...ch, id: existing.id }); // Keep original ID for stability
+        }
+      }
+    }
+  }
+  
+  return Array.from(seen.values());
+};
+
 // Convert local channels to Channel type
 const convertLocalChannels = (localChannels: LocalChannel[]): Channel[] => {
   return localChannels.map(ch => ({
@@ -66,11 +119,80 @@ const convertLocalChannels = (localChannels: LocalChannel[]): Channel[] => {
   }));
 };
 
+// Fetch a single playlist URL via edge function and return parsed channels
+const fetchSinglePlaylist = async (
+  url: string,
+  sourceIndex: number
+): Promise<Channel[]> => {
+  const isNative = Capacitor.isNativePlatform();
+  
+  if (isNative) {
+    const { Http } = await import('@capacitor/http');
+    const response = await Http.request({
+      method: 'GET',
+      url,
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    if (response.status !== 200) {
+      throw new Error(`Failed to fetch playlist. Status: ${response.status}`);
+    }
+    return parseM3U(response.data);
+  }
+  
+  // Web: use edge function
+  const { data, error } = await supabase.functions.invoke('fetch-m3u', {
+    body: { 
+      url, 
+      maxChannels: 100000,
+      maxBytesMB: 40, 
+      maxReturnPerType: 20000,
+      preferXtreamApi: true,
+    }
+  });
+  
+  if (error) throw new Error(`Proxy error: ${error.message}`);
+  if (data?.blocked) return [];
+  if (data?.error) throw new Error(data.error);
+  
+  if (data?.channels && Array.isArray(data.channels)) {
+    console.log(`[Playlist ${sourceIndex + 1}] Received ${data.channels.length} channels`, data.counts);
+    
+    return data.channels
+      .filter((ch: any) => ch.name && (ch.url || ch.type === 'series'))
+      .map((ch: any, idx: number) => ({
+        id: `src${sourceIndex}-ch${idx}`,
+        name: cleanChannelName(ch.name),
+        url: ch.url || '',
+        logo: ch.logo || undefined,
+        group: cleanChannelName(ch.group || 'Live TV'),
+        type: ch.type || 'live',
+        stream_id: ch.stream_id,
+        series_id: ch.series_id,
+        rating: ch.rating,
+        year: ch.year,
+        plot: ch.plot,
+        cast: ch.cast,
+        director: ch.director,
+        genre: ch.genre,
+        duration: ch.duration,
+        container_extension: ch.container_extension,
+        backdrop_path: ch.backdrop_path,
+      }));
+  }
+  
+  return [];
+};
+
 export const useIPTV = (m3uUrl?: string) => {
   // Use provided URL or fall back to stored URL
   const effectiveUrl = m3uUrl || getStoredPlaylistUrl();
   
-  console.log('useIPTV hook called with URL:', effectiveUrl);
+  // Get all enabled playlist URLs (multi-playlist support)
+  const allUrls = getEnabledPlaylistUrls();
+  // If no multi-playlist sources, use the single effective URL
+  const playlistUrls = allUrls.length > 0 ? allUrls : (effectiveUrl ? [effectiveUrl] : []);
+  
+  console.log(`useIPTV: ${playlistUrls.length} playlist source(s) to merge`);
   
   // Check for local channels first (from file upload - Bocaletto approach)
   const localChannels = getLocalChannels();
@@ -130,7 +252,6 @@ export const useIPTV = (m3uUrl?: string) => {
     console.log('useIPTV useEffect running');
     
     // If we have local channels from file upload, use those (Bocaletto approach)
-    // This skips the edge function entirely - streams play directly from user's IP
     const freshLocal = getLocalChannels();
     if (freshLocal && freshLocal.length > 0) {
       console.log(`Using ${freshLocal.length} locally uploaded channels - direct playback enabled`);
@@ -143,111 +264,21 @@ export const useIPTV = (m3uUrl?: string) => {
     const loadDemoChannels = () => {
       console.log('Loading demo channels - real channels will work in native app or upload M3U file');
       const demoChannels: Channel[] = [
-        {
-          id: 'demo-1',
-          name: 'BBC News',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/7iJVHmC.png',
-          group: 'News'
-        },
-        {
-          id: 'demo-2',
-          name: 'Al Jazeera English',
-          url: 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8',
-          logo: 'https://i.imgur.com/xEIhBDz.png',
-          group: 'News'
-        },
-        {
-          id: 'demo-3',
-          name: 'France 24',
-          url: 'https://static.france24.com/meta/android-icon-192x192.png',
-          logo: 'https://i.imgur.com/EcMwBCN.png',
-          group: 'News'
-        },
-        {
-          id: 'demo-4',
-          name: 'CNN',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/KGBSdOa.png',
-          group: 'News'
-        },
-        {
-          id: 'demo-5',
-          name: 'Sky News',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/OUlToBV.png',
-          group: 'News'
-        },
-        {
-          id: 'demo-6',
-          name: 'ESPN',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/qKvjKY8.png',
-          group: 'Sports'
-        },
-        {
-          id: 'demo-7',
-          name: 'Fox Sports',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/YnzJ9Ck.png',
-          group: 'Sports'
-        },
-        {
-          id: 'demo-8',
-          name: 'NBC Sports',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/oMRLjuC.png',
-          group: 'Sports'
-        },
-        {
-          id: 'demo-9',
-          name: 'Discovery',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/vK2wvLq.png',
-          group: 'Documentary'
-        },
-        {
-          id: 'demo-10',
-          name: 'National Geographic',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/BPQASMZ.png',
-          group: 'Documentary'
-        },
-        {
-          id: 'demo-11',
-          name: 'History Channel',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/SJ9CnN7.png',
-          group: 'Documentary'
-        },
-        {
-          id: 'demo-12',
-          name: 'HBO',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/LzxlLVi.png',
-          group: 'Entertainment'
-        },
-        {
-          id: 'demo-13',
-          name: 'Comedy Central',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/g6VmEjF.png',
-          group: 'Entertainment'
-        },
-        {
-          id: 'demo-14',
-          name: 'MTV',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/BwANwNZ.png',
-          group: 'Entertainment'
-        },
-        {
-          id: 'demo-15',
-          name: 'Cartoon Network',
-          url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8',
-          logo: 'https://i.imgur.com/vYBhzGO.png',
-          group: 'Kids'
-        }
+        { id: 'demo-1', name: 'BBC News', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/7iJVHmC.png', group: 'News' },
+        { id: 'demo-2', name: 'Al Jazeera English', url: 'https://live-hls-web-aje.getaj.net/AJE/index.m3u8', logo: 'https://i.imgur.com/xEIhBDz.png', group: 'News' },
+        { id: 'demo-3', name: 'France 24', url: 'https://static.france24.com/meta/android-icon-192x192.png', logo: 'https://i.imgur.com/EcMwBCN.png', group: 'News' },
+        { id: 'demo-4', name: 'CNN', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/KGBSdOa.png', group: 'News' },
+        { id: 'demo-5', name: 'Sky News', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/OUlToBV.png', group: 'News' },
+        { id: 'demo-6', name: 'ESPN', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/qKvjKY8.png', group: 'Sports' },
+        { id: 'demo-7', name: 'Fox Sports', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/YnzJ9Ck.png', group: 'Sports' },
+        { id: 'demo-8', name: 'NBC Sports', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/oMRLjuC.png', group: 'Sports' },
+        { id: 'demo-9', name: 'Discovery', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/vK2wvLq.png', group: 'Documentary' },
+        { id: 'demo-10', name: 'National Geographic', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/BPQASMZ.png', group: 'Documentary' },
+        { id: 'demo-11', name: 'History Channel', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/SJ9CnN7.png', group: 'Documentary' },
+        { id: 'demo-12', name: 'HBO', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/LzxlLVi.png', group: 'Entertainment' },
+        { id: 'demo-13', name: 'Comedy Central', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/g6VmEjF.png', group: 'Entertainment' },
+        { id: 'demo-14', name: 'MTV', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/BwANwNZ.png', group: 'Entertainment' },
+        { id: 'demo-15', name: 'Cartoon Network', url: 'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8', logo: 'https://i.imgur.com/vYBhzGO.png', group: 'Kids' },
       ];
       const mappedChannels = demoChannels.map((ch) => ({
         ...ch,
@@ -259,140 +290,79 @@ export const useIPTV = (m3uUrl?: string) => {
       setLoading(false);
     };
     
-    const fetchM3U = async () => {
-      console.log('fetchM3U function called');
+    const fetchAllPlaylists = async () => {
+      console.log('fetchAllPlaylists called');
       
-      // No URL configured
-      if (!effectiveUrl || !effectiveUrl.trim()) {
-        console.log('No M3U URL provided, loading demo channels');
+      if (playlistUrls.length === 0) {
+        console.log('No playlist URLs configured, loading demo channels');
         loadDemoChannels();
         return;
       }
       
-      // Check if running on native platform
-      const isNative = Capacitor.isNativePlatform();
-
       try {
         setLoading(true);
         
-        let content: string;
+        // Fetch all playlists in parallel
+        console.log(`Fetching ${playlistUrls.length} playlist(s) in parallel...`);
+        const results = await Promise.allSettled(
+          playlistUrls.map((url, idx) => fetchSinglePlaylist(url, idx))
+        );
         
-        if (isNative) {
-          console.log('Fetching M3U using native HTTP...');
-          // Dynamically import Capacitor HTTP
-          const { Http } = await import('@capacitor/http');
-
-          const response = await Http.request({
-            method: 'GET',
-            url: effectiveUrl,
-            headers: {
-              'User-Agent': 'Mozilla/5.0',
-            },
-          });
-
-          if (response.status !== 200) {
-            throw new Error(`Failed to fetch playlist. Status: ${response.status}`);
+        const channelArrays: Channel[][] = [];
+        const errors: string[] = [];
+        
+        for (let i = 0; i < results.length; i++) {
+          const result = results[i];
+          if (result.status === 'fulfilled') {
+            console.log(`Playlist ${i + 1}: ${result.value.length} channels loaded`);
+            if (result.value.length > 0) {
+              channelArrays.push(result.value);
+            }
+          } else {
+            console.error(`Playlist ${i + 1} failed:`, result.reason);
+            errors.push(`Playlist ${i + 1}: ${result.reason?.message || 'Unknown error'}`);
           }
-          
-          content = response.data;
+        }
+        
+        if (channelArrays.length === 0) {
+          if (errors.length > 0) {
+            throw new Error(errors.join('; '));
+          }
+          loadDemoChannels();
+          return;
+        }
+        
+        // Merge and deduplicate all playlists
+        let merged: Channel[];
+        if (channelArrays.length === 1) {
+          merged = channelArrays[0];
         } else {
-          // Web preview - use edge function proxy with Xtream API (IPTV Smarters compatible)
-          console.log('Fetching channels using Xtream API via edge function...');
-          const { data, error } = await supabase.functions.invoke('fetch-m3u', {
-            body: { 
-              url: effectiveUrl, 
-              maxChannels: 100000, // high cap; backend still applies safety limits
-              maxBytesMB: 40, 
-              maxReturnPerType: 20000, // fetch more movies/series than before
-              preferXtreamApi: true // Use Xtream API directly - IPTV Smarters compatible
-            }
-          });
-          
-          if (error) {
-            console.error('Edge function error:', error);
-            throw new Error(`Proxy error: ${error.message}`);
-          }
-          
-          if (data?.blocked) {
-            console.log('IPTV provider blocked proxy request, using demo channels');
-            loadDemoChannels();
-            return;
-          }
-          
-          if (data?.error) {
-            throw new Error(data.error);
-          }
-          
-          // Edge function now returns pre-parsed channels with type
-          if (data?.channels && Array.isArray(data.channels)) {
-            console.log(`Received ${data.channels.length} pre-parsed channels from edge function`);
-            console.log('Counts:', data.counts);
-            
-            // For series, we need to allow empty URLs since they need episode expansion
-            const parsedChannels = data.channels
-              .filter((ch: any) => ch.name && (ch.url || ch.type === 'series'))
-              .map((ch: any, idx: number) => ({
-                id: `channel-${idx}`,
-                name: cleanChannelName(ch.name),
-                url: ch.url || '',
-                logo: ch.logo || undefined,
-                group: cleanChannelName(ch.group || 'Live TV'),
-                type: ch.type || 'live',
-                // Preserve extended metadata
-                stream_id: ch.stream_id,
-                series_id: ch.series_id,
-                rating: ch.rating,
-                year: ch.year,
-                plot: ch.plot,
-                cast: ch.cast,
-                director: ch.director,
-                genre: ch.genre,
-                duration: ch.duration,
-                container_extension: ch.container_extension,
-                backdrop_path: ch.backdrop_path,
-              }));
-            
-            if (parsedChannels.length === 0) {
-              throw new Error('No valid channels found in playlist');
-            }
-            
-            console.log(`Mapped ${parsedChannels.length} channels with types:`, {
-              live: parsedChannels.filter((c: Channel) => c.type === 'live').length,
-              movies: parsedChannels.filter((c: Channel) => c.type === 'movies').length,
-              series: parsedChannels.filter((c: Channel) => c.type === 'series').length,
-              sports: parsedChannels.filter((c: Channel) => c.type === 'sports').length,
-            });
-            
-            setChannels(parsedChannels);
-            // Cache asynchronously - don't block UI
-            setCachedChannels(parsedChannels).catch(err => console.warn('Failed to cache:', err));
-            setError(null);
-            setLoading(false);
-            return;
-          }
-          
-          throw new Error('Invalid response from proxy');
+          console.log(`Merging ${channelArrays.length} playlists...`);
+          const totalBefore = channelArrays.reduce((sum, arr) => sum + arr.length, 0);
+          merged = mergeAndDeduplicate(channelArrays);
+          const removed = totalBefore - merged.length;
+          console.log(`Merged: ${totalBefore} total → ${merged.length} unique (${removed} duplicates removed)`);
         }
         
-        // Native path: parse locally
-        console.log('M3U fetch successful, parsing channels...');
-        const parsedChannels = parseM3U(content);
+        // Re-assign stable IDs after merge
+        merged = merged.map((ch, idx) => ({ ...ch, id: `channel-${idx}` }));
         
-        if (parsedChannels.length === 0) {
-          throw new Error('No channels found in playlist. The M3U file may be empty or invalid.');
-        }
+        console.log(`Final channel counts:`, {
+          live: merged.filter(c => c.type === 'live').length,
+          movies: merged.filter(c => c.type === 'movies').length,
+          series: merged.filter(c => c.type === 'series').length,
+          sports: merged.filter(c => c.type === 'sports').length,
+        });
         
-        setChannels(parsedChannels);
-        // Cache asynchronously - don't block UI
-        setCachedChannels(parsedChannels).catch(err => console.warn('Failed to cache:', err));
-        setError(null);
+        setChannels(merged);
+        setCachedChannels(merged).catch(err => console.warn('Failed to cache:', err));
+        setError(errors.length > 0 ? `Some playlists failed: ${errors.join('; ')}` : null);
+        setLoading(false);
       } catch (err: any) {
-        console.error('Error fetching M3U:', err);
+        console.error('Error fetching playlists:', err);
         const errorMessage = err?.message || 'Failed to load channels';
-        console.log('Error details:', errorMessage);
         
-        if (!isNative) {
-          // Fall back to demo channels for web
+        if (!Capacitor.isNativePlatform()) {
           console.log('Falling back to demo channels due to error');
           loadDemoChannels();
         } else {
@@ -403,8 +373,8 @@ export const useIPTV = (m3uUrl?: string) => {
       }
     };
 
-    fetchM3U();
-  }, [effectiveUrl, refreshKey]);
+    fetchAllPlaylists();
+  }, [playlistUrls.join(','), refreshKey]);
 
   return { channels, loading, error, refresh };
 };
