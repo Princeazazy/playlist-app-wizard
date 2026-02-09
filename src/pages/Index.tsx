@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useIPTV, Channel } from '@/hooks/useIPTV';
+import { isLoggedIn, clearAppSession } from '@/lib/appSession';
+import { LoginScreen } from '@/components/LoginScreen';
 import { useAppNavigation, Screen } from '@/hooks/useAppNavigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MiHomeScreen } from '@/components/MiHomeScreen';
@@ -24,6 +26,7 @@ const Index = () => {
   const [playlistVersion, setPlaylistVersion] = useState(0);
   const { channels, loading, error, refresh } = useIPTV();
   const [showIntro, setShowIntro] = useState(true);
+  const [authenticated, setAuthenticated] = useState(() => isLoggedIn());
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [useMobileBrowse, setUseMobileBrowse] = useState(true);
@@ -187,8 +190,14 @@ const Index = () => {
   }, [nav]);
 
   // Show intro
+  // Show intro first
   if (showIntro) {
     return <ArabiaIntro onComplete={handleIntroComplete} />;
+  }
+
+  // Then require login
+  if (!authenticated) {
+    return <LoginScreen onLogin={() => setAuthenticated(true)} />;
   }
 
   // Error state
