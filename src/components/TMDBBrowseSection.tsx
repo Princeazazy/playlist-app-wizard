@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
+import { useTMDBPosters } from '@/hooks/useTMDBPosters';
 import { Channel } from '@/hooks/useIPTV';
 
 interface TMDBBrowseSectionProps {
@@ -74,11 +75,13 @@ const MediaCard = ({ item, onClick, index }: { item: TMDBItem; onClick?: () => v
   </motion.button>
 );
 
-// Card for playlist items (Arabic movies)
-const PlaylistCard = ({ channel, onClick, index }: { channel: Channel; onClick?: () => void; index: number }) => {
+// Card for playlist items (Arabic movies) - uses TMDB poster when available
+const PlaylistCard = ({ channel, onClick, index, tmdbPoster }: { channel: Channel; onClick?: () => void; index: number; tmdbPoster?: string }) => {
   const cleanName = (name: string) => name.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
   const yearMatch = channel.name.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? yearMatch[0] : null;
+  // Prefer TMDB poster over playlist logo (which is often a scene still)
+  const posterUrl = tmdbPoster || channel.logo;
   
   return (
     <motion.button
@@ -91,12 +94,20 @@ const PlaylistCard = ({ channel, onClick, index }: { channel: Channel; onClick?:
       className="flex-shrink-0 w-full group relative"
     >
       <div className="aspect-[2/3] rounded-xl overflow-hidden bg-card border border-border/30 relative">
-        {channel.logo ? (
+        {posterUrl ? (
           <img
-            src={channel.logo}
+            src={posterUrl}
             alt={channel.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
             loading="lazy"
+            onError={(e) => {
+              // If TMDB poster fails, try falling back to playlist logo
+              if (tmdbPoster && channel.logo && e.currentTarget.src !== channel.logo) {
+                e.currentTarget.src = channel.logo;
+              } else {
+                e.currentTarget.style.display = 'none';
+              }
+            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
@@ -217,7 +228,7 @@ const CategoryRow = ({
   );
 };
 
-// Row for playlist items (Arabic movies)
+// Row for playlist items (Arabic movies) - resolves TMDB posters
 const PlaylistRow = ({ 
   title, 
   icon: Icon, 
@@ -232,6 +243,7 @@ const PlaylistRow = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const totalPages = Math.ceil(channels.length / ITEMS_PER_PAGE);
+  const { getPosterForChannel } = useTMDBPosters(channels);
   
   const visibleItems = channels.slice(
     currentPage * ITEMS_PER_PAGE,
@@ -291,6 +303,7 @@ const PlaylistRow = ({
               key={channel.id}
               channel={channel}
               index={index}
+              tmdbPoster={getPosterForChannel(channel.name)}
               onClick={() => onChannelSelect?.(channel)}
             />
           ))}
