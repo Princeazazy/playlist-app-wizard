@@ -124,43 +124,61 @@ export const MiMediaGrid = ({
   const weather = useWeather();
   const isMobile = useIsMobile();
 
-  // Smart sorting for groups - prioritize Egyptian for series, then year, then Arabic, then seasonal
+  // Smart sorting for groups: Arabic → English → Anime → Streaming platforms → everything else
   const getGroupSortPriority = (groupName: string): number => {
     const g = groupName.toLowerCase();
     
-    // For SERIES: Egyptian content gets TOP priority (1-10)
-    if (category === 'series') {
-      if (groupName.includes('مصر') || g.includes('egypt') || g.includes('egyptian')) return 1;
+    // === 1. ARABIC content first (priority 1-50) ===
+    // Egyptian content gets top priority within Arabic
+    if (groupName.includes('مصر') || g.includes('egypt') || g.includes('egyptian')) return 1;
+    // Ramadan specials
+    if (g.includes('ramadan') || groupName.includes('رمضان')) return 2;
+    if (g.includes('eid') || groupName.includes('عيد')) return 3;
+    // Generic Arabic
+    if (g.includes('arab') || groupName.includes('عربي') || groupName.includes('افلام عربي')) return 5;
+    if (groupName.includes('خليج') || g.includes('khalij') || g.includes('gulf')) return 6;
+    if (groupName.includes('مغرب') || g.includes('maghreb')) return 7;
+    if (g.includes('osn') || g.includes('shahid')) return 8;
+    // Arabic years (newer first)
+    const hasArabicHint = /[\u0600-\u06FF]/.test(groupName);
+    if (hasArabicHint) {
+      const yearMatch = g.match(/\b(19|20)\d{2}\b/);
+      if (yearMatch) return 10 + (2040 - parseInt(yearMatch[0]));
+      return 40;
     }
     
-    // Extract year if present (priority 11-60)
+    // === 2. ENGLISH content (priority 100-150) ===
+    if (g.includes('english') || g.includes('vod en') || g.match(/\ben\b/)) return 100;
+    if (g.includes('uk') || g.includes('us ') || g.includes('usa')) return 101;
+    
+    // === 3. ANIME content (priority 200-220) ===
+    if (g.includes('anime') || g.includes('انمي') || g.includes('anm') || g.includes('crunchyroll')) return 200;
+    if (g.includes('cartoon') || groupName.includes('كرتون') || g.includes('animation')) return 210;
+    
+    // === 4. STREAMING PLATFORMS (priority 300-350) ===
+    if (g.includes('netflix')) return 300;
+    if (g.includes('disney')) return 301;
+    if (g.includes('hbo') || g.includes('max')) return 302;
+    if (g.includes('amazon') || g.includes('prime')) return 303;
+    if (g.includes('apple')) return 304;
+    if (g.includes('paramount')) return 305;
+    if (g.includes('hulu')) return 306;
+    if (g.includes('peacock')) return 307;
+    if (g.includes('starz')) return 308;
+    if (g.includes('showtime')) return 309;
+    
+    // === 5. Year-based categories (priority 400-460) ===
     const yearMatch = g.match(/\b(19|20)\d{2}\b/);
     if (yearMatch) {
       const year = parseInt(yearMatch[0]);
-      // Future/latest years get priority 11-60 (2026=11, 2025=12, etc.)
-      return 2040 - year;
+      return 400 + (2040 - year);
     }
     
-    // Arabic content priority 61-70
-    if (g.includes('arab') || groupName.includes('عربي') || groupName.includes('افلام عربي')) return 61;
-    if (groupName.includes('مصر') || g.includes('egypt')) return 62;
-    if (groupName.includes('خليج') || g.includes('khalij')) return 63;
+    // === 6. Seasonal content (priority 500) ===
+    if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas')) return 500;
     
-    // Seasonal content priority 100-110
-    if (g.includes('ramadan') || groupName.includes('رمضان')) return 100;
-    if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas')) return 101;
-    if (g.includes('eid') || groupName.includes('عيد')) return 102;
-    
-    // Streaming platforms 150-200
-    if (g.includes('netflix')) return 150;
-    if (g.includes('hbo') || g.includes('max')) return 151;
-    if (g.includes('amazon') || g.includes('prime')) return 152;
-    if (g.includes('disney')) return 153;
-    if (g.includes('apple')) return 154;
-    if (g.includes('shahid')) return 155;
-    
-    // Everything else 500+
-    return 500;
+    // === 7. Everything else (priority 900+) ===
+    return 900;
   };
 
   const groups = useMemo(() => {
