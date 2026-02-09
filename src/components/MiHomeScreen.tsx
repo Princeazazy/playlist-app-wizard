@@ -183,13 +183,12 @@ export const MiHomeScreen = ({
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       {/* Background - Cosmic space image */}
       <div className="absolute inset-0">
-        <div 
-          className="w-full h-full bg-center bg-cover bg-no-repeat" 
-          style={{ 
-            backgroundImage: `url(${cosmicBg})`,
-            imageRendering: 'auto',
-            WebkitBackfaceVisibility: 'hidden',
-          }} 
+        <img 
+          src={cosmicBg} 
+          alt="" 
+          className="w-full h-full object-cover"
+          style={{ imageRendering: 'auto' }}
+          loading="eager"
         />
         <div className="absolute inset-0 bg-black/40" />
       </div>
