@@ -180,7 +180,7 @@ export const MiHomeScreen = ({
   }, []);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col relative overflow-x-hidden">
       {/* Background - Cosmic space image */}
       <div className="absolute inset-0" style={{
         background: 'radial-gradient(ellipse at 30% 20%, hsl(280 60% 8%) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, hsl(260 50% 6%) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, hsl(270 40% 5%) 0%, hsl(260 50% 3%) 100%)'
