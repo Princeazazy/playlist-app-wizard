@@ -182,16 +182,9 @@ export const MiHomeScreen = ({
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       {/* Background - Cosmic space image */}
-      <div className="absolute inset-0">
-        <img 
-          src={cosmicBg} 
-          alt="" 
-          className="w-full h-full object-cover"
-          style={{ imageRendering: 'auto' }}
-          loading="eager"
-        />
-        <div className="absolute inset-0 bg-black/40" />
-      </div>
+      <div className="absolute inset-0" style={{
+        background: 'radial-gradient(ellipse at 30% 20%, hsl(280 60% 8%) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, hsl(260 50% 6%) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, hsl(270 40% 5%) 0%, hsl(260 50% 3%) 100%)'
+      }} />
       {/* Header - Mi Player Pro style */}
       <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6">
         {/* Logo */}
