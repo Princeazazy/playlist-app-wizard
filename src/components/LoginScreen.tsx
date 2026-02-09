@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { setAppSession } from '@/lib/appSession';
 import { Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
-import universeLogo from '@/assets/universe-tv-logo.png';
+import universeLogo from '@/assets/universe-play-logo.png';
 
 interface LoginScreenProps {
   onLogin: () => void;
