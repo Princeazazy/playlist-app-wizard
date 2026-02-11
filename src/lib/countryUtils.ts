@@ -28,6 +28,18 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'max': { name: 'Max', code: 'max', flagUrl: '', priority: 1008, isStreamingService: true },
   'starz': { name: 'Starz', code: 'starz', flagUrl: '', priority: 1009, isStreamingService: true },
   'showtime': { name: 'Showtime', code: 'showtime', flagUrl: '', priority: 1010, isStreamingService: true },
+  // Sports leagues - separate from countries
+  'uefa': { name: 'UEFA', code: 'uefa', flagUrl: '', priority: 1020, isStreamingService: true },
+  'premier league': { name: 'Premier League', code: 'premierleague', flagUrl: '', priority: 1021, isStreamingService: true },
+  'serie a': { name: 'Serie A', code: 'seriea', flagUrl: '', priority: 1022, isStreamingService: true },
+  'la liga': { name: 'La Liga', code: 'laliga', flagUrl: '', priority: 1023, isStreamingService: true },
+  'bundesliga': { name: 'Bundesliga', code: 'bundesliga', flagUrl: '', priority: 1024, isStreamingService: true },
+  'rotana': { name: 'Rotana', code: 'rotana', flagUrl: '', priority: 1025, isStreamingService: true },
+  'osn': { name: 'OSN', code: 'osn', flagUrl: '', priority: 1026, isStreamingService: true },
+  'bein': { name: 'beIN', code: 'bein', flagUrl: '', priority: 1027, isStreamingService: true },
+  'bein sport': { name: 'beIN Sports', code: 'bein', flagUrl: '', priority: 1027, isStreamingService: true },
+  'shahid': { name: 'Shahid', code: 'shahid', flagUrl: '', priority: 1028, isStreamingService: true },
+  'relax tv': { name: 'Relax TV', code: 'relaxtv', flagUrl: '', priority: 1029, isStreamingService: true },
 };
 
 // Arabic-speaking countries (priority 1-20)
@@ -113,6 +125,8 @@ const OTHER_COUNTRIES: Record<string, CountryInfo> = {
   'belgium': { name: 'Belgium', code: 'be', flagUrl: 'https://flagcdn.com/w80/be.png', priority: 57 },
   'ch': { name: 'Switzerland', code: 'ch', flagUrl: 'https://flagcdn.com/w80/ch.png', priority: 58 },
   'switzerland': { name: 'Switzerland', code: 'ch', flagUrl: 'https://flagcdn.com/w80/ch.png', priority: 58 },
+  'swiss': { name: 'Switzerland', code: 'ch', flagUrl: 'https://flagcdn.com/w80/ch.png', priority: 58 },
+  'swizterland': { name: 'Switzerland', code: 'ch', flagUrl: 'https://flagcdn.com/w80/ch.png', priority: 58 },
   'at': { name: 'Austria', code: 'at', flagUrl: 'https://flagcdn.com/w80/at.png', priority: 59 },
   'austria': { name: 'Austria', code: 'at', flagUrl: 'https://flagcdn.com/w80/at.png', priority: 59 },
   'pl': { name: 'Poland', code: 'pl', flagUrl: 'https://flagcdn.com/w80/pl.png', priority: 60 },
