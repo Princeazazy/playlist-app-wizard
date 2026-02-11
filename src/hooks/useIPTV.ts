@@ -44,9 +44,16 @@ const cleanChannelName = (name: string): string => {
     // Collapse multiple spaces
     .replace(/\s+/g, ' ')
     .trim();
+  // Name corrections
+  const nameCorrections: Record<string, string> = {
+    'misr quraan karim': 'Misr Quran Karim',
+  };
+  const corrected = nameCorrections[cleaned.toLowerCase()] || cleaned;
   // Title-case: capitalize first letter of each word (including after pipes, dashes, etc.)
-  if (cleaned.length === 0) return cleaned;
-  return cleaned
+  if (corrected.length === 0) return corrected;
+  // If we already have a correction, return it as-is
+  if (nameCorrections[cleaned.toLowerCase()]) return corrected;
+  return corrected
     .split(/(\s+)/)
     .map(word => {
       if (word.trim().length === 0) return word;
