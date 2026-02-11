@@ -528,6 +528,12 @@ export const sortGroupsByPriority = (groups: { name: string; count: number }[]):
 
 // Translate Arabic group names to English for display
 export const translateGroupName = (groupName: string): string => {
+  // Exact overrides for malformed group names
+  const exactOverrides: Record<string, string> = {
+    'Kids JlKids': 'Arabic Kids',
+  };
+  if (exactOverrides[groupName]) return exactOverrides[groupName];
+
   const translations: Record<string, string> = {
     // Movies - full phrases first
     'أفلام عربية حديثة': 'New Arabic Movies',
