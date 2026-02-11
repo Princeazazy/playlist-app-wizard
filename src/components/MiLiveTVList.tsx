@@ -386,8 +386,9 @@ export const MiLiveTVList = ({
   const getGroupLogo = (group: { name: string; displayName: string; firstLogo?: string; originalNames: string[] }): string | null => {
     const countryInfo = getCountryInfo(group.displayName);
     
-    // For streaming services, ALWAYS use first channel logo (no flags)
+    // For streaming services, use explicit flagUrl if set (e.g., MBC logo), otherwise first channel logo
     if (countryInfo?.isStreamingService) {
+      if (countryInfo.flagUrl) return countryInfo.flagUrl;
       return group.firstLogo || null;
     }
     
