@@ -44,7 +44,7 @@ export const LoginScreen = ({ onLogin }: LoginScreenProps) => {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="flex flex-col items-center gap-4">
-          <img src={universeLogo} alt="Universe TV" className="h-24 w-auto" />
+          <img src={universeLogo} alt="Universe TV" className="h-36 w-auto" />
           <p className="text-muted-foreground text-sm">Sign in to continue</p>
         </div>
 
