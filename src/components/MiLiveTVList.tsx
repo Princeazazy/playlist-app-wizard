@@ -247,7 +247,7 @@ export const MiLiveTVList = ({
   onBack,
   category = 'live',
 }: MiLiveTVListProps) => {
-  const [selectedGroup, setSelectedGroup] = useState<string>('eg');
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('number');
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [time, setTime] = useState(new Date());
@@ -281,7 +281,6 @@ export const MiLiveTVList = ({
         groupData.set(normalizedKey, { count: 1, firstLogo: ch.logo, originalNames: [group] });
       } else {
         existing.count++;
-        // Track all original group names for this normalized key
         if (!existing.originalNames.includes(group)) {
           existing.originalNames.push(group);
         }
@@ -293,6 +292,13 @@ export const MiLiveTVList = ({
   const groups = useMemo(() => {
     return mergeAndSortGroups(groupsWithLogos);
   }, [groupsWithLogos]);
+
+  // Auto-select first group when groups load and no group is selected
+  useEffect(() => {
+    if (groups.length > 0 && (!selectedGroup || !groups.find(g => g.name === selectedGroup))) {
+      setSelectedGroup(groups[0].name);
+    }
+  }, [groups, selectedGroup]);
 
   // Create a mapping of normalized keys to original group names for filtering
   const normalizedGroupMap = useMemo(() => {
