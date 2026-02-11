@@ -504,7 +504,7 @@ export const MiLiveTVList = ({
             >
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                 {getGroupLogo(group) ? (
-                  <img src={getGroupLogo(group)!} alt={group.displayName} className="w-full h-full object-contain p-0.5" />
+                  <img src={getGroupLogo(group)!} alt={group.displayName} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-base">{getCategoryEmoji(group.displayName)}</span>
                 )}
