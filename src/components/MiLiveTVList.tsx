@@ -514,7 +514,7 @@ export const MiLiveTVList = ({
                   <img 
                     src={getGroupLogo(group)!} 
                     alt={group.displayName} 
-                    className={`w-full h-full ${isStreamingServiceGroup(group) ? 'object-contain p-0.5' : 'object-cover'}`} 
+                    className="w-full h-full object-cover" 
                   />
                 ) : (
                   <span className="text-base">{getCategoryEmoji(group.displayName)}</span>
