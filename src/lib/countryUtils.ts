@@ -642,11 +642,17 @@ export const sortGroupsByPriority = (groups: { name: string; count: number }[]):
 
 // Translate Arabic group names to English for display
 export const translateGroupName = (groupName: string): string => {
-  // Exact overrides for malformed group names
+  // Exact overrides for malformed group names (case-insensitive check)
   const exactOverrides: Record<string, string> = {
-    'Kids JlKids': 'Arabic Kids',
+    'kids jlkids': 'Arabic Kids',
+    'jlkids': 'Arabic Kids',
   };
-  if (exactOverrides[groupName]) return exactOverrides[groupName];
+  const lowerName = groupName.toLowerCase().trim();
+  if (exactOverrides[lowerName]) return exactOverrides[lowerName];
+  // Also check if groupName contains the key
+  for (const [key, value] of Object.entries(exactOverrides)) {
+    if (lowerName.includes(key)) return value;
+  }
 
   const translations: Record<string, string> = {
     // Movies - full phrases first
