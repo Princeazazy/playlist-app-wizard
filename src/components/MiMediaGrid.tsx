@@ -491,7 +491,7 @@ export const MiMediaGrid = ({
                 <div className="mi-poster-card bg-card aspect-[2/3] relative rounded-lg overflow-hidden">
                   {(() => {
                     const tmdbPoster = getPosterForChannel(item.name);
-                    const posterSrc = tmdbPoster || item.backdrop_path?.[0] || item.logo;
+                    const posterSrc = tmdbPoster || item.logo || item.backdrop_path?.[0];
                     return posterSrc ? (
                       <>
                         <img
