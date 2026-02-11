@@ -36,17 +36,17 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'laliga': { name: 'La Liga', code: 'laliga', flagUrl: '/images/laliga-logo.png', priority: 1023, isStreamingService: true },
   // (bundesliga merged into shahid below)
   // Arabic streaming services - priority 23-27 (right after Islamic/Arabic countries)
-  'mbc': { name: 'MBC', code: 'mbc', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/MBC_Group_logo.svg/200px-MBC_Group_logo.svg.png', priority: 23, isStreamingService: true },
-  'mbc hd': { name: 'MBC', code: 'mbc', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/MBC_Group_logo.svg/200px-MBC_Group_logo.svg.png', priority: 23, isStreamingService: true },
+  'mbc': { name: 'MBC', code: 'mbc', flagUrl: '/images/mbc-logo.png', priority: 23, isStreamingService: true },
+  'mbc hd': { name: 'MBC', code: 'mbc', flagUrl: '/images/mbc-logo.png', priority: 23, isStreamingService: true },
   'rotana': { name: 'Rotana', code: 'rotana', flagUrl: '', priority: 24, isStreamingService: true },
   'shahid': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png', priority: 25, isStreamingService: true },
   'shahid vip': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png', priority: 25, isStreamingService: true },
   'شاهد': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png', priority: 25, isStreamingService: true },
   'bundesliga': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png', priority: 25, isStreamingService: true },
-  'bein': { name: 'beIN', code: 'bein', flagUrl: '', priority: 26, isStreamingService: true },
-  'bein sport': { name: 'beIN Sports', code: 'bein', flagUrl: '', priority: 26, isStreamingService: true },
-  'bein sports': { name: 'beIN Sports', code: 'bein', flagUrl: '', priority: 26, isStreamingService: true },
-  'osn': { name: 'OSN', code: 'osn', flagUrl: '', priority: 27, isStreamingService: true },
+  'bein': { name: 'beIN', code: 'bein', flagUrl: '/images/bein-logo.png', priority: 26, isStreamingService: true },
+  'bein sport': { name: 'beIN Sports', code: 'bein', flagUrl: '/images/bein-logo.png', priority: 26, isStreamingService: true },
+  'bein sports': { name: 'beIN Sports', code: 'bein', flagUrl: '/images/bein-logo.png', priority: 26, isStreamingService: true },
+  'osn': { name: 'OSN', code: 'osn', flagUrl: '/images/osn-logo.png', priority: 27, isStreamingService: true },
   // Western streaming services (priority 1000+)
   'relax tv': { name: 'Relax TV', code: 'relaxtv', flagUrl: '', priority: 1029, isStreamingService: true },
   'marvel': { name: 'Marvel', code: 'marvel', flagUrl: '', priority: 1030, isStreamingService: true },
