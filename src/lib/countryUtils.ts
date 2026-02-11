@@ -39,7 +39,14 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'bein': { name: 'beIN', code: 'bein', flagUrl: '', priority: 1027, isStreamingService: true },
   'bein sport': { name: 'beIN Sports', code: 'bein', flagUrl: '', priority: 1027, isStreamingService: true },
   'shahid': { name: 'Shahid', code: 'shahid', flagUrl: '', priority: 1028, isStreamingService: true },
+  'shahid vip': { name: 'Shahid', code: 'shahid', flagUrl: '', priority: 1028, isStreamingService: true },
+  'شاهد': { name: 'Shahid', code: 'shahid', flagUrl: '', priority: 1028, isStreamingService: true },
   'relax tv': { name: 'Relax TV', code: 'relaxtv', flagUrl: '', priority: 1029, isStreamingService: true },
+  'marvel': { name: 'Marvel', code: 'marvel', flagUrl: '', priority: 1030, isStreamingService: true },
+  'pixar': { name: 'Pixar', code: 'pixar', flagUrl: '', priority: 1031, isStreamingService: true },
+  'star wars': { name: 'Star Wars', code: 'starwars', flagUrl: '', priority: 1032, isStreamingService: true },
+  'crunchyroll': { name: 'Crunchyroll', code: 'crunchyroll', flagUrl: '', priority: 1033, isStreamingService: true },
+  'mbc': { name: 'MBC', code: 'mbc', flagUrl: '', priority: 1034, isStreamingService: true },
 };
 
 // Arabic-speaking countries (priority 1-20)
@@ -47,45 +54,95 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
 const ARABIC_COUNTRIES: Record<string, CountryInfo> = {
   'eg': { name: 'Egypt', code: 'eg', flagUrl: 'https://flagcdn.com/w80/eg.png', priority: 1 },
   'egypt': { name: 'Egypt', code: 'eg', flagUrl: 'https://flagcdn.com/w80/eg.png', priority: 1 },
+  'مصر': { name: 'Egypt', code: 'eg', flagUrl: 'https://flagcdn.com/w80/eg.png', priority: 1 },
+  'مصري': { name: 'Egypt', code: 'eg', flagUrl: 'https://flagcdn.com/w80/eg.png', priority: 1 },
+  'مصرية': { name: 'Egypt', code: 'eg', flagUrl: 'https://flagcdn.com/w80/eg.png', priority: 1 },
+  'egyptian': { name: 'Egypt', code: 'eg', flagUrl: 'https://flagcdn.com/w80/eg.png', priority: 1 },
   'ar': { name: 'Arabic', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 2 },
   'arabic': { name: 'Arabic', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 2 },
+  'عربي': { name: 'Arabic', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 2 },
+  'عربية': { name: 'Arabic', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 2 },
   'sa': { name: 'Saudi Arabia', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 3 },
   'saudi': { name: 'Saudi Arabia', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 3 },
+  'saudi arabia': { name: 'Saudi Arabia', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 3 },
+  'السعودية': { name: 'Saudi Arabia', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 3 },
   'ae': { name: 'UAE', code: 'ae', flagUrl: 'https://flagcdn.com/w80/ae.png', priority: 4 },
   'uae': { name: 'UAE', code: 'ae', flagUrl: 'https://flagcdn.com/w80/ae.png', priority: 4 },
   'emirates': { name: 'UAE', code: 'ae', flagUrl: 'https://flagcdn.com/w80/ae.png', priority: 4 },
+  'الامارات': { name: 'UAE', code: 'ae', flagUrl: 'https://flagcdn.com/w80/ae.png', priority: 4 },
+  'الإمارات': { name: 'UAE', code: 'ae', flagUrl: 'https://flagcdn.com/w80/ae.png', priority: 4 },
+  'اماراتي': { name: 'UAE', code: 'ae', flagUrl: 'https://flagcdn.com/w80/ae.png', priority: 4 },
+  'emirati': { name: 'UAE', code: 'ae', flagUrl: 'https://flagcdn.com/w80/ae.png', priority: 4 },
   'jo': { name: 'Jordan', code: 'jo', flagUrl: 'https://flagcdn.com/w80/jo.png', priority: 5 },
   'jordan': { name: 'Jordan', code: 'jo', flagUrl: 'https://flagcdn.com/w80/jo.png', priority: 5 },
+  'الاردن': { name: 'Jordan', code: 'jo', flagUrl: 'https://flagcdn.com/w80/jo.png', priority: 5 },
+  'الأردن': { name: 'Jordan', code: 'jo', flagUrl: 'https://flagcdn.com/w80/jo.png', priority: 5 },
+  'اردني': { name: 'Jordan', code: 'jo', flagUrl: 'https://flagcdn.com/w80/jo.png', priority: 5 },
   'lb': { name: 'Lebanon', code: 'lb', flagUrl: 'https://flagcdn.com/w80/lb.png', priority: 6 },
   'lebanon': { name: 'Lebanon', code: 'lb', flagUrl: 'https://flagcdn.com/w80/lb.png', priority: 6 },
+  'لبنان': { name: 'Lebanon', code: 'lb', flagUrl: 'https://flagcdn.com/w80/lb.png', priority: 6 },
+  'لبناني': { name: 'Lebanon', code: 'lb', flagUrl: 'https://flagcdn.com/w80/lb.png', priority: 6 },
   'sy': { name: 'Syria', code: 'sy', flagUrl: 'https://flagcdn.com/w80/sy.png', priority: 7 },
   'syria': { name: 'Syria', code: 'sy', flagUrl: 'https://flagcdn.com/w80/sy.png', priority: 7 },
+  'syrya': { name: 'Syria', code: 'sy', flagUrl: 'https://flagcdn.com/w80/sy.png', priority: 7 },
+  'syrian': { name: 'Syria', code: 'sy', flagUrl: 'https://flagcdn.com/w80/sy.png', priority: 7 },
+  'سوريا': { name: 'Syria', code: 'sy', flagUrl: 'https://flagcdn.com/w80/sy.png', priority: 7 },
+  'سوري': { name: 'Syria', code: 'sy', flagUrl: 'https://flagcdn.com/w80/sy.png', priority: 7 },
+  'سورية': { name: 'Syria', code: 'sy', flagUrl: 'https://flagcdn.com/w80/sy.png', priority: 7 },
+  'شامية': { name: 'Syria', code: 'sy', flagUrl: 'https://flagcdn.com/w80/sy.png', priority: 7 },
   'iq': { name: 'Iraq', code: 'iq', flagUrl: 'https://flagcdn.com/w80/iq.png', priority: 8 },
   'iraq': { name: 'Iraq', code: 'iq', flagUrl: 'https://flagcdn.com/w80/iq.png', priority: 8 },
+  'العراق': { name: 'Iraq', code: 'iq', flagUrl: 'https://flagcdn.com/w80/iq.png', priority: 8 },
+  'عراقي': { name: 'Iraq', code: 'iq', flagUrl: 'https://flagcdn.com/w80/iq.png', priority: 8 },
   'kw': { name: 'Kuwait', code: 'kw', flagUrl: 'https://flagcdn.com/w80/kw.png', priority: 9 },
   'kuwait': { name: 'Kuwait', code: 'kw', flagUrl: 'https://flagcdn.com/w80/kw.png', priority: 9 },
+  'الكويت': { name: 'Kuwait', code: 'kw', flagUrl: 'https://flagcdn.com/w80/kw.png', priority: 9 },
+  'كويتي': { name: 'Kuwait', code: 'kw', flagUrl: 'https://flagcdn.com/w80/kw.png', priority: 9 },
   'qa': { name: 'Qatar', code: 'qa', flagUrl: 'https://flagcdn.com/w80/qa.png', priority: 10 },
   'qatar': { name: 'Qatar', code: 'qa', flagUrl: 'https://flagcdn.com/w80/qa.png', priority: 10 },
+  'قطر': { name: 'Qatar', code: 'qa', flagUrl: 'https://flagcdn.com/w80/qa.png', priority: 10 },
   'bh': { name: 'Bahrain', code: 'bh', flagUrl: 'https://flagcdn.com/w80/bh.png', priority: 11 },
   'bahrain': { name: 'Bahrain', code: 'bh', flagUrl: 'https://flagcdn.com/w80/bh.png', priority: 11 },
+  'البحرين': { name: 'Bahrain', code: 'bh', flagUrl: 'https://flagcdn.com/w80/bh.png', priority: 11 },
   'om': { name: 'Oman', code: 'om', flagUrl: 'https://flagcdn.com/w80/om.png', priority: 12 },
   'oman': { name: 'Oman', code: 'om', flagUrl: 'https://flagcdn.com/w80/om.png', priority: 12 },
+  'عمان': { name: 'Oman', code: 'om', flagUrl: 'https://flagcdn.com/w80/om.png', priority: 12 },
   'ye': { name: 'Yemen', code: 'ye', flagUrl: 'https://flagcdn.com/w80/ye.png', priority: 13 },
   'yemen': { name: 'Yemen', code: 'ye', flagUrl: 'https://flagcdn.com/w80/ye.png', priority: 13 },
+  'اليمن': { name: 'Yemen', code: 'ye', flagUrl: 'https://flagcdn.com/w80/ye.png', priority: 13 },
+  'يمني': { name: 'Yemen', code: 'ye', flagUrl: 'https://flagcdn.com/w80/ye.png', priority: 13 },
   'ps': { name: 'Palestine', code: 'ps', flagUrl: 'https://flagcdn.com/w80/ps.png', priority: 14 },
   'palestine': { name: 'Palestine', code: 'ps', flagUrl: 'https://flagcdn.com/w80/ps.png', priority: 14 },
+  'فلسطين': { name: 'Palestine', code: 'ps', flagUrl: 'https://flagcdn.com/w80/ps.png', priority: 14 },
+  'فلسطيني': { name: 'Palestine', code: 'ps', flagUrl: 'https://flagcdn.com/w80/ps.png', priority: 14 },
   'ma': { name: 'Morocco', code: 'ma', flagUrl: 'https://flagcdn.com/w80/ma.png', priority: 15 },
   'morocco': { name: 'Morocco', code: 'ma', flagUrl: 'https://flagcdn.com/w80/ma.png', priority: 15 },
+  'moroccan': { name: 'Morocco', code: 'ma', flagUrl: 'https://flagcdn.com/w80/ma.png', priority: 15 },
+  'المغرب': { name: 'Morocco', code: 'ma', flagUrl: 'https://flagcdn.com/w80/ma.png', priority: 15 },
+  'مغربي': { name: 'Morocco', code: 'ma', flagUrl: 'https://flagcdn.com/w80/ma.png', priority: 15 },
+  'مغربية': { name: 'Morocco', code: 'ma', flagUrl: 'https://flagcdn.com/w80/ma.png', priority: 15 },
   'dz': { name: 'Algeria', code: 'dz', flagUrl: 'https://flagcdn.com/w80/dz.png', priority: 16 },
   'algeria': { name: 'Algeria', code: 'dz', flagUrl: 'https://flagcdn.com/w80/dz.png', priority: 16 },
+  'الجزائر': { name: 'Algeria', code: 'dz', flagUrl: 'https://flagcdn.com/w80/dz.png', priority: 16 },
+  'جزائري': { name: 'Algeria', code: 'dz', flagUrl: 'https://flagcdn.com/w80/dz.png', priority: 16 },
   'tn': { name: 'Tunisia', code: 'tn', flagUrl: 'https://flagcdn.com/w80/tn.png', priority: 17 },
   'tunisia': { name: 'Tunisia', code: 'tn', flagUrl: 'https://flagcdn.com/w80/tn.png', priority: 17 },
+  'تونس': { name: 'Tunisia', code: 'tn', flagUrl: 'https://flagcdn.com/w80/tn.png', priority: 17 },
+  'تونسي': { name: 'Tunisia', code: 'tn', flagUrl: 'https://flagcdn.com/w80/tn.png', priority: 17 },
   'ly': { name: 'Libya', code: 'ly', flagUrl: 'https://flagcdn.com/w80/ly.png', priority: 18 },
   'libya': { name: 'Libya', code: 'ly', flagUrl: 'https://flagcdn.com/w80/ly.png', priority: 18 },
+  'ليبيا': { name: 'Libya', code: 'ly', flagUrl: 'https://flagcdn.com/w80/ly.png', priority: 18 },
   'sd': { name: 'Sudan', code: 'sd', flagUrl: 'https://flagcdn.com/w80/sd.png', priority: 19 },
   'sudan': { name: 'Sudan', code: 'sd', flagUrl: 'https://flagcdn.com/w80/sd.png', priority: 19 },
+  'السودان': { name: 'Sudan', code: 'sd', flagUrl: 'https://flagcdn.com/w80/sd.png', priority: 19 },
   'so': { name: 'Somalia', code: 'so', flagUrl: 'https://flagcdn.com/w80/so.png', priority: 20 },
   'somalia': { name: 'Somalia', code: 'so', flagUrl: 'https://flagcdn.com/w80/so.png', priority: 20 },
+  'الصومال': { name: 'Somalia', code: 'so', flagUrl: 'https://flagcdn.com/w80/so.png', priority: 20 },
+  // Gulf region generic
+  'خليجي': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
+  'خليجية': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
+  'khaliji': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
+  'gulf': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
 };
 
 // USA (priority 25)
@@ -349,10 +406,18 @@ const getStreamingServiceInfo = (group: string): CountryInfo | null => {
   const sortedKeys = Object.keys(STREAMING_SERVICES).sort((a, b) => b.length - a.length);
   
   for (const key of sortedKeys) {
-    // Check if key appears as a whole word anywhere in the group name
-    const keyRegex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-    if (keyRegex.test(groupLower)) {
-      return STREAMING_SERVICES[key];
+    const isArabic = /[\u0600-\u06FF]/.test(key);
+    if (isArabic) {
+      // Arabic: simple substring match
+      if (group.includes(key) || groupLower.includes(key)) {
+        return STREAMING_SERVICES[key];
+      }
+    } else {
+      // Latin: word boundary match
+      const keyRegex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      if (keyRegex.test(groupLower)) {
+        return STREAMING_SERVICES[key];
+      }
     }
   }
   
@@ -374,10 +439,12 @@ export const getCountryInfo = (group: string): CountryInfo | null => {
     return ALL_COUNTRIES[groupLower];
   }
 
+  // Check if any key (including Arabic text) appears as a substring in the group name
+  // Sort by key length descending to match longer/more specific keys first
+  const sortedCountryKeys = Object.keys(ALL_COUNTRIES).sort((a, b) => b.length - a.length);
+  
   // Check for full country name matches FIRST (before partial matching)
-  // This ensures "United Kingdom" matches UK, not "om" from Oman
   for (const [key, info] of Object.entries(ALL_COUNTRIES)) {
-    // Only match if the full country name is found as a complete match
     if (groupLower === info.name.toLowerCase()) {
       return info;
     }
@@ -389,20 +456,30 @@ export const getCountryInfo = (group: string): CountryInfo | null => {
     return ALL_COUNTRIES[codeMatch[1]];
   }
 
-  // Check if country name appears as a whole word in group name
-  // Use word boundaries to prevent "om" matching "kingdom"
-  for (const [key, info] of Object.entries(ALL_COUNTRIES)) {
-    const countryName = info.name.toLowerCase();
-    // Check if country name appears as whole word(s)
-    const nameRegex = new RegExp(`\\b${countryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-    if (nameRegex.test(groupLower)) {
-      return info;
-    }
-    // Check if key (like "uk", "usa") appears as whole word, but only for keys 3+ chars to avoid false matches
-    if (key.length >= 3) {
-      const keyRegex = new RegExp(`\\b${key}\\b`, 'i');
-      if (keyRegex.test(groupLower)) {
+  // Check if country name/key appears in group name
+  // For Arabic keys, use simple substring matching (word boundaries don't work for Arabic)
+  // For Latin keys, use word boundary matching
+  for (const key of sortedCountryKeys) {
+    const info = ALL_COUNTRIES[key];
+    const isArabic = /[\u0600-\u06FF]/.test(key);
+    
+    if (isArabic) {
+      // Arabic: simple substring match
+      if (groupLower.includes(key) || group.includes(key)) {
         return info;
+      }
+    } else {
+      // Latin: word boundary match
+      const countryName = info.name.toLowerCase();
+      const nameRegex = new RegExp(`\\b${countryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      if (nameRegex.test(groupLower)) {
+        return info;
+      }
+      if (key.length >= 3) {
+        const keyRegex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (keyRegex.test(groupLower)) {
+          return info;
+        }
       }
     }
   }
