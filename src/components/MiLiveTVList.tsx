@@ -402,12 +402,18 @@ export const MiLiveTVList = ({
       if (flag) return flag;
     }
     
-    // For non-country groups (e.g., "MBC HD", "Jawwy TV"), use the first channel's logo
+    // For non-country groups, use the first channel's logo
     if (group.firstLogo) {
       return group.firstLogo;
     }
     
     return null;
+  };
+
+  // Check if a group is a streaming service (for logo styling)
+  const isStreamingServiceGroup = (group: { displayName: string }): boolean => {
+    const countryInfo = getCountryInfo(group.displayName);
+    return !!countryInfo?.isStreamingService;
   };
 
   return (
@@ -504,7 +510,11 @@ export const MiLiveTVList = ({
             >
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                 {getGroupLogo(group) ? (
-                  <img src={getGroupLogo(group)!} alt={group.displayName} className="w-full h-full object-cover" />
+                  <img 
+                    src={getGroupLogo(group)!} 
+                    alt={group.displayName} 
+                    className={`w-full h-full ${isStreamingServiceGroup(group) ? 'object-contain p-0.5' : 'object-cover'}`} 
+                  />
                 ) : (
                   <span className="text-base">{getCategoryEmoji(group.displayName)}</span>
                 )}

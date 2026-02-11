@@ -33,7 +33,9 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'premier league': { name: 'Premier League', code: 'premierleague', flagUrl: '', priority: 1021, isStreamingService: true },
   'serie a': { name: 'Serie A', code: 'seriea', flagUrl: '', priority: 1022, isStreamingService: true },
   'la liga': { name: 'La Liga', code: 'laliga', flagUrl: '', priority: 1023, isStreamingService: true },
-  'bundesliga': { name: 'Bundesliga', code: 'bundesliga', flagUrl: '', priority: 1024, isStreamingService: true },
+  'laliga': { name: 'La Liga', code: 'laliga', flagUrl: '', priority: 1023, isStreamingService: true },
+  'liga': { name: 'La Liga', code: 'laliga', flagUrl: '', priority: 1023, isStreamingService: true },
+  'bundesliga': { name: 'Shahid', code: 'shahid', flagUrl: '', priority: 1028, isStreamingService: true },
   'rotana': { name: 'Rotana', code: 'rotana', flagUrl: '', priority: 1025, isStreamingService: true },
   'osn': { name: 'OSN', code: 'osn', flagUrl: '', priority: 1026, isStreamingService: true },
   'bein': { name: 'beIN', code: 'bein', flagUrl: '', priority: 1027, isStreamingService: true },
@@ -143,6 +145,16 @@ const ARABIC_COUNTRIES: Record<string, CountryInfo> = {
   'خليجية': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
   'khaliji': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
   'gulf': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
+  // Islamic/Religious channels - right after Arabic countries
+  'islamic': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
+  'islam': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
+  'إسلامي': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
+  'إسلامية': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
+  'اسلامي': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
+  'اسلامية': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
+  'quran': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
+  'قرآن': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
+  'religious': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
 };
 
 // USA (priority 25)
@@ -196,6 +208,9 @@ const OTHER_COUNTRIES: Record<string, CountryInfo> = {
   'ua': { name: 'Ukraine', code: 'ua', flagUrl: 'https://flagcdn.com/w80/ua.png', priority: 62 },
   'ukraine': { name: 'Ukraine', code: 'ua', flagUrl: 'https://flagcdn.com/w80/ua.png', priority: 62 },
   'ukrainian': { name: 'Ukraine', code: 'ua', flagUrl: 'https://flagcdn.com/w80/ua.png', priority: 62 },
+  'ukrain': { name: 'Ukraine', code: 'ua', flagUrl: 'https://flagcdn.com/w80/ua.png', priority: 62 },
+  'ukraina': { name: 'Ukraine', code: 'ua', flagUrl: 'https://flagcdn.com/w80/ua.png', priority: 62 },
+  'ukrane': { name: 'Ukraine', code: 'ua', flagUrl: 'https://flagcdn.com/w80/ua.png', priority: 62 },
   'tr': { name: 'Turkey', code: 'tr', flagUrl: 'https://flagcdn.com/w80/tr.png', priority: 63 },
   'turkey': { name: 'Turkey', code: 'tr', flagUrl: 'https://flagcdn.com/w80/tr.png', priority: 63 },
   'turk': { name: 'Turkey', code: 'tr', flagUrl: 'https://flagcdn.com/w80/tr.png', priority: 63 },
@@ -606,8 +621,9 @@ export const mergeAndSortGroups = (
     }
   }
 
-  // Convert to array and sort
+  // Convert to array, filter out groups with fewer than 3 channels, and sort
   return Array.from(mergedGroups.entries())
+    .filter(([_, data]) => data.count >= 3) // Remove groups with fewer than 3 channels
     .map(([name, data]) => ({
       name,
       displayName: data.displayName,
