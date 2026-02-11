@@ -139,6 +139,12 @@ export const MiMediaGrid = ({
     if (groupName.includes('خليج') || g.includes('khalij') || g.includes('gulf')) return 6;
     if (groupName.includes('مغرب') || g.includes('maghreb')) return 7;
     if (g.includes('osn') || g.includes('shahid')) return 8;
+    // AR MOV / AR SER year-based groups (newer first, top priority)
+    const arYearMatch = g.match(/^ar\s+(mov|ser|movies?|series)\s+((?:19|20)\d{2})/i);
+    if (arYearMatch) {
+      const year = parseInt(arYearMatch[2]);
+      return 10 + (2040 - year); // 2026→24, 2025→25, etc.
+    }
     // Arabic years (newer first)
     const hasArabicHint = /[\u0600-\u06FF]/.test(groupName);
     if (hasArabicHint) {
