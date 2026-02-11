@@ -496,13 +496,33 @@ export const MiLiveTVList = ({
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-                {getGroupLogo(group) ? (
-                  <img src={getGroupLogo(group)!} alt={group.displayName} className="w-full h-full object-contain p-0.5" />
-                ) : (
-                  <span className="text-base">{getCategoryEmoji(group.displayName)}</span>
-                )}
-              </div>
+              {(() => {
+                const countryInfo = getCountryInfo(group.displayName);
+                const isStreaming = countryInfo?.isStreamingService;
+                const logo = getGroupLogo(group);
+                
+                if (isStreaming && logo) {
+                  return (
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-md backdrop-blur-sm">
+                      <img src={logo} alt={group.displayName} className="w-7 h-7 object-contain drop-shadow-lg" />
+                    </div>
+                  );
+                }
+                
+                if (logo) {
+                  return (
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                      <img src={logo} alt={group.displayName} className="w-full h-full object-contain p-0.5" />
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <span className="text-base">{getCategoryEmoji(group.displayName)}</span>
+                  </div>
+                );
+              })()}
               <AnimatePresence>
                 {(!sidebarCollapsed || isMobile) && (
                   <motion.div 
