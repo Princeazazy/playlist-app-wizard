@@ -10,7 +10,7 @@ const StarField = memo(() => {
       'rgba(255,230,200,',
       'rgba(180,200,255,',
     ];
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 180; i++) {
       result.push({
         x: Math.random() * 100,
         y: Math.random() * 100,
