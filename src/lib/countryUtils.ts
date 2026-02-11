@@ -38,7 +38,7 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   // Arabic streaming services - priority 23-27 (right after Islamic/Arabic countries)
   'mbc': { name: 'MBC', code: 'mbc', flagUrl: '/images/mbc-logo.png', priority: 23, isStreamingService: true },
   'mbc hd': { name: 'MBC', code: 'mbc', flagUrl: '/images/mbc-logo.png', priority: 23, isStreamingService: true },
-  'rotana': { name: 'Rotana', code: 'rotana', flagUrl: '', priority: 24, isStreamingService: true },
+  'rotana': { name: 'Rotana', code: 'rotana', flagUrl: '/images/rotana-logo.png', priority: 24, isStreamingService: true },
   'shahid': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png', priority: 25, isStreamingService: true },
   'shahid vip': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png', priority: 25, isStreamingService: true },
   'شاهد': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png', priority: 25, isStreamingService: true },
