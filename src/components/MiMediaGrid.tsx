@@ -165,6 +165,54 @@ const getCategoryEmoji = (group: string): string => {
   return '🎬';
 };
 
+const shortenGroupName = (name: string): string => {
+  let clean = translateGroupName(name);
+  
+  // Extract year
+  const yearMatch = clean.match(/\b(19|20)\d{2}\b/);
+  const year = yearMatch ? yearMatch[0] : '';
+  const lower = clean.toLowerCase();
+  
+  // 1. Arabic Movies with Year -> "Arabic 2024"
+  if ((lower.includes('arabic') || lower.includes('عربي')) && (lower.includes('movie') || lower.includes('film')) && year) {
+    return `Arabic ${year}`;
+  }
+  
+  // 2. Foreign Subtitled with Year -> "Foreign 2024"
+  if (lower.includes('foreign') && lower.includes('sub') && year) {
+    return `Foreign ${year}`;
+  }
+  
+  // 3. English Dubbed -> "English Dubbed"
+  if (lower.includes('english') && lower.includes('dub')) {
+     return year ? `English ${year}` : 'English Dubbed';
+  }
+
+  // 4. Weekend/Thursday
+  if (lower.includes('thursday') || lower.includes('weekend') || name.includes('الخميس') || name.includes('سهرة')) {
+    return 'Weekend Movies';
+  }
+
+  // 5. Documentaries
+  if (lower.includes('documentary') || lower.includes('docu')) {
+    return 'Documentaries';
+  }
+  
+  // 6. 4K / 3D
+  if (lower.includes('4k')) return '4K Movies';
+  if (lower.includes('3d')) return '3D Movies';
+
+  // 7. General Cleanup
+  clean = clean
+    .replace(/\b(Movies|Films|Series|Season|Complete|Full|HD|FHD|HEVC|New|Latest|Update|Library|Collection|Pack|Box|Set|From|By)\b/gi, '')
+    .replace(/(مكتبة|أفلام|مسلسلات)/g, '')
+    .replace(/[|•\-–_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+    
+  return clean || name;
+};
+
 interface MiMediaGridProps {
   items: Channel[];
   favorites: Set<string>;
@@ -449,7 +497,7 @@ export const MiMediaGrid = ({
               </div>
               <div className="flex-1 text-left">
                 <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold text-foreground' : ''}`}>
-                  {translateGroupName(group.name)}
+                  {shortenGroupName(group.name)}
                 </p>
                 {selectedGroup === group.name && (
                   <p className="text-xs text-muted-foreground">{group.count} {title}</p>
