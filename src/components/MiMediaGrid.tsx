@@ -43,11 +43,11 @@ const getCategoryLogo = (groupName: string): string | null => {
   const g = groupName.toLowerCase();
   
   // Arabic Movies by Year/Era
-  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('mov') || g.includes('film') || g.includes('أفلام')) && g.includes('2026')) return arabicMovies2026Logo;
-  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('mov') || g.includes('film') || g.includes('أفلام')) && g.includes('2025')) return arabicMovies2025Logo;
-  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('mov') || g.includes('film') || g.includes('أفلام')) && g.includes('2024')) return arabicMovies2024Logo;
-  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('mov') || g.includes('film') || g.includes('أفلام')) && g.includes('2023')) return arabicMovies2023Logo;
-  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('mov') || g.includes('film') || g.includes('أفلام')) && (g.includes('197') || g.includes('198') || g.includes('199') || g.includes('200') || g.includes('classic') || g.includes('old'))) return arabicMovies1970s2000sLogo;
+  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2026')) return arabicMovies2026Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2025')) return arabicMovies2025Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2024')) return arabicMovies2024Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2023')) return arabicMovies2023Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('197') || g.includes('198') || g.includes('199') || g.includes('200') || g.includes('classic') || g.includes('old'))) return arabicMovies1970s2000sLogo;
 
   // Foreign Subtitled
   if (g.includes('foreign') && g.includes('sub') && g.includes('2000')) return foreignSub2000sLogo;
@@ -73,6 +73,14 @@ const getCategoryLogo = (groupName: string): string | null => {
   if (g.includes('4k') && (g.includes('mov') || g.includes('film') || g.includes('cinema'))) return movies4kLogo;
   if (g.includes('3d') && (g.includes('mov') || g.includes('film'))) return movies3dLogo;
   if (g.includes('vod') && g.includes('german') && g.includes('sub')) return vodGermanyLogo;
+  
+  // Generic Year Fallbacks (if no other specific match)
+  if (g.includes('2026')) return foreignSub2026Logo;
+  if (g.includes('2025')) return foreignSub2025Logo;
+  if (g.includes('2024')) return foreignSub2024Logo;
+  if (g.includes('2023')) return foreignSub2023Logo;
+  if (g.includes('2022')) return foreignSub2022Logo;
+  if (g.includes('2000') || g.includes('201') || g.includes('200')) return foreignSub2000sLogo;
   
   return null;
 };
@@ -417,13 +425,13 @@ export const MiMediaGrid = ({
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center overflow-hidden flex-shrink-0 border border-white/10">
+              <div className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {/* Use custom category logo first, then group's first poster, then emoji */}
                 {getCategoryLogo(group.name) ? (
                   <img 
                     src={getCategoryLogo(group.name)!} 
                     alt={group.name} 
-                    className="w-full h-full object-cover scale-125"
+                    className="w-full h-full object-cover scale-150"
                   />
                 ) : group.firstLogo ? (
                   <img 
