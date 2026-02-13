@@ -14,6 +14,32 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+// Custom category logos
+import englishDubbedMoviesLogo from '@/assets/category-logos/english-dubbed-movies.png';
+import arabicDubbedCartoonLogo from '@/assets/category-logos/arabic-dubbed-cartoon.png';
+import arabicSubbedCartoonLogo from '@/assets/category-logos/arabic-subbed-cartoon.png';
+import foreignSub2000sLogo from '@/assets/category-logos/foreign-subtitled-2000s.png';
+import foreignSub2022Logo from '@/assets/category-logos/foreign-subtitled-2022.png';
+import foreignSub2023Logo from '@/assets/category-logos/foreign-subtitled-2023.png';
+import foreignSub2024Logo from '@/assets/category-logos/foreign-subtitled-2024.png';
+import foreignSub2025Logo from '@/assets/category-logos/foreign-subtitled-2025.png';
+import foreignSub2026Logo from '@/assets/category-logos/foreign-subtitled-2026.png';
+
+// Match group names to custom category logos
+const getCategoryLogo = (groupName: string): string | null => {
+  const g = groupName.toLowerCase();
+  if (g.includes('english') && g.includes('dub') && (g.includes('mov') || g.includes('film'))) return englishDubbedMoviesLogo;
+  if (g.includes('arabic') && g.includes('dub') && g.includes('cartoon')) return arabicDubbedCartoonLogo;
+  if (g.includes('arabic') && g.includes('sub') && g.includes('cartoon')) return arabicSubbedCartoonLogo;
+  if (g.includes('foreign') && g.includes('sub') && g.includes('2000')) return foreignSub2000sLogo;
+  if (g.includes('foreign') && g.includes('sub') && g.includes('2022')) return foreignSub2022Logo;
+  if (g.includes('foreign') && g.includes('sub') && g.includes('2023')) return foreignSub2023Logo;
+  if (g.includes('foreign') && g.includes('sub') && g.includes('2024')) return foreignSub2024Logo;
+  if (g.includes('foreign') && g.includes('sub') && g.includes('2025')) return foreignSub2025Logo;
+  if (g.includes('foreign') && g.includes('sub') && g.includes('2026')) return foreignSub2026Logo;
+  return null;
+};
+
 const WeatherIcon = ({ icon }: { icon: string }) => {
   switch (icon) {
     case 'sun': return <Sun className="w-5 h-5" />;
@@ -355,8 +381,14 @@ export const MiMediaGrid = ({
               }`}
             >
               <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden flex-shrink-0">
-                {/* Use group's first movie/series poster as icon if available, otherwise emoji */}
-                {group.firstLogo ? (
+                {/* Use custom category logo first, then group's first poster, then emoji */}
+                {getCategoryLogo(group.name) ? (
+                  <img 
+                    src={getCategoryLogo(group.name)!} 
+                    alt={group.name} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : group.firstLogo ? (
                   <img 
                     src={group.firstLogo} 
                     alt={group.name} 
