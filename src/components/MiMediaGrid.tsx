@@ -63,7 +63,7 @@ const getCategoryLogo = (groupName: string): string | null => {
 
   // Specific Genres/Types
   if (g.includes('english') && g.includes('dub') && (g.includes('mov') || g.includes('film'))) return englishDubbedMoviesLogo;
-  if (g.includes('weekend') || g.includes('marathon')) return weekendMoviesLogo;
+  if (g.includes('weekend') || g.includes('marathon') || g.includes('سهرة') || g.includes('خميس') || g.includes('جمعة') || g.includes('ويك')) return weekendMoviesLogo;
   if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas')) return christmasMoviesLogo;
   if (g.includes('documentary') || g.includes('docu')) return documentaryMoviesLogo;
   if (g.includes('indian') || g.includes('bollywood') || g.includes('hindi')) return indianMoviesLogo;
