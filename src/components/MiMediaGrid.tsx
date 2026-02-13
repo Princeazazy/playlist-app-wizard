@@ -34,6 +34,9 @@ import arabicMovies2023Logo from '@/assets/category-logos/arabic-movies-2023.png
 import arabicMovies2024Logo from '@/assets/category-logos/arabic-movies-2024.png';
 import arabicMovies2025Logo from '@/assets/category-logos/arabic-movies-2025.png';
 import arabicMovies2026Logo from '@/assets/category-logos/arabic-movies-2026.png';
+import movies4kLogo from '@/assets/category-logos/4k-movies.png';
+import movies3dLogo from '@/assets/category-logos/3d-movies.png';
+import vodGermanyLogo from '@/assets/category-logos/german-vod-movies.png';
 
 // Match group names to custom category logos
 const getCategoryLogo = (groupName: string): string | null => {
@@ -65,7 +68,12 @@ const getCategoryLogo = (groupName: string): string | null => {
   if (g.includes('documentary') || g.includes('docu')) return documentaryMoviesLogo;
   if (g.includes('indian') || g.includes('bollywood') || g.includes('hindi')) return indianMoviesLogo;
   if (g.includes('turkish') || g.includes('turk')) return turkishMoviesLogo;
-
+  
+  // Tech/Regional
+  if (g.includes('4k') && (g.includes('mov') || g.includes('film') || g.includes('cinema'))) return movies4kLogo;
+  if (g.includes('3d') && (g.includes('mov') || g.includes('film'))) return movies3dLogo;
+  if (g.includes('vod') && g.includes('german') && g.includes('sub')) return vodGermanyLogo;
+  
   return null;
 };
 
