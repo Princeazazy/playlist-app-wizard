@@ -187,10 +187,23 @@ export const MiMediaGrid = ({
     return 900;
   };
 
+  // Filter out groups that don't belong in movies/series (music, concerts, sports events, etc.)
+  const isIrrelevantGroup = (groupName: string): boolean => {
+    const g = groupName.toLowerCase();
+    if (g.includes('music') || g.includes('موسيق') || g.includes('حفلات') || g.includes('concert')) return true;
+    if (g.includes('radio') || g.includes('راديو')) return true;
+    if (g.includes('podcast')) return true;
+    if (g.includes('adult') || g.includes('xxx') || g.includes('18+')) return true;
+    if (g.includes('live ') && !g.includes('live action')) return true;
+    return false;
+  };
+
   const groups = useMemo(() => {
     const groupCounts = new Map<string, { count: number; firstLogo?: string }>();
     items.forEach((item) => {
       const group = item.group || 'Uncategorized';
+      // Skip irrelevant groups
+      if (isIrrelevantGroup(group)) return;
       const existing = groupCounts.get(group);
       if (!existing) {
         groupCounts.set(group, { count: 1, firstLogo: item.backdrop_path?.[0] || item.logo });
@@ -223,6 +236,8 @@ export const MiMediaGrid = ({
 
   const filteredItems = useMemo(() => {
     let filtered = items.filter((item) => {
+      // Skip irrelevant groups
+      if (isIrrelevantGroup(item.group || '')) return false;
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
       // When searching, ignore group filter and search ALL items
       // Use first group if selectedGroup is empty
