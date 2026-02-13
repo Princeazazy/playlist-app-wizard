@@ -49,20 +49,20 @@ const getCategoryLogo = (groupName: string): string | null => {
   if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2023')) return arabicMovies2023Logo;
   if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('197') || g.includes('198') || g.includes('199') || g.includes('200') || g.includes('classic') || g.includes('old'))) return arabicMovies1970s2000sLogo;
 
-  // Foreign Subtitled
-  if (g.includes('foreign') && g.includes('sub') && (g.includes('2000') || g.includes('2021') || g.includes('201'))) return foreignSub2000sLogo;
-  if (g.includes('foreign') && g.includes('sub') && g.includes('2022')) return foreignSub2022Logo;
-  if (g.includes('foreign') && g.includes('sub') && g.includes('2023')) return foreignSub2023Logo;
-  if (g.includes('foreign') && g.includes('sub') && g.includes('2024')) return foreignSub2024Logo;
-  if (g.includes('foreign') && g.includes('sub') && g.includes('2025')) return foreignSub2025Logo;
-  if (g.includes('foreign') && g.includes('sub') && g.includes('2026')) return foreignSub2026Logo;
+  // Dubbed Foreign movies (check BEFORE foreign subtitled to avoid wrong match)
+  if (g.includes('dub') && (g.includes('foreign') || g.includes('مدبلجة'))) return englishDubbedMoviesLogo;
+
+  // Foreign Subtitled (only match if NOT dubbed)
+  if (g.includes('foreign') && !g.includes('dub') && (g.includes('2000') || g.includes('2021') || g.includes('201'))) return foreignSub2000sLogo;
+  if (g.includes('foreign') && !g.includes('dub') && g.includes('2022')) return foreignSub2022Logo;
+  if (g.includes('foreign') && !g.includes('dub') && g.includes('2023')) return foreignSub2023Logo;
+  if (g.includes('foreign') && !g.includes('dub') && g.includes('2024')) return foreignSub2024Logo;
+  if (g.includes('foreign') && !g.includes('dub') && g.includes('2025')) return foreignSub2025Logo;
+  if (g.includes('foreign') && !g.includes('dub') && g.includes('2026')) return foreignSub2026Logo;
 
   // Cartoons - don't require "arabic" prefix
   if (g.includes('dub') && g.includes('cartoon')) return arabicDubbedCartoonLogo;
   if (g.includes('sub') && g.includes('cartoon')) return arabicSubbedCartoonLogo;
-
-  // Dubbed Foreign movies
-  if (g.includes('dub') && (g.includes('foreign') || g.includes('مدبلجة'))) return englishDubbedMoviesLogo;
 
   // Specific Genres/Types
   if (g.includes('english') && g.includes('dub')) return englishDubbedMoviesLogo;
@@ -180,17 +180,17 @@ const shortenGroupName = (name: string): string => {
     return `Arabic ${year}`;
   }
   
+  // Dubbed Foreign (check before generic foreign to avoid overlap)
+  if (lower.includes('dub') && (lower.includes('foreign') || lower.includes('مدبلجة'))) {
+    return 'Dubbed Foreign';
+  }
+
   // Foreign Subtitled with Year
   if ((lower.includes('foreign') || lower.includes('أجنبي')) && (lower.includes('2000') || lower.includes('2021') || lower.includes('201'))) {
     return "Foreign 2000's";
   }
   if ((lower.includes('foreign') || lower.includes('أجنبي')) && year) {
     return `Foreign ${year}`;
-  }
-  
-  // Dubbed Foreign
-  if (lower.includes('dub') && (lower.includes('foreign') || lower.includes('مدبلجة'))) {
-    return 'Dubbed Foreign';
   }
   
   // English Dubbed
