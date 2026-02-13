@@ -24,19 +24,48 @@ import foreignSub2023Logo from '@/assets/category-logos/foreign-subtitled-2023.p
 import foreignSub2024Logo from '@/assets/category-logos/foreign-subtitled-2024.png';
 import foreignSub2025Logo from '@/assets/category-logos/foreign-subtitled-2025.png';
 import foreignSub2026Logo from '@/assets/category-logos/foreign-subtitled-2026.png';
+import weekendMoviesLogo from '@/assets/category-logos/weekend-movies.png';
+import christmasMoviesLogo from '@/assets/category-logos/christmas-movies.png';
+import documentaryMoviesLogo from '@/assets/category-logos/documentary-movies.png';
+import indianMoviesLogo from '@/assets/category-logos/indian-movies.png';
+import turkishMoviesLogo from '@/assets/category-logos/turkish-movies.png';
+import arabicMovies1970s2000sLogo from '@/assets/category-logos/arabic-movies-1970s-2000s.png';
+import arabicMovies2023Logo from '@/assets/category-logos/arabic-movies-2023.png';
+import arabicMovies2024Logo from '@/assets/category-logos/arabic-movies-2024.png';
+import arabicMovies2025Logo from '@/assets/category-logos/arabic-movies-2025.png';
+import arabicMovies2026Logo from '@/assets/category-logos/arabic-movies-2026.png';
 
 // Match group names to custom category logos
 const getCategoryLogo = (groupName: string): string | null => {
   const g = groupName.toLowerCase();
-  if (g.includes('english') && g.includes('dub') && (g.includes('mov') || g.includes('film'))) return englishDubbedMoviesLogo;
-  if (g.includes('arabic') && g.includes('dub') && g.includes('cartoon')) return arabicDubbedCartoonLogo;
-  if (g.includes('arabic') && g.includes('sub') && g.includes('cartoon')) return arabicSubbedCartoonLogo;
+  
+  // Arabic Movies by Year/Era
+  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('mov') || g.includes('film') || g.includes('أفلام')) && g.includes('2026')) return arabicMovies2026Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('mov') || g.includes('film') || g.includes('أفلام')) && g.includes('2025')) return arabicMovies2025Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('mov') || g.includes('film') || g.includes('أفلام')) && g.includes('2024')) return arabicMovies2024Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('mov') || g.includes('film') || g.includes('أفلام')) && g.includes('2023')) return arabicMovies2023Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('mov') || g.includes('film') || g.includes('أفلام')) && (g.includes('197') || g.includes('198') || g.includes('199') || g.includes('200') || g.includes('classic') || g.includes('old'))) return arabicMovies1970s2000sLogo;
+
+  // Foreign Subtitled
   if (g.includes('foreign') && g.includes('sub') && g.includes('2000')) return foreignSub2000sLogo;
   if (g.includes('foreign') && g.includes('sub') && g.includes('2022')) return foreignSub2022Logo;
   if (g.includes('foreign') && g.includes('sub') && g.includes('2023')) return foreignSub2023Logo;
   if (g.includes('foreign') && g.includes('sub') && g.includes('2024')) return foreignSub2024Logo;
   if (g.includes('foreign') && g.includes('sub') && g.includes('2025')) return foreignSub2025Logo;
   if (g.includes('foreign') && g.includes('sub') && g.includes('2026')) return foreignSub2026Logo;
+
+  // Cartoons
+  if (g.includes('arabic') && g.includes('dub') && g.includes('cartoon')) return arabicDubbedCartoonLogo;
+  if (g.includes('arabic') && g.includes('sub') && g.includes('cartoon')) return arabicSubbedCartoonLogo;
+
+  // Specific Genres/Types
+  if (g.includes('english') && g.includes('dub') && (g.includes('mov') || g.includes('film'))) return englishDubbedMoviesLogo;
+  if (g.includes('weekend') || g.includes('marathon')) return weekendMoviesLogo;
+  if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas')) return christmasMoviesLogo;
+  if (g.includes('documentary') || g.includes('docu')) return documentaryMoviesLogo;
+  if (g.includes('indian') || g.includes('bollywood') || g.includes('hindi')) return indianMoviesLogo;
+  if (g.includes('turkish') || g.includes('turk')) return turkishMoviesLogo;
+
   return null;
 };
 
