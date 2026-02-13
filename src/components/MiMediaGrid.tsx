@@ -57,22 +57,25 @@ const getCategoryLogo = (groupName: string): string | null => {
   if (g.includes('foreign') && g.includes('sub') && g.includes('2025')) return foreignSub2025Logo;
   if (g.includes('foreign') && g.includes('sub') && g.includes('2026')) return foreignSub2026Logo;
 
-  // Cartoons
-  if (g.includes('arabic') && g.includes('dub') && g.includes('cartoon')) return arabicDubbedCartoonLogo;
-  if (g.includes('arabic') && g.includes('sub') && g.includes('cartoon')) return arabicSubbedCartoonLogo;
+  // Cartoons - don't require "arabic" prefix
+  if (g.includes('dub') && g.includes('cartoon')) return arabicDubbedCartoonLogo;
+  if (g.includes('sub') && g.includes('cartoon')) return arabicSubbedCartoonLogo;
+
+  // Dubbed Foreign movies
+  if (g.includes('dub') && (g.includes('foreign') || g.includes('مدبلجة'))) return englishDubbedMoviesLogo;
 
   // Specific Genres/Types
-  if (g.includes('english') && g.includes('dub') && (g.includes('mov') || g.includes('film'))) return englishDubbedMoviesLogo;
+  if (g.includes('english') && g.includes('dub')) return englishDubbedMoviesLogo;
   if (g.includes('weekend') || g.includes('marathon') || g.includes('سهرة') || g.includes('خميس') || g.includes('جمعة') || g.includes('ويك')) return weekendMoviesLogo;
-  if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas')) return christmasMoviesLogo;
-  if (g.includes('documentary') || g.includes('docu')) return documentaryMoviesLogo;
-  if (g.includes('indian') || g.includes('bollywood') || g.includes('hindi')) return indianMoviesLogo;
-  if (g.includes('turkish') || g.includes('turk')) return turkishMoviesLogo;
+  if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas') || g.includes('كريسماس')) return christmasMoviesLogo;
+  if (g.includes('documentary') || g.includes('docu') || g.includes('وثائقي')) return documentaryMoviesLogo;
+  if (g.includes('indian') || g.includes('bollywood') || g.includes('hindi') || g.includes('هندي')) return indianMoviesLogo;
+  if (g.includes('turkish') || g.includes('turk') || g.includes('ترك')) return turkishMoviesLogo;
   
   // Tech/Regional
-  if (g.includes('4k') && (g.includes('mov') || g.includes('film') || g.includes('cinema'))) return movies4kLogo;
-  if (g.includes('3d') && (g.includes('mov') || g.includes('film'))) return movies3dLogo;
-  if (g.includes('vod') && g.includes('german') && g.includes('sub')) return vodGermanyLogo;
+  if (g.includes('4k')) return movies4kLogo;
+  if (g.includes('3d')) return movies3dLogo;
+  if (g.includes('german') || (g.includes('vod') && g.includes('germany'))) return vodGermanyLogo;
   
   // Generic Year Fallbacks (if no other specific match)
   if (g.includes('2026')) return foreignSub2026Logo;
@@ -168,44 +171,55 @@ const getCategoryEmoji = (group: string): string => {
 const shortenGroupName = (name: string): string => {
   let clean = translateGroupName(name);
   
-  // Extract year
   const yearMatch = clean.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? yearMatch[0] : '';
   const lower = clean.toLowerCase();
   
-  // 1. Arabic Movies with Year -> "Arabic 2024"
-  if ((lower.includes('arabic') || lower.includes('عربي')) && (lower.includes('movie') || lower.includes('film')) && year) {
+  // Arabic Movies with Year
+  if ((lower.includes('arabic') || lower.includes('عربي')) && (lower.includes('movie') || lower.includes('film') || lower.includes('mov')) && year) {
     return `Arabic ${year}`;
   }
   
-  // 2. Foreign Subtitled with Year -> "Foreign 2024"
-  if (lower.includes('foreign') && lower.includes('sub') && year) {
+  // Foreign Subtitled with Year
+  if ((lower.includes('foreign') || lower.includes('أجنبي')) && year) {
     return `Foreign ${year}`;
   }
   
-  // 3. English Dubbed -> "English Dubbed"
-  if (lower.includes('english') && lower.includes('dub')) {
-     return year ? `English ${year}` : 'English Dubbed';
-  }
-
-  // 4. Weekend/Thursday
-  if (lower.includes('thursday') || lower.includes('weekend') || name.includes('الخميس') || name.includes('سهرة')) {
-    return 'Weekend Movies';
-  }
-
-  // 5. Documentaries
-  if (lower.includes('documentary') || lower.includes('docu')) {
-    return 'Documentaries';
+  // Dubbed Foreign
+  if (lower.includes('dub') && (lower.includes('foreign') || lower.includes('مدبلجة'))) {
+    return 'Dubbed Foreign';
   }
   
-  // 6. 4K / 3D
+  // English Dubbed
+  if (lower.includes('english') && lower.includes('dub')) {
+    return year ? `English ${year}` : 'English Dubbed';
+  }
+
+  // Cartoons
+  if (lower.includes('cartoon') && lower.includes('dub')) return 'Cartoon Dubbed';
+  if (lower.includes('cartoon') && lower.includes('sub')) return 'Cartoon Subbed';
+  if (lower.includes('cartoon')) return 'Cartoons';
+
+  // Weekend/Thursday
+  if (lower.includes('thursday') || lower.includes('weekend') || name.includes('الخميس') || name.includes('سهرة')) {
+    return 'Weekend';
+  }
+
+  // Specific genres
+  if (lower.includes('documentary') || lower.includes('docu') || lower.includes('وثائقي')) return 'Documentaries';
+  if (lower.includes('christmas') || lower.includes('كريسماس')) return 'Christmas';
+  if (lower.includes('indian') || lower.includes('هندي')) return 'Indian';
+  if (lower.includes('turkish') || lower.includes('turk') || lower.includes('ترك')) return 'Turkish';
+  if (lower.includes('german') || lower.includes('germany')) return 'German VOD';
+  
+  // Tech
   if (lower.includes('4k')) return '4K Movies';
   if (lower.includes('3d')) return '3D Movies';
 
-  // 7. General Cleanup
+  // General Cleanup
   clean = clean
-    .replace(/\b(Movies|Films|Series|Season|Complete|Full|HD|FHD|HEVC|New|Latest|Update|Library|Collection|Pack|Box|Set|From|By)\b/gi, '')
-    .replace(/(مكتبة|أفلام|مسلسلات)/g, '')
+    .replace(/\b(Movies|Films|Series|Season|Complete|Full|HD|FHD|HEVC|New|Latest|Update|Library|Collection|Pack|Box|Set|From|By|VOD|Vod)\b/gi, '')
+    .replace(/(مكتبة|أفلام|مسلسلات|افلام)/g, '')
     .replace(/[|•\-–_]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
