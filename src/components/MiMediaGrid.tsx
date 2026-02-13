@@ -417,13 +417,13 @@ export const MiMediaGrid = ({
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center overflow-hidden flex-shrink-0 border border-white/10">
                 {/* Use custom category logo first, then group's first poster, then emoji */}
                 {getCategoryLogo(group.name) ? (
                   <img 
                     src={getCategoryLogo(group.name)!} 
                     alt={group.name} 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover scale-125"
                   />
                 ) : group.firstLogo ? (
                   <img 
