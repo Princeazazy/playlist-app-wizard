@@ -40,7 +40,7 @@ import vodGermanyLogo from '@/assets/category-logos/german-vod-movies.png';
 
 // Match group names to custom category logos
 const getCategoryLogo = (groupName: string): string | null => {
-  const g = groupName.toLowerCase();
+  const g = (groupName + ' ' + translateGroupName(groupName)).toLowerCase();
   
   // Arabic Movies by Year/Era
   if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2026')) return arabicMovies2026Logo;
