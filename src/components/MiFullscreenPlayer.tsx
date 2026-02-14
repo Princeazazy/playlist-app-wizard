@@ -70,9 +70,10 @@ export const MiFullscreenPlayer = ({
   const lastSaveTimeRef = useRef(0);
   
   // Subtitle track states
-  const [subtitleTracks, setSubtitleTracks] = useState<{ id: number; name: string; lang: string }[]>([]);
+  const [subtitleTracks, setSubtitleTracks] = useState<{ id: number; name: string; lang: string; url?: string }[]>([]);
   const [activeSubtitleTrack, setActiveSubtitleTrack] = useState(-1);
   const [showSubtitlePicker, setShowSubtitlePicker] = useState(false);
+  const subtitlesFetchedRef = useRef(false);
   
   // Thumbnail preview scrubbing states
   const [hoverTime, setHoverTime] = useState(0);
@@ -308,6 +309,68 @@ export const MiFullscreenPlayer = ({
       }
     };
   }, [channel.url, functionConfig.streamProxyUrl]);
+
+  // Fetch external subtitle tracks from Xtream API for VOD content
+  useEffect(() => {
+    if (!channel.url || !isVOD || subtitlesFetchedRef.current) return;
+    
+    // Check if URL looks like an Xtream API movie/series URL
+    const isXtreamUrl = /\/(movie|series)\/[^\/]+\/[^\/]+\/\d+/.test(channel.url);
+    if (!isXtreamUrl) return;
+    
+    subtitlesFetchedRef.current = true;
+    
+    const fetchSubs = async () => {
+      try {
+        console.log('[Player] Fetching VOD subtitle info...');
+        const { data, error: fetchError } = await supabase.functions.invoke('fetch-vod-info', {
+          body: { streamUrl: channel.url },
+        });
+        
+        if (fetchError) {
+          console.warn('[Player] Subtitle fetch error:', fetchError);
+          return;
+        }
+        
+        if (data?.subtitles && data.subtitles.length > 0) {
+          console.log(`[Player] Found ${data.subtitles.length} external subtitle tracks`);
+          const video = videoRef.current;
+          
+          const tracks = data.subtitles.map((sub: any, idx: number) => ({
+            id: idx,
+            name: sub.label || sub.language || `Subtitle ${idx + 1}`,
+            lang: sub.language || '',
+            url: sub.url,
+          }));
+          
+          setSubtitleTracks(prev => prev.length > 0 ? prev : tracks);
+          
+          // Add <track> elements to the video for each external subtitle
+          if (video) {
+            data.subtitles.forEach((sub: any, idx: number) => {
+              const track = document.createElement('track');
+              track.kind = 'subtitles';
+              track.label = sub.label || sub.language || `Subtitle ${idx + 1}`;
+              track.srclang = sub.language || 'und';
+              // Proxy the subtitle URL through our stream-proxy to handle CORS
+              const proxyUrl = functionConfig.streamProxyUrl 
+                ? `${functionConfig.streamProxyUrl}?url=${encodeURIComponent(sub.url)}`
+                : sub.url;
+              track.src = proxyUrl;
+              track.default = false;
+              video.appendChild(track);
+            });
+          }
+        } else {
+          console.log('[Player] No external subtitle tracks found from provider');
+        }
+      } catch (e) {
+        console.warn('[Player] Subtitle fetch failed:', e);
+      }
+    };
+    
+    fetchSubs();
+  }, [channel.url, isVOD, functionConfig.streamProxyUrl]);
 
   useEffect(() => {
     const video = videoRef.current;
