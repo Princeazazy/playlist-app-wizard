@@ -37,6 +37,13 @@ import arabicMovies2026Logo from '@/assets/category-logos/arabic-movies-2026.png
 import movies4kLogo from '@/assets/category-logos/4k-movies.png';
 import movies3dLogo from '@/assets/category-logos/3d-movies.png';
 import vodGermanyLogo from '@/assets/category-logos/german-vod-movies.png';
+import wweLogo from '@/assets/category-logos/wwe-movies.png';
+import alPacinoLogo from '@/assets/category-logos/al-pacino-movies.png';
+import samirGhanemLogo from '@/assets/category-logos/samir-ghanem-movies.png';
+import leonardoDicaprioLogo from '@/assets/category-logos/leonardo-dicaprio-movies.png';
+import enComedyLogo from '@/assets/category-logos/en-comedy-movies.png';
+import adelImamLogo from '@/assets/category-logos/adel-imam-movies.png';
+import theaterPlaysLogo from '@/assets/category-logos/theater-plays-movies.png';
 
 // Match group names to custom category logos
 const getCategoryLogo = (groupName: string): string | null => {
@@ -72,6 +79,21 @@ const getCategoryLogo = (groupName: string): string | null => {
   if (g.includes('indian') || g.includes('bollywood') || g.includes('hindi') || g.includes('هندي')) return indianMoviesLogo;
   if (g.includes('turkish') || g.includes('turk') || g.includes('ترك')) return turkishMoviesLogo;
   
+  // Actor/Star collections
+  if (g.includes('pacino')) return alPacinoLogo;
+  if (g.includes('dicaprio') || g.includes('di caprio')) return leonardoDicaprioLogo;
+  if (g.includes('adel') && g.includes('imam') || g.includes('عادل') && g.includes('إمام')) return adelImamLogo;
+  if (g.includes('samir') && g.includes('ghanem') || g.includes('سمير') && g.includes('غانم')) return samirGhanemLogo;
+  
+  // WWE
+  if (g.includes('wwe') || g.includes('wrestling')) return wweLogo;
+  
+  // Comedy
+  if (g.includes('comedy') || g.includes('كوميدي')) return enComedyLogo;
+  
+  // Theater/Plays
+  if (g.includes('theater') || g.includes('theatre') || g.includes('play') || g.includes('مسرح') || g.includes('مسرحي')) return theaterPlaysLogo;
+
   // Tech/Regional
   if (g.includes('4k')) return movies4kLogo;
   if (g.includes('3d')) return movies3dLogo;
