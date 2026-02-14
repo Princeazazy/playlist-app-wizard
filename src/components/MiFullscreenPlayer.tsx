@@ -11,6 +11,8 @@ import {
   RotateCcw,
   Rewind,
   FastForward,
+  Subtitles,
+  X,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Channel } from '@/hooks/useIPTV';
@@ -66,6 +68,11 @@ export const MiFullscreenPlayer = ({
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [hasResumed, setHasResumed] = useState(false);
   const lastSaveTimeRef = useRef(0);
+  
+  // Subtitle track states
+  const [subtitleTracks, setSubtitleTracks] = useState<{ id: number; name: string; lang: string }[]>([]);
+  const [activeSubtitleTrack, setActiveSubtitleTrack] = useState(-1);
+  const [showSubtitlePicker, setShowSubtitlePicker] = useState(false);
   
   // Thumbnail preview scrubbing states
   const [hoverTime, setHoverTime] = useState(0);
@@ -196,6 +203,17 @@ export const MiFullscreenPlayer = ({
         hls.attachMedia(video);
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          // Detect subtitle tracks
+          if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
+            const tracks = hls.subtitleTracks.map((t, i) => ({
+              id: i,
+              name: t.name || t.lang || `Track ${i + 1}`,
+              lang: t.lang || '',
+            }));
+            setSubtitleTracks(tracks);
+            setActiveSubtitleTrack(hls.subtitleTrack);
+          }
+          
           video.play().catch((e) => {
             setIsPlaying(false);
             if (e?.name === 'NotAllowedError') {
@@ -204,6 +222,18 @@ export const MiFullscreenPlayer = ({
               onFail?.();
             }
           });
+        });
+        
+        // Listen for subtitle track changes
+        hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, () => {
+          if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
+            const tracks = hls.subtitleTracks.map((t, i) => ({
+              id: i,
+              name: t.name || t.lang || `Track ${i + 1}`,
+              lang: t.lang || '',
+            }));
+            setSubtitleTracks(tracks);
+          }
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -455,6 +485,62 @@ export const MiFullscreenPlayer = ({
     return () => clearInterval(interval);
   }, []);
 
+  const handleSelectSubtitle = useCallback((trackId: number) => {
+    const hls = hlsRef.current;
+    if (hls) {
+      hls.subtitleTrack = trackId;
+      setActiveSubtitleTrack(trackId);
+    }
+    // Also handle native text tracks
+    const video = videoRef.current;
+    if (video?.textTracks) {
+      for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].mode = i === trackId ? 'showing' : 'hidden';
+      }
+    }
+    setShowSubtitlePicker(false);
+  }, []);
+
+  const handleDisableSubtitles = useCallback(() => {
+    const hls = hlsRef.current;
+    if (hls) {
+      hls.subtitleTrack = -1;
+      setActiveSubtitleTrack(-1);
+    }
+    const video = videoRef.current;
+    if (video?.textTracks) {
+      for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].mode = 'hidden';
+      }
+    }
+    setShowSubtitlePicker(false);
+  }, []);
+
+  // Also detect native video text tracks (for non-HLS sources)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const checkTracks = () => {
+      if (subtitleTracks.length > 0) return; // HLS already provided them
+      const tracks: { id: number; name: string; lang: string }[] = [];
+      for (let i = 0; i < video.textTracks.length; i++) {
+        const t = video.textTracks[i];
+        if (t.kind === 'subtitles' || t.kind === 'captions') {
+          tracks.push({ id: i, name: t.label || t.language || `Track ${i + 1}`, lang: t.language || '' });
+        }
+      }
+      if (tracks.length > 0) setSubtitleTracks(tracks);
+    };
+    video.textTracks.addEventListener('addtrack', checkTracks);
+    checkTracks();
+    return () => video.textTracks.removeEventListener('addtrack', checkTracks);
+  }, [subtitleTracks.length]);
+
+  const isMultiSub = channel.name?.toLowerCase().includes('multi sub') || 
+                     channel.name?.toLowerCase().includes('multi lang') ||
+                     channel.group?.toLowerCase().includes('multi') ||
+                     subtitleTracks.length > 0;
+
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -527,14 +613,68 @@ export const MiFullscreenPlayer = ({
           )}
         </div>
 
-        {/* Top Right - Time & Weather */}
+        {/* Top Right - Time, Weather & Subtitle Toggle */}
         <div className="absolute top-6 right-6 flex items-center gap-4 text-white/80">
+          {/* Subtitle button */}
+          {(isMultiSub || subtitleTracks.length > 0) && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowSubtitlePicker(prev => !prev); }}
+              className={`p-2 rounded-full transition-colors ${activeSubtitleTrack >= 0 ? 'bg-primary text-primary-foreground' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+              title="Subtitles"
+            >
+              <Subtitles className="w-5 h-5" />
+            </button>
+          )}
           <span className="text-lg font-medium">{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           <div className="flex items-center gap-1">
             <WeatherIcon icon={weather.icon} />
             <span>{weather.displayTemp}</span>
           </div>
         </div>
+
+        {/* Subtitle Language Picker Panel */}
+        {showSubtitlePicker && (
+          <div 
+            className="absolute top-20 right-6 bg-black/90 backdrop-blur-xl rounded-2xl border border-white/10 p-4 z-20 min-w-[220px] shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+                <Subtitles className="w-4 h-4" />
+                Subtitles
+              </h3>
+              <button onClick={() => setShowSubtitlePicker(false)} className="text-white/50 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {subtitleTracks.length > 0 ? (
+              <div className="space-y-1">
+                {/* Off option */}
+                <button
+                  onClick={() => handleDisableSubtitles()}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${activeSubtitleTrack === -1 ? 'bg-primary text-primary-foreground' : 'text-white/80 hover:bg-white/10'}`}
+                >
+                  Off
+                </button>
+                {subtitleTracks.map((track) => (
+                  <button
+                    key={track.id}
+                    onClick={() => handleSelectSubtitle(track.id)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${activeSubtitleTrack === track.id ? 'bg-primary text-primary-foreground' : 'text-white/80 hover:bg-white/10'}`}
+                  >
+                    {track.name}
+                    {track.lang && track.lang !== track.name && (
+                      <span className="text-white/40 ml-2 text-xs uppercase">({track.lang})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-white/40 text-sm">No subtitle tracks detected in this stream. The provider may embed subtitles directly in the video.</p>
+            )}
+          </div>
+        )}
 
         {/* Bottom Left - Channel Info */}
         <div className="absolute bottom-8 left-6">
