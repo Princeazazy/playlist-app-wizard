@@ -80,19 +80,19 @@ const getCategoryLogo = (groupName: string): string | null => {
   if (g.includes('turkish') || g.includes('turk') || g.includes('ترك')) return turkishMoviesLogo;
   
   // Actor/Star collections
-  if (g.includes('pacino')) return alPacinoLogo;
-  if (g.includes('dicaprio') || g.includes('di caprio')) return leonardoDicaprioLogo;
-  if (g.includes('adel') && g.includes('imam') || g.includes('عادل') && g.includes('إمام')) return adelImamLogo;
-  if (g.includes('samir') && g.includes('ghanem') || g.includes('سمير') && g.includes('غانم')) return samirGhanemLogo;
+  if (g.includes('pacino') || g.includes('باتشينو') || g.includes('باشينو')) return alPacinoLogo;
+  if (g.includes('dicaprio') || g.includes('di caprio') || g.includes('كابريو') || g.includes('ليوناردو')) return leonardoDicaprioLogo;
+  if (g.includes('adel') && g.includes('imam') || g.includes('عادل') || g.includes('امام')) return adelImamLogo;
+  if (g.includes('samir') && g.includes('ghanem') || g.includes('سمير') || g.includes('غانم')) return samirGhanemLogo;
   
   // WWE
-  if (g.includes('wwe') || g.includes('wrestling')) return wweLogo;
+  if (g.includes('wwe') || g.includes('wrestling') || g.includes('مصارعة')) return wweLogo;
   
   // Comedy
-  if (g.includes('comedy') || g.includes('كوميدي')) return enComedyLogo;
+  if (g.includes('comedy') || g.includes('كوميدي') || g.includes('كوميديا')) return enComedyLogo;
   
   // Theater/Plays
-  if (g.includes('theater') || g.includes('theatre') || g.includes('play') || g.includes('مسرح') || g.includes('مسرحي')) return theaterPlaysLogo;
+  if (g.includes('theater') || g.includes('theatre') || g.includes('play') || g.includes('مسرح') || g.includes('مسرحي') || g.includes('مسرحيات')) return theaterPlaysLogo;
 
   // Tech/Regional
   if (g.includes('4k')) return movies4kLogo;
