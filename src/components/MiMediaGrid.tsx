@@ -44,6 +44,16 @@ import leonardoDicaprioLogo from '@/assets/category-logos/leonardo-dicaprio-movi
 import enComedyLogo from '@/assets/category-logos/en-comedy-movies.png';
 import adelImamLogo from '@/assets/category-logos/adel-imam-movies.png';
 import theaterPlaysLogo from '@/assets/category-logos/theater-plays-movies.png';
+import dcMoviesLogo from '@/assets/category-logos/dc-movies.png';
+import disneyShortsLogo from '@/assets/category-logos/disney-shorts.png';
+import enDramaRomanceLogo from '@/assets/category-logos/en-drama-romance.png';
+import enHboAmazonLogo from '@/assets/category-logos/en-hbo-amazon.png';
+import enKidsFamilyLogo from '@/assets/category-logos/en-kids-family.png';
+import enStarWarsLogo from '@/assets/category-logos/en-star-wars.png';
+import formula1Logo from '@/assets/category-logos/formula1-movies.png';
+import enNetflixLogo from '@/assets/category-logos/en-netflix.png';
+import englishMoviesLogo from '@/assets/category-logos/english-movies.png';
+import albaniaMoviesLogo from '@/assets/category-logos/albania-movies.png';
 
 // Match group names to custom category logos
 const getCategoryLogo = (groupName: string): string | null => {
@@ -93,6 +103,36 @@ const getCategoryLogo = (groupName: string): string | null => {
   
   // Theater/Plays
   if (g.includes('theater') || g.includes('theatre') || g.includes('play') || g.includes('مسرح') || g.includes('مسرحي') || g.includes('مسرحيات')) return theaterPlaysLogo;
+
+  // DC Comics
+  if (g.includes('dc ') || g.includes('dc-') || g.includes('دي سي')) return dcMoviesLogo;
+  
+  // Disney Shorts
+  if (g.includes('disney') && g.includes('short')) return disneyShortsLogo;
+  
+  // Drama & Romance
+  if ((g.includes('drama') || g.includes('romance') || g.includes('رومانسي') || g.includes('دراما')) && !g.includes('arabic')) return enDramaRomanceLogo;
+  
+  // HBO / Amazon Prime
+  if (g.includes('hbo') || g.includes('amazon') || g.includes('prime')) return enHboAmazonLogo;
+  
+  // Kids & Family
+  if (g.includes('kids') || g.includes('family') || g.includes('اطفال') || g.includes('عائلي') || g.includes('أطفال')) return enKidsFamilyLogo;
+  
+  // Star Wars
+  if (g.includes('star wars') || g.includes('starwars') || g.includes('ستار وورز')) return enStarWarsLogo;
+  
+  // Formula 1
+  if (g.includes('formula') || g.includes('f1') || g.includes('فورمولا')) return formula1Logo;
+  
+  // Netflix
+  if (g.includes('netflix') || g.includes('نتفلكس')) return enNetflixLogo;
+  
+  // Generic English movies
+  if (g.includes('english') && (g.includes('mov') || g.includes('film') || g.includes('انجليزي'))) return englishMoviesLogo;
+  
+  // Albania
+  if (g.includes('albania') || g.includes('ألبان')) return albaniaMoviesLogo;
 
   // Tech/Regional
   if (g.includes('4k')) return movies4kLogo;
