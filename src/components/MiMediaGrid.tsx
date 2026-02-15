@@ -57,6 +57,16 @@ import formula1Logo from '@/assets/category-logos/formula1-movies.png';
 import enNetflixLogo from '@/assets/category-logos/en-netflix.png';
 import englishMoviesLogo from '@/assets/category-logos/english-movies.png';
 import albaniaMoviesLogo from '@/assets/category-logos/albania-movies.png';
+import ramadanSeriesLogo from '@/assets/category-logos/ramadan-series.png';
+import koreanDramaLogo from '@/assets/category-logos/korean-drama.png';
+import animeSeriesLogo from '@/assets/category-logos/anime-series.png';
+import actionAdventureLogo from '@/assets/category-logos/action-adventure.png';
+import horrorThrillerLogo from '@/assets/category-logos/horror-thriller.png';
+import scifiFantasyLogo from '@/assets/category-logos/scifi-fantasy.png';
+import crimeMysteryLogo from '@/assets/category-logos/crime-mystery.png';
+import historicalBiographyLogo from '@/assets/category-logos/historical-biography.png';
+import warMilitaryLogo from '@/assets/category-logos/war-military.png';
+import sportsSeriesLogo from '@/assets/category-logos/sports-series.png';
 
 // Match group names to custom category logos
 const getCategoryLogo = (groupName: string): string | null => {
@@ -84,6 +94,9 @@ const getCategoryLogo = (groupName: string): string | null => {
   if (g.includes('dub') && g.includes('cartoon')) return arabicDubbedCartoonLogo;
   if (g.includes('sub') && g.includes('cartoon')) return arabicSubbedCartoonLogo;
 
+  // Ramadan
+  if (g.includes('ramadan') || g.includes('رمضان')) return ramadanSeriesLogo;
+
   // Specific Genres/Types
   if (g.includes('english') && g.includes('dub')) return englishDubbedMoviesLogo;
   if (g.includes('weekend') || g.includes('marathon') || g.includes('سهرة') || g.includes('خميس') || g.includes('جمعة') || g.includes('ويك')) return weekendMoviesLogo;
@@ -91,6 +104,33 @@ const getCategoryLogo = (groupName: string): string | null => {
   if (g.includes('documentary') || g.includes('docu') || g.includes('وثائقي')) return documentaryMoviesLogo;
   if (g.includes('indian') || g.includes('bollywood') || g.includes('hindi') || g.includes('هندي')) return indianMoviesLogo;
   if (g.includes('turkish') || g.includes('turk') || g.includes('ترك')) return turkishMoviesLogo;
+  
+  // Korean / K-Drama
+  if (g.includes('korean') || g.includes('kdrama') || g.includes('k-drama') || g.includes('كوري')) return koreanDramaLogo;
+  
+  // Anime
+  if (g.includes('anime') || g.includes('انمي') || g.includes('أنمي') || g.includes('anm')) return animeSeriesLogo;
+  
+  // Action / Adventure
+  if (g.includes('action') || g.includes('adventure') || g.includes('أكشن') || g.includes('مغامر')) return actionAdventureLogo;
+  
+  // Horror / Thriller
+  if (g.includes('horror') || g.includes('thriller') || g.includes('scary') || g.includes('رعب') || g.includes('إثارة')) return horrorThrillerLogo;
+  
+  // Sci-Fi / Fantasy
+  if (g.includes('sci-fi') || g.includes('scifi') || g.includes('fantasy') || g.includes('خيال')) return scifiFantasyLogo;
+  
+  // Crime / Mystery
+  if (g.includes('crime') || g.includes('mystery') || g.includes('detective') || g.includes('جريمة') || g.includes('غموض')) return crimeMysteryLogo;
+  
+  // Historical / Biography
+  if (g.includes('history') || g.includes('historical') || g.includes('biography') || g.includes('تاريخ') || g.includes('سيرة')) return historicalBiographyLogo;
+  
+  // War / Military
+  if (g.includes('war') || g.includes('military') || g.includes('حرب') || g.includes('عسكري')) return warMilitaryLogo;
+  
+  // Sports
+  if (g.includes('sport') || g.includes('رياض')) return sportsSeriesLogo;
   
   // Actor/Star collections
   if (g.includes('pacino') || g.includes('باتشينو') || g.includes('باشينو')) return alPacinoLogo;
