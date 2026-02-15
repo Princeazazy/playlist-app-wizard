@@ -44,6 +44,9 @@ import leonardoDicaprioLogo from '@/assets/category-logos/leonardo-dicaprio-movi
 import enComedyLogo from '@/assets/category-logos/en-comedy-movies.png';
 import adelImamLogo from '@/assets/category-logos/adel-imam-movies.png';
 import theaterPlaysLogo from '@/assets/category-logos/theater-plays-movies.png';
+import worldMoviesLogo from '@/assets/category-logos/world-movies.png';
+import asiaMoviesLogo from '@/assets/category-logos/asia-movies.png';
+import multiLangMoviesLogo from '@/assets/category-logos/multi-lang-movies.png';
 import dcMoviesLogo from '@/assets/category-logos/dc-movies.png';
 import disneyShortsLogo from '@/assets/category-logos/disney-shorts.png';
 import enDramaRomanceLogo from '@/assets/category-logos/en-drama-romance.png';
@@ -133,6 +136,15 @@ const getCategoryLogo = (groupName: string): string | null => {
   
   // Albania
   if (g.includes('albania') || g.includes('ألبان')) return albaniaMoviesLogo;
+
+  // Multi-Language Releases
+  if (g.includes('multi') && (g.includes('lang') || g.includes('sub') || g.includes('release'))) return multiLangMoviesLogo;
+  
+  // Asia
+  if (g.includes('asia') || g.includes('آسيا') || g.includes('asian')) return asiaMoviesLogo;
+  
+  // World
+  if (g.includes('world') || g.includes('عالم') || g.includes('international')) return worldMoviesLogo;
 
   // Tech/Regional
   if (g.includes('4k')) return movies4kLogo;
