@@ -57,6 +57,26 @@ import formula1Logo from '@/assets/category-logos/formula1-movies.png';
 import enNetflixLogo from '@/assets/category-logos/en-netflix.png';
 import englishMoviesLogo from '@/assets/category-logos/english-movies.png';
 import albaniaMoviesLogo from '@/assets/category-logos/albania-movies.png';
+
+// Series-specific logos
+import serArabic2026Logo from '@/assets/category-logos/ser-arabic-2026.png';
+import serArabic2025Logo from '@/assets/category-logos/ser-arabic-2025.png';
+import serArabic2024Logo from '@/assets/category-logos/ser-arabic-2024.png';
+import serArabic2023Logo from '@/assets/category-logos/ser-arabic-2023.png';
+import serArabicClassicLogo from '@/assets/category-logos/ser-arabic-classic.png';
+import serTurkishLogo from '@/assets/category-logos/ser-turkish.png';
+import serIndianLogo from '@/assets/category-logos/ser-indian.png';
+import serEnglishLogo from '@/assets/category-logos/ser-english.png';
+import serNetflixLogo from '@/assets/category-logos/ser-netflix.png';
+import serDocumentaryLogo from '@/assets/category-logos/ser-documentary.png';
+import serComedyLogo from '@/assets/category-logos/ser-comedy.png';
+import serDramaRomanceLogo from '@/assets/category-logos/ser-drama-romance.png';
+import serHboAmazonLogo from '@/assets/category-logos/ser-hbo-amazon.png';
+import serKidsFamilyLogo from '@/assets/category-logos/ser-kids-family.png';
+import serCartoonLogo from '@/assets/category-logos/ser-cartoon.png';
+import serForeignSubLogo from '@/assets/category-logos/ser-foreign-sub.png';
+import serDisneyLogo from '@/assets/category-logos/ser-disney.png';
+import serEnglishDubbedLogo from '@/assets/category-logos/ser-english-dubbed.png';
 import ramadanSeriesLogo from '@/assets/category-logos/ramadan-series.png';
 import koreanDramaLogo from '@/assets/category-logos/korean-drama.png';
 import animeSeriesLogo from '@/assets/category-logos/anime-series.png';
@@ -68,42 +88,34 @@ import historicalBiographyLogo from '@/assets/category-logos/historical-biograph
 import warMilitaryLogo from '@/assets/category-logos/war-military.png';
 import sportsSeriesLogo from '@/assets/category-logos/sports-series.png';
 
-// Match group names to custom category logos
-const getCategoryLogo = (groupName: string): string | null => {
+// Series-specific category logo matcher
+const getSeriesCategoryLogo = (groupName: string): string | null => {
   const g = (groupName + ' ' + translateGroupName(groupName)).toLowerCase();
   
-  // Arabic Movies by Year/Era
-  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2026')) return arabicMovies2026Logo;
-  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2025')) return arabicMovies2025Logo;
-  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2024')) return arabicMovies2024Logo;
-  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2023')) return arabicMovies2023Logo;
-  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('197') || g.includes('198') || g.includes('199') || g.includes('200') || g.includes('classic') || g.includes('old'))) return arabicMovies1970s2000sLogo;
-
-  // Dubbed Foreign movies (check BEFORE foreign subtitled to avoid wrong match)
-  if (g.includes('dub') && (g.includes('foreign') || g.includes('مدبلجة'))) return englishDubbedMoviesLogo;
-
-  // Foreign Subtitled (only match if NOT dubbed)
-  if (g.includes('foreign') && !g.includes('dub') && (g.includes('2000') || g.includes('2021') || g.includes('201'))) return foreignSub2000sLogo;
-  if (g.includes('foreign') && !g.includes('dub') && g.includes('2022')) return foreignSub2022Logo;
-  if (g.includes('foreign') && !g.includes('dub') && g.includes('2023')) return foreignSub2023Logo;
-  if (g.includes('foreign') && !g.includes('dub') && g.includes('2024')) return foreignSub2024Logo;
-  if (g.includes('foreign') && !g.includes('dub') && g.includes('2025')) return foreignSub2025Logo;
-  if (g.includes('foreign') && !g.includes('dub') && g.includes('2026')) return foreignSub2026Logo;
-
-  // Cartoons - don't require "arabic" prefix
-  if (g.includes('dub') && g.includes('cartoon')) return arabicDubbedCartoonLogo;
-  if (g.includes('sub') && g.includes('cartoon')) return arabicSubbedCartoonLogo;
-
   // Ramadan
   if (g.includes('ramadan') || g.includes('رمضان')) return ramadanSeriesLogo;
+  
+  // Arabic Series by Year
+  if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && g.includes('2026')) return serArabic2026Logo;
+  if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && g.includes('2025')) return serArabic2025Logo;
+  if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && g.includes('2024')) return serArabic2024Logo;
+  if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && g.includes('2023')) return serArabic2023Logo;
+  if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && (g.includes('197') || g.includes('198') || g.includes('199') || g.includes('200') || g.includes('classic') || g.includes('old'))) return serArabicClassicLogo;
 
-  // Specific Genres/Types
-  if (g.includes('english') && g.includes('dub')) return englishDubbedMoviesLogo;
-  if (g.includes('weekend') || g.includes('marathon') || g.includes('سهرة') || g.includes('خميس') || g.includes('جمعة') || g.includes('ويك')) return weekendMoviesLogo;
-  if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas') || g.includes('كريسماس')) return christmasMoviesLogo;
-  if (g.includes('documentary') || g.includes('docu') || g.includes('وثائقي')) return documentaryMoviesLogo;
-  if (g.includes('indian') || g.includes('bollywood') || g.includes('hindi') || g.includes('هندي')) return indianMoviesLogo;
-  if (g.includes('turkish') || g.includes('turk') || g.includes('ترك')) return turkishMoviesLogo;
+  // Dubbed Foreign series
+  if (g.includes('dub') && (g.includes('foreign') || g.includes('مدبلجة'))) return serEnglishDubbedLogo;
+
+  // Foreign Subtitled
+  if (g.includes('foreign') && !g.includes('dub')) return serForeignSubLogo;
+
+  // Cartoons
+  if (g.includes('cartoon') || g.includes('كرتون') || g.includes('animation')) return serCartoonLogo;
+
+  // Specific Genres
+  if (g.includes('english') && g.includes('dub')) return serEnglishDubbedLogo;
+  if (g.includes('documentary') || g.includes('docu') || g.includes('وثائقي')) return serDocumentaryLogo;
+  if (g.includes('indian') || g.includes('bollywood') || g.includes('hindi') || g.includes('هندي')) return serIndianLogo;
+  if (g.includes('turkish') || g.includes('turk') || g.includes('ترك')) return serTurkishLogo;
   
   // Korean / K-Drama
   if (g.includes('korean') || g.includes('kdrama') || g.includes('k-drama') || g.includes('كوري')) return koreanDramaLogo;
@@ -131,6 +143,70 @@ const getCategoryLogo = (groupName: string): string | null => {
   
   // Sports
   if (g.includes('sport') || g.includes('رياض')) return sportsSeriesLogo;
+  
+  // Comedy
+  if (g.includes('comedy') || g.includes('كوميدي') || g.includes('كوميديا')) return serComedyLogo;
+  
+  // Drama & Romance
+  if ((g.includes('drama') || g.includes('romance') || g.includes('رومانسي') || g.includes('دراما'))) return serDramaRomanceLogo;
+  
+  // HBO / Amazon Prime
+  if (g.includes('hbo') || g.includes('amazon') || g.includes('prime')) return serHboAmazonLogo;
+  
+  // Kids & Family
+  if (g.includes('kids') || g.includes('family') || g.includes('اطفال') || g.includes('عائلي') || g.includes('أطفال')) return serKidsFamilyLogo;
+  
+  // Netflix
+  if (g.includes('netflix') || g.includes('نتفلكس')) return serNetflixLogo;
+  
+  // Disney
+  if (g.includes('disney')) return serDisneyLogo;
+  
+  // Generic English series
+  if (g.includes('english') || g.includes('انجليزي')) return serEnglishLogo;
+  
+  // Year Fallbacks
+  if (g.includes('2026')) return serArabic2026Logo;
+  if (g.includes('2025')) return serArabic2025Logo;
+  if (g.includes('2024')) return serArabic2024Logo;
+  if (g.includes('2023')) return serArabic2023Logo;
+  
+  return null;
+};
+
+// Match group names to custom category logos (MOVIES ONLY)
+const getMovieCategoryLogo = (groupName: string): string | null => {
+  const g = (groupName + ' ' + translateGroupName(groupName)).toLowerCase();
+  
+  // Arabic Movies by Year/Era
+  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2026')) return arabicMovies2026Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2025')) return arabicMovies2025Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2024')) return arabicMovies2024Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2023')) return arabicMovies2023Logo;
+  if ((g.includes('arabic') || g.includes('عربي')) && (g.includes('197') || g.includes('198') || g.includes('199') || g.includes('200') || g.includes('classic') || g.includes('old'))) return arabicMovies1970s2000sLogo;
+
+  // Dubbed Foreign movies (check BEFORE foreign subtitled to avoid wrong match)
+  if (g.includes('dub') && (g.includes('foreign') || g.includes('مدبلجة'))) return englishDubbedMoviesLogo;
+
+  // Foreign Subtitled (only match if NOT dubbed)
+  if (g.includes('foreign') && !g.includes('dub') && (g.includes('2000') || g.includes('2021') || g.includes('201'))) return foreignSub2000sLogo;
+  if (g.includes('foreign') && !g.includes('dub') && g.includes('2022')) return foreignSub2022Logo;
+  if (g.includes('foreign') && !g.includes('dub') && g.includes('2023')) return foreignSub2023Logo;
+  if (g.includes('foreign') && !g.includes('dub') && g.includes('2024')) return foreignSub2024Logo;
+  if (g.includes('foreign') && !g.includes('dub') && g.includes('2025')) return foreignSub2025Logo;
+  if (g.includes('foreign') && !g.includes('dub') && g.includes('2026')) return foreignSub2026Logo;
+
+  // Cartoons - don't require "arabic" prefix
+  if (g.includes('dub') && g.includes('cartoon')) return arabicDubbedCartoonLogo;
+  if (g.includes('sub') && g.includes('cartoon')) return arabicSubbedCartoonLogo;
+
+  // Specific Genres/Types
+  if (g.includes('english') && g.includes('dub')) return englishDubbedMoviesLogo;
+  if (g.includes('weekend') || g.includes('marathon') || g.includes('سهرة') || g.includes('خميس') || g.includes('جمعة') || g.includes('ويك')) return weekendMoviesLogo;
+  if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas') || g.includes('كريسماس')) return christmasMoviesLogo;
+  if (g.includes('documentary') || g.includes('docu') || g.includes('وثائقي')) return documentaryMoviesLogo;
+  if (g.includes('indian') || g.includes('bollywood') || g.includes('hindi') || g.includes('هندي')) return indianMoviesLogo;
+  if (g.includes('turkish') || g.includes('turk') || g.includes('ترك')) return turkishMoviesLogo;
   
   // Actor/Star collections
   if (g.includes('pacino') || g.includes('باتشينو') || g.includes('باشينو')) return alPacinoLogo;
@@ -202,6 +278,12 @@ const getCategoryLogo = (groupName: string): string | null => {
   return null;
 };
 
+// Unified getter that picks the right function based on category
+const getCategoryLogo = (groupName: string, category?: 'movies' | 'series'): string | null => {
+  if (category === 'series') return getSeriesCategoryLogo(groupName);
+  return getMovieCategoryLogo(groupName);
+};
+
 const WeatherIcon = ({ icon }: { icon: string }) => {
   switch (icon) {
     case 'sun': return <Sun className="w-5 h-5" />;
@@ -237,7 +319,7 @@ const getCategoryEmoji = (group: string): string => {
   if (groupLower.includes('halloween')) return '🎃';
   if (groupLower.includes('ramadan') || group.includes('رمضان')) return '🌙';
   if (groupLower.includes('eid') || group.includes('عيد')) return '🕌';
-  
+
   // Arabic content
   if (group.includes('عربي') || group.includes('arabic') || groupLower.includes('arab')) return '🇸🇦';
   if (group.includes('مصر') || groupLower.includes('egypt')) return '🇪🇬';
@@ -606,9 +688,9 @@ export const MiMediaGrid = ({
             >
               <div className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {/* Use custom category logo first, then group's first poster, then emoji */}
-                {getCategoryLogo(group.name) ? (
+                {getCategoryLogo(group.name, category) ? (
                   <img 
-                    src={getCategoryLogo(group.name)!} 
+                    src={getCategoryLogo(group.name, category)!} 
                     alt={group.name} 
                     className="w-full h-full object-cover scale-150"
                   />
