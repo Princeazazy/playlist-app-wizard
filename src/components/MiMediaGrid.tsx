@@ -468,59 +468,136 @@ const shortenGroupName = (name: string): string => {
   const yearMatch = clean.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? yearMatch[0] : '';
   const lower = clean.toLowerCase();
+  const nameLower = name.toLowerCase();
   
-  // Ramadan Maghreb/Morocco
-  if (lower.includes('ramadan') && (lower.includes('maghreb') || lower.includes('morocco') || lower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria'))) return 'Ramadan 2026 Morocco';
+  // Ramadan specific regions
+  if ((lower.includes('ramadan') || nameLower.includes('رمضان')) && (lower.includes('maghreb') || lower.includes('morocco') || nameLower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria'))) return 'Ramadan 2026 Morocco';
+  if ((lower.includes('ramadan') || nameLower.includes('رمضان')) && (lower.includes('egypt') || nameLower.includes('مصر') || nameLower.includes('مصري'))) return 'Ramadan 2026 Egyptian';
+  if ((lower.includes('ramadan') || nameLower.includes('رمضان')) && (lower.includes('gulf') || lower.includes('khaleej') || nameLower.includes('خليج'))) return 'Ramadan 2026 Gulf';
+  if ((lower.includes('ramadan') || nameLower.includes('رمضان')) && (lower.includes('levant') || lower.includes('sham') || nameLower.includes('شام') || nameLower.includes('سوري') || nameLower.includes('لبنان'))) return 'Ramadan 2026 Levantine';
+  if (lower.includes('ramadan') || nameLower.includes('رمضان')) return 'Ramadan 2026';
   
-  // Arabic Movies with Year
-  if ((lower.includes('arabic') || lower.includes('عربي')) && (lower.includes('movie') || lower.includes('film') || lower.includes('mov')) && year) {
+  // Now Showing
+  if (lower.includes('now showing') || lower.includes('currently') || nameLower.includes('تعرض حاليا')) return 'Now Showing';
+  
+  // Songs / Music
+  if (lower.includes('song') || nameLower.includes('أغاني') || nameLower.includes('اغاني') || lower.includes('music clip')) return 'Songs';
+  
+  // TV Shows / Programs
+  if (lower.includes('tv show') || nameLower.includes('برامج') || lower.includes('program')) return 'TV Shows';
+  
+  // Islamic
+  if (lower.includes('islamic') || lower.includes('islam') || nameLower.includes('إسلام') || nameLower.includes('اسلام') || nameLower.includes('ديني')) return 'Islamic';
+  
+  // Masrah / Theater
+  if (lower.includes('masrah') || nameLower.includes('مسرح') || lower.includes('theater') || lower.includes('theatre')) return 'Theater';
+  
+  // Arabic content with Year
+  if ((lower.includes('arabic') || nameLower.includes('عربي') || lower.includes('arab')) && (lower.includes('movie') || lower.includes('film') || lower.includes('mov')) && year) {
     return `Arabic ${year}`;
   }
+  if ((lower.includes('arabic') || nameLower.includes('عربي') || lower.includes('arab')) && (lower.includes('ser') || lower.includes('series') || nameLower.includes('مسلسل')) && year) {
+    return `Arabic ${year}`;
+  }
+  if ((lower.includes('arabic') || nameLower.includes('عربي') || lower.includes('arab')) && year) {
+    return `Arabic ${year}`;
+  }
+  if ((lower.includes('arabic') || nameLower.includes('عربي') || lower.includes('arab')) && (lower.includes('classic') || lower.includes('old') || lower.includes('before') || nameLower.includes('قبل'))) {
+    return 'Arabic Classic';
+  }
   
-  // Dubbed Foreign (check before generic foreign to avoid overlap)
-  if (lower.includes('dub') && (lower.includes('foreign') || lower.includes('مدبلجة'))) {
+  // Dubbed Foreign (check before generic foreign)
+  if (lower.includes('dub') && (lower.includes('foreign') || nameLower.includes('مدبلجة'))) {
     return 'Dubbed Foreign';
   }
 
   // Foreign Subtitled with Year
-  if ((lower.includes('foreign') || lower.includes('أجنبي')) && (lower.includes('2000') || lower.includes('2021') || lower.includes('201'))) {
+  if ((lower.includes('foreign') || nameLower.includes('أجنبي')) && (lower.includes('2000') || lower.includes('2021') || lower.includes('201'))) {
     return "Foreign 2000's";
   }
-  if ((lower.includes('foreign') || lower.includes('أجنبي')) && year) {
+  if ((lower.includes('foreign') || nameLower.includes('أجنبي')) && year) {
     return `Foreign ${year}`;
   }
+  if (lower.includes('foreign') && lower.includes('sub')) return 'Foreign Subtitled';
   
-  // English Dubbed
-  if (lower.includes('english') && lower.includes('dub')) {
-    return year ? `English ${year}` : 'English Dubbed';
-  }
+  // English
+  if (lower.includes('english') && lower.includes('dub')) return 'English Dubbed';
+  if (lower.includes('english') && lower.includes('series')) return 'English Series';
+  if (lower.includes('english') && (lower.includes('mov') || lower.includes('film'))) return 'English Movies';
 
   // Cartoons
   if (lower.includes('cartoon') && lower.includes('dub')) return 'Cartoon Dubbed';
   if (lower.includes('cartoon') && lower.includes('sub')) return 'Cartoon Subbed';
   if (lower.includes('cartoon')) return 'Cartoons';
 
-  // Weekend/Thursday
-  if (lower.includes('thursday') || lower.includes('weekend') || name.includes('الخميس') || name.includes('سهرة')) {
-    return 'Weekend';
-  }
+  // Weekend
+  if (lower.includes('thursday') || lower.includes('weekend') || nameLower.includes('الخميس') || nameLower.includes('سهرة')) return 'Weekend';
 
-  // Specific genres
-  if (lower.includes('tv show') || lower.includes('برامج') || lower.includes('program')) return 'TV Shows';
-  if (lower.includes('islamic') || lower.includes('islam') || lower.includes('إسلام') || lower.includes('اسلام') || lower.includes('ديني')) return 'Islamic';
-  if (lower.includes('documentary') || lower.includes('docu') || lower.includes('وثائقي')) return 'Documentaries';
-  if (lower.includes('christmas') || lower.includes('كريسماس')) return 'Christmas';
-  if (lower.includes('indian') || lower.includes('هندي')) return 'Indian';
-  if (lower.includes('turkish') || lower.includes('turk') || lower.includes('ترك')) return 'Turkish';
-  if (lower.includes('german') || lower.includes('germany')) return 'German VOD';
+  // Genres
+  if (lower.includes('documentary') || lower.includes('docu') || nameLower.includes('وثائقي')) return 'Documentaries';
+  if (lower.includes('christmas') || nameLower.includes('كريسماس')) return 'Christmas';
+  if (lower.includes('indian') || lower.includes('bollywood') || nameLower.includes('هندي')) return 'Indian';
+  if (lower.includes('turkish') || lower.includes('turk') || nameLower.includes('ترك')) return 'Turkish';
+  if (lower.includes('korean') || lower.includes('kdrama')) return 'Korean';
+  if (lower.includes('comedy') || nameLower.includes('كوميدي')) return 'Comedy';
+  if (lower.includes('action') || lower.includes('adventure')) return 'Action';
+  if (lower.includes('horror') || lower.includes('thriller')) return 'Horror & Thriller';
+  if (lower.includes('crime') || lower.includes('mystery')) return 'Crime & Mystery';
+  if ((lower.includes('sci') && lower.includes('fi')) || lower.includes('fantasy')) return 'Sci-Fi & Fantasy';
+  if (lower.includes('drama') || lower.includes('romance')) return 'Drama & Romance';
+  if (lower.includes('war') || lower.includes('military')) return 'War & Military';
+  if (lower.includes('history') || lower.includes('biography')) return 'Historical';
+  
+  // Anime
+  if (lower.includes('anime') && (lower.includes('fr') || lower.includes('french'))) return 'FR Anime';
+  if (lower.includes('anime') && (lower.includes('en') || lower.includes('english'))) return 'EN Anime';
+  if (lower.includes('anime')) return 'Anime';
+  
+  // French
+  if ((lower.includes('fr') || lower.includes('french')) && lower.includes('comed')) return 'FR Comédie';
+  if ((lower.includes('fr') || lower.includes('french')) && lower.includes('drame')) return 'FR Drame';
+  if ((lower.includes('fr') || lower.includes('french')) && (lower.includes('enfant') || lower.includes('kids'))) return 'FR Enfants';
+  if ((lower.includes('fr') || lower.includes('french')) && lower.includes('action')) return 'FR Action';
+  if ((lower.includes('fr') || lower.includes('french')) && (lower.includes('sci') || lower.includes('fiction'))) return 'FR Sci-Fi';
+  if ((lower.includes('fr ') || lower.includes('french')) && !lower.includes('foreign')) return 'French';
+  
+  // German
+  if (lower.includes('german') && lower.includes('vod')) return 'German VOD';
+  if (lower.includes('deutsch') || lower.includes('german')) return 'German';
+  
+  // Platforms
+  if (lower.includes('netflix')) return 'Netflix';
+  if (lower.includes('disney')) return 'Disney';
+  if (lower.includes('hbo') || lower.includes('amazon') || lower.includes('prime')) return 'HBO & Amazon';
+  
+  // Sports
+  if (lower.includes('wwe') || lower.includes('wrestling')) return 'WWE';
+  if (lower.includes('ufc')) return 'UFC';
+  if (lower.includes('formula') || lower.includes('f1')) return 'Formula 1';
+  if (lower.includes('sport')) return 'Sports';
+  
+  // Star collections
+  if (lower.includes('pacino')) return 'Al Pacino';
+  if (lower.includes('dicaprio') || lower.includes('di caprio')) return 'Leonardo DiCaprio';
+  if (lower.includes('adel') && lower.includes('imam')) return 'Adel Imam';
+  if (lower.includes('samir') && lower.includes('ghanem')) return 'Samir Ghanem';
+  
+  // Regions
+  if (lower.includes('asia') || lower.includes('asian')) return 'Asian';
+  if (lower.includes('world') || lower.includes('international')) return 'World';
+  if (lower.includes('albania')) return 'Albanian';
   
   // Tech
-  if (lower.includes('4k')) return '4K Movies';
-  if (lower.includes('3d')) return '3D Movies';
+  if (lower.includes('4k')) return '4K';
+  if (lower.includes('3d')) return '3D';
+  if (lower.includes('star wars')) return 'Star Wars';
+  if (lower.includes('dc ') || lower.includes('dc-')) return 'DC Comics';
+  if (lower.includes('multi') && lower.includes('lang')) return 'Multi-Language';
+  if (lower.includes('kids') || lower.includes('family')) return 'Kids & Family';
 
   // General Cleanup
   clean = clean
-    .replace(/\b(Movies|Films|Series|Season|Complete|Full|HD|FHD|HEVC|New|Latest|Update|Library|Collection|Pack|Box|Set|From|By|VOD|Vod)\b/gi, '')
+    .replace(/\b(Movies|Films|Series|Season|Complete|Full|HD|FHD|HEVC|New|Latest|Update|Library|Collection|Pack|Box|Set|From|By|VOD|Vod|AR|EN|SER|MOV)\b/gi, '')
     .replace(/(مكتبة|أفلام|مسلسلات|افلام)/g, '')
     .replace(/[|•\-–_]/g, ' ')
     .replace(/\s+/g, ' ')
@@ -636,34 +713,53 @@ export const MiMediaGrid = ({
     return false;
   };
 
-  const groups = useMemo(() => {
-    const groupCounts = new Map<string, { count: number; firstLogo?: string }>();
+  // Build a mapping from raw group names to shortened display names
+  const groupDisplayNameMap = useMemo(() => {
+    const map = new Map<string, string>();
     items.forEach((item) => {
       const group = item.group || 'Uncategorized';
-      // Skip irrelevant groups
+      if (!map.has(group) && !isIrrelevantGroup(group)) {
+        map.set(group, shortenGroupName(group));
+      }
+    });
+    return map;
+  }, [items]);
+
+  const groups = useMemo(() => {
+    // Merge groups that share the same shortened display name
+    const mergedCounts = new Map<string, { count: number; firstLogo?: string; rawNames: string[]; bestPriority: number }>();
+    items.forEach((item) => {
+      const group = item.group || 'Uncategorized';
       if (isIrrelevantGroup(group)) return;
-      const existing = groupCounts.get(group);
+      const displayName = groupDisplayNameMap.get(group) || group;
+      const existing = mergedCounts.get(displayName);
       if (!existing) {
-        groupCounts.set(group, { count: 1, firstLogo: item.backdrop_path?.[0] || item.logo });
+        mergedCounts.set(displayName, { 
+          count: 1, 
+          firstLogo: item.backdrop_path?.[0] || item.logo,
+          rawNames: [group],
+          bestPriority: getGroupSortPriority(group)
+        });
       } else {
         existing.count++;
-        // Use better logo if available
         if (!existing.firstLogo && (item.backdrop_path?.[0] || item.logo)) {
           existing.firstLogo = item.backdrop_path?.[0] || item.logo;
+        }
+        if (!existing.rawNames.includes(group)) {
+          existing.rawNames.push(group);
+          const p = getGroupSortPriority(group);
+          if (p < existing.bestPriority) existing.bestPriority = p;
         }
       }
     });
     
-    // Sort by priority (year desc, then Arabic, then seasonal, then alpha)
-    return Array.from(groupCounts.entries())
+    return Array.from(mergedCounts.entries())
       .sort((a, b) => {
-        const priorityA = getGroupSortPriority(a[0]);
-        const priorityB = getGroupSortPriority(b[0]);
-        if (priorityA !== priorityB) return priorityA - priorityB;
+        if (a[1].bestPriority !== b[1].bestPriority) return a[1].bestPriority - b[1].bestPriority;
         return a[0].localeCompare(b[0]);
       })
-      .map(([name, data]) => ({ name, count: data.count, firstLogo: data.firstLogo }));
-  }, [items]);
+      .map(([name, data]) => ({ name, count: data.count, firstLogo: data.firstLogo, rawNames: data.rawNames }));
+  }, [items, groupDisplayNameMap]);
 
   // Set selectedGroup to the first group in the sorted list if not already set
   useEffect(() => {
@@ -673,14 +769,17 @@ export const MiMediaGrid = ({
   }, [groups, selectedGroup]);
 
   const filteredItems = useMemo(() => {
+    // Find which raw group names belong to the selected merged group
+    const selectedMergedGroup = groups.find(g => g.name === selectedGroup);
+    const matchingRawNames = selectedMergedGroup?.rawNames || [];
+    
     let filtered = items.filter((item) => {
-      // Skip irrelevant groups
       if (isIrrelevantGroup(item.group || '')) return false;
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-      // When searching, ignore group filter and search ALL items
-      // Use first group if selectedGroup is empty
       const effectiveGroup = selectedGroup || (groups.length > 0 ? groups[0].name : 'all');
-      const matchesGroup = searchQuery.trim() ? true : (effectiveGroup === 'all' || item.group === effectiveGroup);
+      // Match against all raw group names that map to this display name
+      const itemDisplayName = groupDisplayNameMap.get(item.group || '') || item.group;
+      const matchesGroup = searchQuery.trim() ? true : (effectiveGroup === 'all' || matchingRawNames.includes(item.group || '') || itemDisplayName === effectiveGroup);
       const matchesFavorites = !showFavoritesOnly || favorites.has(item.id);
       return matchesSearch && matchesGroup && matchesFavorites;
     });
@@ -793,30 +892,32 @@ export const MiMediaGrid = ({
               }`}
             >
               <div className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center overflow-hidden flex-shrink-0">
-                {/* Use custom category logo first, then group's first poster, then emoji */}
-                {getCategoryLogo(group.name, category) ? (
-                  <img 
-                    src={getCategoryLogo(group.name, category)!} 
-                    alt={group.name} 
-                    className="w-full h-full object-cover scale-150"
-                  />
-                ) : group.firstLogo ? (
-                  <img 
-                    src={group.firstLogo} 
-                    alt={group.name} 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement!.innerHTML = `<span class="text-2xl">${getCategoryEmoji(group.name)}</span>`;
-                    }}
-                  />
-                ) : (
-                  <span className="text-2xl">{getCategoryEmoji(group.name)}</span>
-                )}
+                {/* Use custom category logo from first raw group name, then poster, then emoji */}
+                {(() => {
+                  const rawName = (group as any).rawNames?.[0] || group.name;
+                  const logo = getCategoryLogo(rawName, category);
+                  if (logo) {
+                    return <img src={logo} alt={group.name} className="w-full h-full object-cover scale-150" />;
+                  }
+                  if (group.firstLogo) {
+                    return (
+                      <img 
+                        src={group.firstLogo} 
+                        alt={group.name} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement!.innerHTML = `<span class="text-2xl">${getCategoryEmoji(rawName)}</span>`;
+                        }}
+                      />
+                    );
+                  }
+                  return <span className="text-2xl">{getCategoryEmoji(rawName)}</span>;
+                })()}
               </div>
               <div className="flex-1 text-left">
                 <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold text-foreground' : ''}`}>
-                  {shortenGroupName(group.name)}
+                  {group.name}
                 </p>
                 {selectedGroup === group.name && (
                   <p className="text-xs text-muted-foreground">{group.count} {title}</p>
