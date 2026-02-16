@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Cache TMDB poster lookups in localStorage
-const POSTER_CACHE_KEY = 'mi-player-tmdb-poster-cache-v2'; // v2: year-aware matching
-const CACHE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const POSTER_CACHE_KEY = 'mi-player-tmdb-poster-cache-v3'; // v3: 1-hour refresh
+const CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour - refresh frequently for new releases
 
 interface PosterCacheEntry {
   url: string | null;
