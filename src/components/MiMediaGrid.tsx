@@ -883,10 +883,6 @@ export const MiMediaGrid = ({
           )}
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-foreground">{title}</h1>
-            <div className="flex gap-0.5">
-              <Star className="w-4 h-4 mi-star-filled" />
-              <Star className="w-4 h-4 mi-star-filled" />
-            </div>
           </div>
         </div>
 
