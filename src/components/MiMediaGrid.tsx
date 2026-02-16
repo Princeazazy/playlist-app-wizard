@@ -105,6 +105,9 @@ import serNowShowingLogo from '@/assets/category-logos/ser-now-showing.png';
 import serKoreanLogo from '@/assets/category-logos/ser-korean.png';
 import serForeign2024Logo from '@/assets/category-logos/foreign-subtitled-2024.png';
 import serForeign2025Logo from '@/assets/category-logos/foreign-subtitled-2025.png';
+import serMasrahLogo from '@/assets/category-logos/ser-masrah.png';
+import serForeign4kLogo from '@/assets/category-logos/ser-foreign-4k.png';
+import serAnimeEnLogo from '@/assets/category-logos/ser-anime-en.png';
 
 // Series-specific category logo matcher
 const getSeriesCategoryLogo = (groupName: string): string | null => {
@@ -151,6 +154,12 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   // Foreign Subtitled
   if (g.includes('foreign') && !g.includes('dub')) return serForeignSubLogo;
 
+  // Masrah / Theater Plays (series-specific)
+  if (g.includes('masrah') || g.includes('مسرح') || g.includes('مسرحي') || g.includes('مسرحيات') || g.includes('theater') || g.includes('theatre')) return serMasrahLogo;
+
+  // Foreign 4K Series
+  if (g.includes('4k') && (g.includes('ser') || g.includes('series') || g.includes('مسلسل'))) return serForeign4kLogo;
+
   // Cartoons
   if (g.includes('cartoon') || g.includes('كرتون') || g.includes('animation')) return serCartoonLogo;
 
@@ -163,7 +172,8 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   // Korean / K-Drama
   if (g.includes('korean') || g.includes('kdrama') || g.includes('k-drama') || g.includes('كوري')) return serKoreanLogo;
   
-  // Anime
+  // Anime - English anime gets specific logo
+  if ((g.includes('anime') || g.includes('anm')) && (g.includes('en') || g.includes('english') || g.includes('انجليزي'))) return serAnimeEnLogo;
   if (g.includes('anime') || g.includes('انمي') || g.includes('أنمي') || g.includes('anm')) return animeSeriesLogo;
   
   // Action / Adventure
