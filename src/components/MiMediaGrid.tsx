@@ -616,6 +616,8 @@ export const MiMediaGrid = ({
     if (g.includes('podcast')) return true;
     if (g.includes('adult') || g.includes('xxx') || g.includes('18+')) return true;
     if (g.includes('live ') && !g.includes('live action')) return true;
+    // In series mode, filter out generic cartoon groups (they belong in Movies)
+    if (category === 'series' && (g.includes('cartoon') || g.includes('كرتون')) && !g.includes('anime') && !g.includes('انمي')) return true;
     return false;
   };
 
