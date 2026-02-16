@@ -774,7 +774,7 @@ export const MiMediaGrid = ({
 
   // Set selectedGroup to the first group in the sorted list if not already set
   useEffect(() => {
-    if (!selectedGroup && groups.length > 0) {
+    if ((!selectedGroup || selectedGroup === 'all') && groups.length > 0) {
       setSelectedGroup(groups[0].name);
     }
   }, [groups, selectedGroup]);
