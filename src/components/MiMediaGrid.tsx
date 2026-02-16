@@ -38,6 +38,7 @@ import movies4kLogo from '@/assets/category-logos/4k-movies.png';
 import movies3dLogo from '@/assets/category-logos/3d-movies.png';
 import vodGermanyLogo from '@/assets/category-logos/german-vod-movies.png';
 import wweLogo from '@/assets/category-logos/wwe-movies.png';
+import serUfcLogo from '@/assets/category-logos/ser-ufc.png';
 import alPacinoLogo from '@/assets/category-logos/al-pacino-movies.png';
 import samirGhanemLogo from '@/assets/category-logos/samir-ghanem-movies.png';
 import leonardoDicaprioLogo from '@/assets/category-logos/leonardo-dicaprio-movies.png';
@@ -183,8 +184,11 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   // War / Military
   if (g.includes('war') || g.includes('military') || g.includes('حرب') || g.includes('عسكري')) return warMilitaryLogo;
   
+  // UFC
+  if (g.includes('ufc') || (g.includes('عروض') && !g.includes('wwe'))) return serUfcLogo;
+  
   // Sports
-  if (g.includes('sport') || g.includes('رياض') || g.includes('ufc') || g.includes('wwe') || g.includes('wrestling') || g.includes('عروض')) return sportsSeriesLogo;
+  if (g.includes('sport') || g.includes('رياض') || g.includes('wwe') || g.includes('wrestling')) return sportsSeriesLogo;
   
   // Comedy
   if (g.includes('comedy') || g.includes('كوميدي') || g.includes('كوميديا')) return serComedyLogo;
