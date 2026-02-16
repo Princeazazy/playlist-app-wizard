@@ -126,7 +126,7 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   if (g.includes('tv show') || g.includes('program') || g.includes('برامج')) return serTvShowsLogo;
   
   // Islamic
-  if (g.includes('islamic') || g.includes('islam') || g.includes('إسلام') || g.includes('ديني')) return serIslamicLogo;
+  if (g.includes('islamic') || g.includes('islam') || g.includes('إسلام') || g.includes('اسلام') || g.includes('ديني')) return serIslamicLogo;
 
   // Foreign/English Subtitled Years (Specific)
   if ((g.includes('foreign') || g.includes('english')) && g.includes('sub') && g.includes('2022')) return serEnglish2022SubLogo;
