@@ -147,12 +147,12 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   // Islamic
   if (g.includes('islamic') || g.includes('islam') || g.includes('إسلام') || g.includes('اسلام') || g.includes('اسلامية') || g.includes('ديني') || g.includes('الاسلامية') || g.includes('الإسلامية') || g.includes('ال الاسلامية') || g.includes('ال الإسلامية')) return serIslamicLogo;
 
-  // Foreign/English Subtitled Years (Specific) - also match "bf" (before) and "قبل"
+  // Foreign/English Subtitled Years (Specific) - check specific years BEFORE generic sub match
   if ((g.includes('foreign') || g.includes('english') || g.includes('bf') || g.includes('قبل')) && (g.includes('sub') || g.includes('subtitled')) && g.includes('2022')) return serEnglish2022SubLogo;
-  if ((g.includes('foreign') || g.includes('english')) && (g.includes('sub') || g.includes('2023'))) return serForeign2023Logo;
-  if ((g.includes('foreign') || g.includes('english')) && g.includes('2024')) return serForeign2024Logo;
+  if ((g.includes('foreign') || g.includes('english')) && g.includes('2026')) return serForeign2026Logo;
   if ((g.includes('foreign') || g.includes('english')) && g.includes('2025')) return serForeign2025Logo;
-  if ((g.includes('foreign') || g.includes('english')) && (g.includes('sub') || g.includes('2026'))) return serForeign2026Logo;
+  if ((g.includes('foreign') || g.includes('english')) && g.includes('2024')) return serForeign2024Logo;
+  if ((g.includes('foreign') || g.includes('english')) && g.includes('2023')) return serForeign2023Logo;
   
   // Arabic Series by Year
   if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && g.includes('2026')) return serArabic2026Logo;
@@ -481,7 +481,7 @@ const shortenGroupName = (name: string): string => {
   if (lower.includes('now showing') || lower.includes('currently') || nameLower.includes('تعرض حاليا')) return 'Now Showing';
   
   // Songs / Music
-  if (lower.includes('song') || nameLower.includes('أغاني') || nameLower.includes('اغاني') || lower.includes('music clip')) return 'Songs';
+  if (lower.includes('song') || lower.includes('أغاني') || lower.includes('اغاني') || nameLower.includes('أغاني') || nameLower.includes('اغاني') || lower.includes('music clip') || lower.includes('أغان') || nameLower.includes('أغان')) return 'Songs';
   
   // TV Shows / Programs
   if (lower.includes('tv show') || nameLower.includes('برامج') || lower.includes('program')) return 'TV Shows';
