@@ -93,13 +93,24 @@ import serEnglish2022SubLogo from '@/assets/category-logos/ser-english-2022-sub.
 import serForeign2023Logo from '@/assets/category-logos/ser-foreign-2023.png';
 import serForeign2026Logo from '@/assets/category-logos/ser-foreign-2026.png';
 import serRamadanMaghreb2026Logo from '@/assets/category-logos/ser-ramadan-maghreb-2026.png';
+import serRamadanEgyptian2026Logo from '@/assets/category-logos/ser-ramadan-egyptian-2026.png';
+import serRamadanGulf2026Logo from '@/assets/category-logos/ser-ramadan-gulf-2026.png';
+import serRamadanLevantine2026Logo from '@/assets/category-logos/ser-ramadan-levantine-2026.png';
+import serAsiaLogo from '@/assets/category-logos/ser-asia.png';
+import serWorldLogo from '@/assets/category-logos/ser-world.png';
+import serAlbaniaLogo from '@/assets/category-logos/ser-albania.png';
 
 // Series-specific category logo matcher
 const getSeriesCategoryLogo = (groupName: string): string | null => {
   const g = (groupName + ' ' + translateGroupName(groupName)).toLowerCase();
   
-  // Ramadan
-  if (g.includes('ramadan') && (g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب'))) return serRamadanMaghreb2026Logo;
+  // Ramadan - Specific Regions
+  if (g.includes('ramadan') && (g.includes('egypt') || g.includes('misr') || g.includes('مصر') || g.includes('مصري'))) return serRamadanEgyptian2026Logo;
+  if (g.includes('ramadan') && (g.includes('gulf') || g.includes('khaleej') || g.includes('خليج'))) return serRamadanGulf2026Logo;
+  if (g.includes('ramadan') && (g.includes('levant') || g.includes('cham') || g.includes('shami') || g.includes('shamy') || g.includes('شامي') || g.includes('شام') || g.includes('سوريا') || g.includes('syria') || g.includes('lebanon') || g.includes('لبنان'))) return serRamadanLevantine2026Logo;
+  if (g.includes('ramadan') && (g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب') || g.includes('tunisia') || g.includes('تونس') || g.includes('algeria') || g.includes('جزائر'))) return serRamadanMaghreb2026Logo;
+  
+  // Generic Ramadan Fallback
   if (g.includes('ramadan') || g.includes('رمضان')) return ramadanSeriesLogo;
   
   // TV Shows / Programs
@@ -182,6 +193,11 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   
   // Generic English series
   if (g.includes('english') || g.includes('انجليزي')) return serEnglishLogo;
+
+  // Regions
+  if (g.includes('asia') || g.includes('asian') || g.includes('آسيا')) return serAsiaLogo;
+  if (g.includes('world') || g.includes('international') || g.includes('عالم')) return serWorldLogo;
+  if (g.includes('albania') || g.includes('shqip') || g.includes('ألبان')) return serAlbaniaLogo;
   
   // Year Fallbacks
   if (g.includes('2026')) return serArabic2026Logo;
