@@ -58,6 +58,12 @@ import formula1Logo from '@/assets/category-logos/formula1-movies.png';
 import enNetflixLogo from '@/assets/category-logos/en-netflix.png';
 import englishMoviesLogo from '@/assets/category-logos/english-movies.png';
 import albaniaMoviesLogo from '@/assets/category-logos/albania-movies.png';
+import frComedieMoviesLogo from '@/assets/category-logos/fr-comedie-movies.png';
+import frDocumentariesMoviesLogo from '@/assets/category-logos/fr-documentaries-movies.png';
+import frDrameMoviesLogo from '@/assets/category-logos/fr-drame-movies.png';
+import frEnfantsFlagMoviesLogo from '@/assets/category-logos/fr-enfants-flag-movies.png';
+import frGeneralMoviesLogo from '@/assets/category-logos/fr-general-movies.png';
+import frScifiMoviesLogo from '@/assets/category-logos/fr-scifi-movies.png';
 
 // Series-specific logos
 import serArabic2026Logo from '@/assets/category-logos/ser-arabic-2026.png';
@@ -345,6 +351,14 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   
   // World
   if (g.includes('world') || g.includes('عالم') || g.includes('international')) return worldMoviesLogo;
+
+  // French categories (specific before generic)
+  if ((g.includes('fr') || g.includes('french') || g.includes('فرنسي')) && (g.includes('comed') || g.includes('coméd') || g.includes('كوميد'))) return frComedieMoviesLogo;
+  if ((g.includes('fr') || g.includes('french') || g.includes('فرنسي')) && (g.includes('drame') || g.includes('drama') || g.includes('دراما'))) return frDrameMoviesLogo;
+  if ((g.includes('fr') || g.includes('french') || g.includes('فرنسي')) && (g.includes('enfant') || g.includes('kids') || g.includes('اطفال') || g.includes('أطفال'))) return frEnfantsFlagMoviesLogo;
+  if ((g.includes('fr') || g.includes('french') || g.includes('فرنسي')) && (g.includes('sci') || g.includes('fiction') || g.includes('خيال'))) return frScifiMoviesLogo;
+  if ((g.includes('fr') || g.includes('french') || g.includes('فرنسي')) && (g.includes('docu') || g.includes('وثائقي'))) return frDocumentariesMoviesLogo;
+  if ((g.includes('fr ') || g.includes('french')) && !g.includes('foreign')) return frGeneralMoviesLogo;
 
   // Tech/Regional
   if (g.includes('4k')) return movies4kLogo;
