@@ -616,8 +616,9 @@ export const MiMediaGrid = ({
     if (g.includes('podcast')) return true;
     if (g.includes('adult') || g.includes('xxx') || g.includes('18+')) return true;
     if (g.includes('live ') && !g.includes('live action')) return true;
-    // In series mode, filter out generic cartoon groups (they belong in Movies)
+    // In series mode, filter out generic cartoon groups and movie groups (they belong in Movies)
     if (category === 'series' && (g.includes('cartoon') || g.includes('كرتون')) && !g.includes('anime') && !g.includes('انمي')) return true;
+    if (category === 'series' && (g.includes(' mov ') || g.includes(' mov') || g.match(/\bmov\b/) || g.includes('movie') || g.includes('film') || g.includes('أفلام') || g.includes('افلام')) && !g.includes('ser') && !g.includes('series') && !g.includes('مسلسل')) return true;
     return false;
   };
 
