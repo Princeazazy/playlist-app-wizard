@@ -53,9 +53,12 @@ const Index = () => {
         // Also include live channels with sport-related names (e.g. Egyptian sports channels)
         if (ch.type === 'live' || !ch.type) {
           const nameLower = ch.name?.toLowerCase() || '';
+          const groupLower = ch.group?.toLowerCase() || '';
           return nameLower.includes('sport') || nameLower.includes('bein') || 
                  nameLower.includes('espn') || nameLower.includes('fox sport') ||
-                 nameLower.includes('sky sport') || nameLower.includes('رياض');
+                 nameLower.includes('sky sport') || nameLower.includes('رياض') ||
+                 nameLower.includes('ppv') || nameLower.includes('dazn') ||
+                 groupLower.includes('ppv') || groupLower.includes('dazn');
         }
         return false;
       });
