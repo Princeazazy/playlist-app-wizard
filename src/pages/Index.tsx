@@ -46,6 +46,20 @@ const Index = () => {
     if (nav.currentScreen === 'live') {
       return channels.filter((ch) => ch.type === 'live' || !ch.type);
     }
+    if (nav.currentScreen === 'sports') {
+      // Include typed sports channels + live channels with sport-related names from any country
+      return channels.filter((ch) => {
+        if (ch.type === 'sports') return true;
+        // Also include live channels with sport-related names (e.g. Egyptian sports channels)
+        if (ch.type === 'live' || !ch.type) {
+          const nameLower = ch.name?.toLowerCase() || '';
+          return nameLower.includes('sport') || nameLower.includes('bein') || 
+                 nameLower.includes('espn') || nameLower.includes('fox sport') ||
+                 nameLower.includes('sky sport') || nameLower.includes('رياض');
+        }
+        return false;
+      });
+    }
     return channels.filter((ch) => ch.type === nav.currentScreen);
   }, [channels, nav.currentScreen]);
 
