@@ -455,6 +455,9 @@ const shortenGroupName = (name: string): string => {
   const year = yearMatch ? yearMatch[0] : '';
   const lower = clean.toLowerCase();
   
+  // Ramadan Maghreb/Morocco
+  if (lower.includes('ramadan') && (lower.includes('maghreb') || lower.includes('morocco') || lower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria'))) return 'Ramadan 2026 Morocco';
+  
   // Arabic Movies with Year
   if ((lower.includes('arabic') || lower.includes('عربي')) && (lower.includes('movie') || lower.includes('film') || lower.includes('mov')) && year) {
     return `Arabic ${year}`;
