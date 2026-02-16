@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronLeft, Search, Star, Film, User, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Menu, X, Heart } from 'lucide-react';
+import { ChevronLeft, Search, Star, Film, User, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Menu, X, Heart, Mic, MicOff } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
 import { useWeather } from '@/hooks/useWeather';
@@ -645,48 +645,90 @@ export const MiMediaGrid = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const weather = useWeather();
   const isMobile = useIsMobile();
 
-  // Smart sorting for groups: Arabic → English → Anime → Streaming platforms → everything else
+  // Voice search handler
+  const toggleVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ar-SA';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognitionRef.current = recognition;
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results).map((r: any) => r[0].transcript).join('');
+      setSearchQuery(transcript);
+      setShowSearchInput(true);
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.start();
+    setIsListening(true);
+    setShowSearchInput(true);
+  };
+
+  // Smart sorting for groups: Ramadan 2026 → Arabic (newest first) → English → Foreign → Anime → Platforms → Regional → Misc → Songs
   const getGroupSortPriority = (groupName: string): number => {
     const g = groupName.toLowerCase();
     
-    // === 1. ARABIC content first (priority 1-50) ===
-    // Egyptian content gets top priority within Arabic
-    if (groupName.includes('مصر') || g.includes('egypt') || g.includes('egyptian')) return 1;
-    // Ramadan specials
-    if (g.includes('ramadan') || groupName.includes('رمضان')) return 2;
-    if (g.includes('eid') || groupName.includes('عيد')) return 3;
-    // Generic Arabic
-    if (g.includes('arab') || groupName.includes('عربي') || groupName.includes('افلام عربي')) return 5;
-    if (groupName.includes('خليج') || g.includes('khalij') || g.includes('gulf')) return 6;
-    if (groupName.includes('مغرب') || g.includes('maghreb')) return 7;
-    if (g.includes('osn') || g.includes('shahid')) return 8;
-    // AR MOV / AR SER year-based groups (newer first, top priority)
+    // Helper: extract year from group name
+    const yearMatch = g.match(/\b(19|20)\d{2}\b/);
+    const year = yearMatch ? parseInt(yearMatch[0]) : 0;
+    
+    // === 1. RAMADAN 2026 at absolute top ===
+    if ((g.includes('ramadan') || groupName.includes('رمضان')) && g.includes('2026')) return 1;
+    // Other Ramadan years
+    if ((g.includes('ramadan') || groupName.includes('رمضان')) && year) return 2 + (2040 - year);
+    if (g.includes('ramadan') || groupName.includes('رمضان')) return 5;
+    
+    // === 2. "Now Showing" / current content ===
+    if (g.includes('now showing') || g.includes('now_showing') || groupName.includes('يعرض الآن')) return 10;
+    
+    // === 3. ARABIC content by year (newest first, priority 20-80) ===
+    const isArabic = g.includes('arab') || groupName.includes('عربي') || groupName.includes('افلام') || groupName.includes('مسلسل') ||
+      groupName.includes('مصر') || g.includes('egypt') || groupName.includes('خليج') || g.includes('gulf') || g.includes('khalij') ||
+      groupName.includes('مغرب') || g.includes('maghreb') || g.includes('levant') || groupName.includes('شام');
     const arYearMatch = g.match(/^ar\s+(mov|ser|movies?|series)\s+((?:19|20)\d{2})/i);
+    
     if (arYearMatch) {
-      const year = parseInt(arYearMatch[2]);
-      return 10 + (2040 - year); // 2026→24, 2025→25, etc.
+      const arYear = parseInt(arYearMatch[2]);
+      return 20 + (2040 - arYear); // 2026→34, 2025→35, 2024→36...
     }
-    // Arabic years (newer first)
-    const hasArabicHint = /[\u0600-\u06FF]/.test(groupName);
-    if (hasArabicHint) {
-      const yearMatch = g.match(/\b(19|20)\d{2}\b/);
-      if (yearMatch) return 10 + (2040 - parseInt(yearMatch[0]));
-      return 40;
+    if (isArabic && year) return 20 + (2040 - year);
+    if (groupName.includes('مصر') || g.includes('egypt')) return 75;
+    if (isArabic) return 80;
+    if (g.includes('eid') || groupName.includes('عيد')) return 81;
+    if (g.includes('osn') || g.includes('shahid')) return 82;
+    
+    // === 4. ENGLISH content (priority 100-120) ===
+    if (g.includes('english') || g.includes('vod en') || g.match(/\ben\b/)) {
+      if (year) return 100 + (2040 - year);
+      return 120;
+    }
+    if (g.includes('uk') || g.includes('us ') || g.includes('usa')) return 121;
+    
+    // === 5. FOREIGN / Subtitled content (priority 130-150) ===
+    if (g.includes('foreign') || g.includes('sub')) {
+      if (year) return 130 + (2040 - year);
+      return 150;
     }
     
-    // === 2. ENGLISH content (priority 100-150) ===
-    if (g.includes('english') || g.includes('vod en') || g.match(/\ben\b/)) return 100;
-    if (g.includes('uk') || g.includes('us ') || g.includes('usa')) return 101;
-    
-    // === 3. ANIME content (priority 200-220) ===
+    // === 6. ANIME content (priority 200-220) ===
     if (g.includes('anime') || g.includes('انمي') || g.includes('anm') || g.includes('crunchyroll')) return 200;
     if (g.includes('cartoon') || groupName.includes('كرتون') || g.includes('animation')) return 210;
+    if (g.includes('kids') || g.includes('family') || groupName.includes('أطفال') || g.includes('enfant')) return 215;
     
-    // === 4. STREAMING PLATFORMS (priority 300-350) ===
+    // === 7. STREAMING PLATFORMS (priority 300-350) ===
     if (g.includes('netflix')) return 300;
     if (g.includes('disney')) return 301;
     if (g.includes('hbo') || g.includes('max')) return 302;
@@ -698,23 +740,45 @@ export const MiMediaGrid = ({
     if (g.includes('starz')) return 308;
     if (g.includes('showtime')) return 309;
     
-    // === 5. Year-based categories (priority 400-460) ===
-    const yearMatch = g.match(/\b(19|20)\d{2}\b/);
-    if (yearMatch) {
-      const year = parseInt(yearMatch[0]);
-      return 400 + (2040 - year);
-    }
+    // === 8. REGIONAL content (priority 400-450) ===
+    if (g.includes('turkish') || g.includes('turk') || groupName.includes('ترك')) return 400;
+    if (g.includes('korean') || g.includes('korea') || groupName.includes('كوري')) return 410;
+    if (g.includes('indian') || g.includes('india') || g.includes('bollywood') || groupName.includes('هند')) return 420;
+    if (g.includes('asia') || groupName.includes('آسي')) return 430;
+    if (g.includes('french') || g.includes('fr ') || g.match(/\bfr\b/)) return 440;
+    if (g.includes('german') || g.includes('deutsch')) return 445;
+    if (g.includes('albania')) return 448;
+    if (g.includes('world') || groupName.includes('عالم')) return 450;
     
-    // === 6. Seasonal content (priority 500) ===
+    // === 9. GENRE categories (priority 460-500) ===
+    if (g.includes('action') || g.includes('adventure')) return 460;
+    if (g.includes('comedy') || g.includes('comedie') || groupName.includes('كوميد')) return 462;
+    if (g.includes('drama') || g.includes('romance') || g.includes('drame')) return 464;
+    if (g.includes('horror') || g.includes('thriller')) return 466;
+    if (g.includes('scifi') || g.includes('sci-fi') || g.includes('fantasy')) return 468;
+    if (g.includes('crime') || g.includes('mystery')) return 470;
+    if (g.includes('war') || g.includes('military')) return 472;
+    if (g.includes('historical') || g.includes('biography')) return 474;
+    if (g.includes('documentary') || groupName.includes('وثائق')) return 476;
+    if (g.includes('sport') || g.includes('formula') || g.includes('ufc') || g.includes('wwe')) return 480;
+    
+    // === 10. Seasonal content (priority 500) ===
     if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas')) return 500;
     
-    // === 7. Misc content pushed to bottom (priority 800+) ===
-    if (g.includes('song') || groupName.includes('أغاني') || groupName.includes('اغاني') || g.includes('music clip') || groupName.includes('أغان')) return 999;
-    if (g.includes('masrah') || groupName.includes('مسرح') || g.includes('theater') || g.includes('theatre')) return 840;
-    if (g.includes('islamic') || g.includes('islam') || groupName.includes('إسلام') || groupName.includes('اسلام') || groupName.includes('ديني')) return 830;
-    if (g.includes('tv show') || groupName.includes('برامج') || g.includes('program')) return 820;
+    // === 11. Year-based fallback (priority 550+, newest first) ===
+    if (year) return 550 + (2040 - year);
     
-    // === 8. Everything else (priority 900+) ===
+    // === 12. Misc content pushed to bottom (priority 800+) ===
+    if (g.includes('tv show') || groupName.includes('برامج') || g.includes('program')) return 820;
+    if (g.includes('islamic') || g.includes('islam') || groupName.includes('إسلام') || groupName.includes('اسلام') || groupName.includes('ديني')) return 830;
+    if (g.includes('masrah') || groupName.includes('مسرح') || g.includes('theater') || g.includes('theatre')) return 840;
+    
+    // === 13. Everything else ===
+    if (g.includes('4k') || g.includes('3d')) return 850;
+    
+    // === 14. Songs absolute last ===
+    if (g.includes('song') || groupName.includes('أغاني') || groupName.includes('اغاني') || g.includes('music clip') || groupName.includes('أغان')) return 999;
+    
     return 900;
   };
 
@@ -1012,7 +1076,7 @@ export const MiMediaGrid = ({
           {/* Right Actions */}
           <div className="flex items-center gap-2 md:gap-3">
             {showSearchInput ? (
-              <div className="relative">
+              <div className="relative flex items-center gap-1">
                 <input
                   type="text"
                   value={searchQuery}
@@ -1024,25 +1088,39 @@ export const MiMediaGrid = ({
                   }}
                   className="w-40 md:w-60 px-4 py-2 bg-card border border-border/50 rounded-xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
+                <button
+                  onClick={toggleVoiceSearch}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-card hover:bg-card/80 text-muted-foreground'}`}
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
                 {searchQuery && (
                   <button
                     onClick={() => {
                       setSearchQuery('');
                       setShowSearchInput(false);
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-11 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
             ) : (
-              <button
-                onClick={() => setShowSearchInput(true)}
-                className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-card flex items-center justify-center hover:bg-card/80 transition-colors"
-              >
-                <Search className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setShowSearchInput(true)}
+                  className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-card flex items-center justify-center hover:bg-card/80 transition-colors"
+                >
+                  <Search className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+                </button>
+                <button
+                  onClick={toggleVoiceSearch}
+                  className={`w-9 h-9 md:w-11 md:h-11 rounded-full flex items-center justify-center transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-card hover:bg-card/80 text-muted-foreground'}`}
+                >
+                  {isListening ? <MicOff className="w-4 h-4 md:w-5 md:h-5" /> : <Mic className="w-4 h-4 md:w-5 md:h-5" />}
+                </button>
+              </div>
             )}
             {!isMobile && (
               <div className="w-11 h-11 rounded-full bg-primary overflow-hidden flex items-center justify-center ring-2 ring-primary/30">

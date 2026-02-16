@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Calendar, Heart, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Calendar, Heart, Loader2, Mic, MicOff } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
 import { useWeather } from '@/hooks/useWeather';
@@ -258,12 +258,35 @@ export const MiLiveTVList = ({
   const [showEPG, setShowEPG] = useState(false);
   const [localShowFavoritesOnly, setLocalShowFavoritesOnly] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const weather = useWeather();
   const isMobile = useIsMobile();
   const { getLogoForChannel } = useBulkChannelLogos(channels);
 
   const effectiveSearchQuery = localSearchQuery || searchQuery;
+
+  const toggleVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ar-SA';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognitionRef.current = recognition;
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results).map((r: any) => r[0].transcript).join('');
+      setLocalSearchQuery(transcript);
+      setShowSearchInput(true);
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.start();
+    setIsListening(true);
+    setShowSearchInput(true);
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -609,7 +632,7 @@ export const MiLiveTVList = ({
           {/* Search & Profile */}
           <div className="flex items-center gap-2">
             {showSearchInput ? (
-              <div className="relative">
+              <div className="relative flex items-center gap-1">
                 <input
                   type="text"
                   value={localSearchQuery}
@@ -619,16 +642,30 @@ export const MiLiveTVList = ({
                   onBlur={() => { if (!localSearchQuery) setShowSearchInput(false); }}
                   className="w-40 px-4 py-2 bg-card border border-border/30 rounded-xl text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
+                <button
+                  onClick={toggleVoiceSearch}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-card hover:bg-card/80 text-muted-foreground'}`}
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
                 {localSearchQuery && (
-                  <button onClick={() => { setLocalSearchQuery(''); setShowSearchInput(false); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <button onClick={() => { setLocalSearchQuery(''); setShowSearchInput(false); }} className="absolute right-11 top-1/2 -translate-y-1/2 text-muted-foreground">
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
             ) : (
-              <button onClick={() => setShowSearchInput(true)} className="w-10 h-10 rounded-full bg-card border border-border/30 flex items-center justify-center hover:bg-card/80">
-                <Search className="w-4 h-4 text-muted-foreground" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setShowSearchInput(true)} className="w-10 h-10 rounded-full bg-card border border-border/30 flex items-center justify-center hover:bg-card/80">
+                  <Search className="w-4 h-4 text-muted-foreground" />
+                </button>
+                <button
+                  onClick={toggleVoiceSearch}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border border-border/30 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-card hover:bg-card/80 text-muted-foreground'}`}
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
+              </div>
             )}
             {!isMobile && (
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ring-2 ring-primary/30">
