@@ -635,7 +635,10 @@ export const MiMediaGrid = ({
   category,
   initialSelectedGroup,
 }: MiMediaGridProps) => {
-  const [selectedGroup, setSelectedGroup] = useState<string>(initialSelectedGroup || '');
+  const [selectedGroup, setSelectedGroup] = useState<string>(() => {
+    // Only use initialSelectedGroup if it's a real group name (not 'all')
+    return initialSelectedGroup && initialSelectedGroup !== 'all' ? initialSelectedGroup : '';
+  });
   const [sortBy, setSortBy] = useState<string>('number');
   const [time] = useState(new Date());
   const [sidebarOpen, setSidebarOpen] = useState(false);
