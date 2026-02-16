@@ -99,6 +99,9 @@ import serRamadanLevantine2026Logo from '@/assets/category-logos/ser-ramadan-lev
 import serAsiaLogo from '@/assets/category-logos/ser-asia.png';
 import serWorldLogo from '@/assets/category-logos/ser-world.png';
 import serAlbaniaLogo from '@/assets/category-logos/ser-albania.png';
+import serSongsLogo from '@/assets/category-logos/ser-songs.png';
+import serNowShowingLogo from '@/assets/category-logos/ser-now-showing.png';
+import serKoreanLogo from '@/assets/category-logos/ser-korean.png';
 
 // Series-specific category logo matcher
 const getSeriesCategoryLogo = (groupName: string): string | null => {
@@ -112,6 +115,12 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   
   // Generic Ramadan Fallback
   if (g.includes('ramadan') || g.includes('رمضان')) return ramadanSeriesLogo;
+  
+  // Now Showing / Currently Airing
+  if (g.includes('تعرض حاليا') || g.includes('now showing') || g.includes('currently') || g.includes('airing')) return serNowShowingLogo;
+  
+  // Songs / Music
+  if (g.includes('أغاني') || g.includes('اغاني') || g.includes('song') || g.includes('music') || g.includes('clip')) return serSongsLogo;
   
   // TV Shows / Programs
   if (g.includes('tv show') || g.includes('program') || g.includes('برامج')) return serTvShowsLogo;
@@ -147,7 +156,7 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   if (g.includes('turkish') || g.includes('turk') || g.includes('ترك')) return serTurkishLogo;
   
   // Korean / K-Drama
-  if (g.includes('korean') || g.includes('kdrama') || g.includes('k-drama') || g.includes('كوري')) return koreanDramaLogo;
+  if (g.includes('korean') || g.includes('kdrama') || g.includes('k-drama') || g.includes('كوري')) return serKoreanLogo;
   
   // Anime
   if (g.includes('anime') || g.includes('انمي') || g.includes('أنمي') || g.includes('anm')) return animeSeriesLogo;
