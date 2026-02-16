@@ -157,8 +157,8 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   // Masrah / Theater Plays (series-specific)
   if (g.includes('masrah') || g.includes('مسرح') || g.includes('مسرحي') || g.includes('مسرحيات') || g.includes('theater') || g.includes('theatre')) return serMasrahLogo;
 
-  // Foreign 4K Series
-  if (g.includes('4k') && (g.includes('ser') || g.includes('series') || g.includes('مسلسل'))) return serForeign4kLogo;
+  // 4K Series
+  if (g.includes('4k')) return serForeign4kLogo;
 
   // Cartoons
   if (g.includes('cartoon') || g.includes('كرتون') || g.includes('animation')) return serCartoonLogo;
