@@ -102,6 +102,8 @@ import serAlbaniaLogo from '@/assets/category-logos/ser-albania.png';
 import serSongsLogo from '@/assets/category-logos/ser-songs.png';
 import serNowShowingLogo from '@/assets/category-logos/ser-now-showing.png';
 import serKoreanLogo from '@/assets/category-logos/ser-korean.png';
+import serForeign2024Logo from '@/assets/category-logos/foreign-subtitled-2024.png';
+import serForeign2025Logo from '@/assets/category-logos/foreign-subtitled-2025.png';
 
 // Series-specific category logo matcher
 const getSeriesCategoryLogo = (groupName: string): string | null => {
@@ -126,19 +128,21 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   if (g.includes('tv show') || g.includes('program') || g.includes('برامج')) return serTvShowsLogo;
   
   // Islamic
-  if (g.includes('islamic') || g.includes('islam') || g.includes('إسلام') || g.includes('اسلام') || g.includes('ديني')) return serIslamicLogo;
+  if (g.includes('islamic') || g.includes('islam') || g.includes('إسلام') || g.includes('اسلام') || g.includes('اسلامية') || g.includes('ديني')) return serIslamicLogo;
 
-  // Foreign/English Subtitled Years (Specific)
-  if ((g.includes('foreign') || g.includes('english')) && g.includes('sub') && g.includes('2022')) return serEnglish2022SubLogo;
-  if ((g.includes('foreign') || g.includes('english')) && g.includes('sub') && g.includes('2023')) return serForeign2023Logo;
-  if ((g.includes('foreign') || g.includes('english')) && g.includes('sub') && g.includes('2026')) return serForeign2026Logo;
+  // Foreign/English Subtitled Years (Specific) - also match "bf" (before) and "قبل"
+  if ((g.includes('foreign') || g.includes('english') || g.includes('bf') || g.includes('قبل')) && (g.includes('sub') || g.includes('subtitled')) && g.includes('2022')) return serEnglish2022SubLogo;
+  if ((g.includes('foreign') || g.includes('english')) && (g.includes('sub') || g.includes('2023'))) return serForeign2023Logo;
+  if ((g.includes('foreign') || g.includes('english')) && g.includes('2024')) return serForeign2024Logo;
+  if ((g.includes('foreign') || g.includes('english')) && g.includes('2025')) return serForeign2025Logo;
+  if ((g.includes('foreign') || g.includes('english')) && (g.includes('sub') || g.includes('2026'))) return serForeign2026Logo;
   
   // Arabic Series by Year
   if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && g.includes('2026')) return serArabic2026Logo;
   if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && g.includes('2025')) return serArabic2025Logo;
   if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && g.includes('2024')) return serArabic2024Logo;
   if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && g.includes('2023')) return serArabic2023Logo;
-  if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && (g.includes('197') || g.includes('198') || g.includes('199') || g.includes('200') || g.includes('classic') || g.includes('old'))) return serArabicClassicLogo;
+  if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && (g.includes('197') || g.includes('198') || g.includes('199') || g.includes('200') || g.includes('classic') || g.includes('old') || g.includes('before') || g.includes('قبل'))) return serArabicClassicLogo;
 
   // Dubbed Foreign series
   if (g.includes('dub') && (g.includes('foreign') || g.includes('مدبلجة'))) return serEnglishDubbedLogo;
@@ -180,7 +184,7 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   if (g.includes('war') || g.includes('military') || g.includes('حرب') || g.includes('عسكري')) return warMilitaryLogo;
   
   // Sports
-  if (g.includes('sport') || g.includes('رياض')) return sportsSeriesLogo;
+  if (g.includes('sport') || g.includes('رياض') || g.includes('ufc') || g.includes('wwe') || g.includes('wrestling') || g.includes('عروض')) return sportsSeriesLogo;
   
   // Comedy
   if (g.includes('comedy') || g.includes('كوميدي') || g.includes('كوميديا')) return serComedyLogo;
