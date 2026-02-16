@@ -108,6 +108,13 @@ import serForeign2025Logo from '@/assets/category-logos/foreign-subtitled-2025.p
 import serMasrahLogo from '@/assets/category-logos/ser-masrah.png';
 import serForeign4kLogo from '@/assets/category-logos/ser-foreign-4k.png';
 import serAnimeEnLogo from '@/assets/category-logos/ser-anime-en.png';
+import serEnglishSeriesLogo from '@/assets/category-logos/ser-english-series.png';
+import serFrAnimeLogo from '@/assets/category-logos/ser-fr-anime.png';
+import serAnimeFrLogo from '@/assets/category-logos/ser-anime-fr.png';
+import serDeutschLogo from '@/assets/category-logos/ser-deutsch.png';
+import serFrActionLogo from '@/assets/category-logos/ser-fr-action.png';
+import serFrEnfantsLogo from '@/assets/category-logos/ser-fr-enfants.png';
+import serGermanVodLogo from '@/assets/category-logos/ser-german-vod.png';
 
 // Series-specific category logo matcher
 const getSeriesCategoryLogo = (groupName: string): string | null => {
@@ -218,7 +225,23 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   // Disney
   if (g.includes('disney')) return serDisneyLogo;
   
-  // Generic English series
+  // French Anime
+  if ((g.includes('fr') || g.includes('french') || g.includes('فرنسي')) && (g.includes('anime') || g.includes('انمي') || g.includes('أنمي'))) return serAnimeFrLogo;
+  
+  // French Action
+  if ((g.includes('fr') || g.includes('french') || g.includes('فرنسي')) && (g.includes('action') || g.includes('أكشن'))) return serFrActionLogo;
+  
+  // French Kids / Enfants
+  if ((g.includes('fr') || g.includes('french') || g.includes('فرنسي')) && (g.includes('enfant') || g.includes('kids') || g.includes('child') || g.includes('اطفال') || g.includes('أطفال'))) return serFrEnfantsLogo;
+  
+  // Deutsch / German Series
+  if (g.includes('deutsch') || (g.includes('german') && !g.includes('vod'))) return serDeutschLogo;
+  
+  // German VOD Series
+  if (g.includes('german') && g.includes('vod')) return serGermanVodLogo;
+
+  // Generic English series (with crown badge for "english series" specific)
+  if ((g.includes('english') || g.includes('انجليزي')) && (g.includes('series') || g.includes('مسلسل'))) return serEnglishSeriesLogo;
   if (g.includes('english') || g.includes('انجليزي')) return serEnglishLogo;
 
   // Regions
