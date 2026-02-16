@@ -466,7 +466,12 @@ const shortenGroupName = (name: string): string => {
   let clean = translateGroupName(name);
   
   const yearMatch = clean.match(/\b(19|20)\d{2}\b/);
-  const year = yearMatch ? yearMatch[0] : '';
+  const rawYear = yearMatch ? yearMatch[0] : '';
+  // If the group has a decade ending in 0 and contains "s" suffix (e.g. "2000s", "1970s"), format as decade
+  const cleanLower = clean.toLowerCase();
+  const nameLow = name.toLowerCase();
+  const isDecade = rawYear && (cleanLower.includes(rawYear + 's') || cleanLower.includes(rawYear + "'s") || nameLow.includes(rawYear + 's'));
+  const year = rawYear ? (isDecade ? rawYear + "'s" : rawYear) : '';
   const lower = clean.toLowerCase();
   const nameLower = name.toLowerCase();
   
