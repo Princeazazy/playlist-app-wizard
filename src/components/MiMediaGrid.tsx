@@ -470,6 +470,11 @@ const shortenGroupName = (name: string): string => {
   const lower = clean.toLowerCase();
   const nameLower = name.toLowerCase();
   
+  // Debug: log groups containing Arabic music/song characters
+  if (name.includes('غان') || name.includes('اغان') || lower.includes('song') || lower.includes('music')) {
+    console.log('[SHORTEN DEBUG] Songs candidate:', { name, clean, lower, nameLower });
+  }
+  
   // Ramadan specific regions
   if ((lower.includes('ramadan') || nameLower.includes('رمضان')) && (lower.includes('maghreb') || lower.includes('morocco') || nameLower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria'))) return 'Ramadan 2026 Morocco';
   if ((lower.includes('ramadan') || nameLower.includes('رمضان')) && (lower.includes('egypt') || nameLower.includes('مصر') || nameLower.includes('مصري'))) return 'Ramadan 2026 Egyptian';
@@ -898,10 +903,14 @@ export const MiMediaGrid = ({
               }`}
             >
               <div className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center overflow-hidden flex-shrink-0">
-                {/* Use custom category logo from first raw group name, then poster, then emoji */}
                 {(() => {
-                  const rawName = (group as any).rawNames?.[0] || group.name;
-                  const logo = getCategoryLogo(rawName, category);
+                  const rawNames: string[] = (group as any).rawNames || [group.name];
+                  // Try all raw names to find the best logo match
+                  let logo: string | null = null;
+                  for (const rawName of rawNames) {
+                    logo = getCategoryLogo(rawName, category);
+                    if (logo) break;
+                  }
                   if (logo) {
                     return <img src={logo} alt={group.name} className="w-full h-full object-cover scale-150" />;
                   }
@@ -913,12 +922,12 @@ export const MiMediaGrid = ({
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = `<span class="text-2xl">${getCategoryEmoji(rawName)}</span>`;
+                          e.currentTarget.parentElement!.innerHTML = `<span class="text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
                         }}
                       />
                     );
                   }
-                  return <span className="text-2xl">{getCategoryEmoji(rawName)}</span>;
+                  return <span className="text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
                 })()}
               </div>
               <div className="flex-1 text-left">
