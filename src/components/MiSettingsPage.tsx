@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, User, Shield, ListVideo, Trash2, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Check, X, Upload, FileVideo, Download, Loader2, Pencil } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronLeft, User, Shield, ListVideo, Trash2, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Check, X, Upload, FileVideo, Download, Loader2, Pencil, Users, Plus, ShieldOff, UserX, UserCheck } from 'lucide-react';
 import { getProfileName, setProfileName, getProfileInitial } from '@/lib/profileStorage';
+import { getAppSession } from '@/lib/appSession';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -55,6 +56,121 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange }: MiSettingsPageProps
   const weather = useWeather();
   const [profileNameInput, setProfileNameInput] = useState(getProfileName());
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  // Admin user management
+  const session = getAppSession();
+  const isAdminUser = session?.user?.is_admin === true;
+  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [managedUsers, setManagedUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newDisplayName, setNewDisplayName] = useState('');
+  const [newIsAdmin, setNewIsAdmin] = useState(false);
+  const [creatingUser, setCreatingUser] = useState(false);
+
+  const adminHeaders = {
+    'x-session-token': session?.token || '',
+    'x-session-user-id': session?.user?.id || '',
+  };
+
+  const fetchUsers = useCallback(async () => {
+    setUsersLoading(true);
+    setUsersError('');
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('app-auth', {
+        body: { action: 'list_users' },
+        headers: adminHeaders,
+      });
+      if (fnError || data?.error) throw new Error(data?.error || fnError?.message);
+      setManagedUsers(data.users || []);
+    } catch (err: any) {
+      setUsersError(err.message);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUsername.trim() || !newPassword) return;
+    setCreatingUser(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('app-auth', {
+        body: {
+          action: 'create_user',
+          username: newUsername.trim(),
+          password: newPassword,
+          display_name: newDisplayName.trim() || newUsername.trim(),
+          is_admin: newIsAdmin,
+        },
+        headers: adminHeaders,
+      });
+      if (fnError || data?.error) throw new Error(data?.error || fnError?.message);
+      toast.success(`User "${newUsername}" created!`);
+      setShowCreateUser(false);
+      setNewUsername('');
+      setNewPassword('');
+      setNewDisplayName('');
+      setNewIsAdmin(false);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
+  const handleToggleActive = async (user: any) => {
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('app-auth', {
+        body: { action: 'update_user', user_id: user.id, is_active: !user.is_active },
+        headers: adminHeaders,
+      });
+      if (fnError || data?.error) throw new Error(data?.error || fnError?.message);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleToggleAdmin = async (user: any) => {
+    if (user.id === session?.user?.id) return;
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('app-auth', {
+        body: { action: 'update_user', user_id: user.id, is_admin: !user.is_admin },
+        headers: adminHeaders,
+      });
+      if (fnError || data?.error) throw new Error(data?.error || fnError?.message);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleDeleteUser = async (user: any) => {
+    if (user.id === session?.user?.id) return;
+    if (!confirm(`Delete user "${user.username}"?`)) return;
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('app-auth', {
+        body: { action: 'delete_user', user_id: user.id },
+        headers: adminHeaders,
+      });
+      if (fnError || data?.error) throw new Error(data?.error || fnError?.message);
+      toast.success(`User "${user.username}" deleted`);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (showUserManagement && isAdminUser) {
+      fetchUsers();
+    }
+  }, [showUserManagement]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -353,6 +469,22 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange }: MiSettingsPageProps
               </div>
               <span className="text-foreground font-medium text-lg">Delete Cache</span>
             </button>
+
+            {/* Manage Users - Admin Only */}
+            {isAdminUser && (
+              <button
+                onClick={() => setShowUserManagement(true)}
+                className="w-full flex items-center gap-4 px-6 py-5 bg-card rounded-2xl border border-primary/30 hover:bg-card/80 transition-colors text-left"
+              >
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <span className="text-foreground font-medium text-lg block">Manage Users</span>
+                  <span className="text-primary text-sm">Admin Panel</span>
+                </div>
+              </button>
+            )}
           </div>
         </div>
 
@@ -540,7 +672,80 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange }: MiSettingsPageProps
         </DialogContent>
       </Dialog>
 
-      {/* Hidden file input */}
+      {/* User Management Dialog - Admin Only */}
+      <Dialog open={showUserManagement} onOpenChange={setShowUserManagement}>
+        <DialogContent className="bg-card border-border/30 max-w-2xl max-h-[85vh] overflow-y-auto mi-scrollbar">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              Manage Users
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {usersError && <p className="text-destructive text-sm bg-destructive/10 rounded-xl p-3">{usersError}</p>}
+
+            {/* Create User */}
+            {!showCreateUser ? (
+              <button onClick={() => setShowCreateUser(true)} className="flex items-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors w-full justify-center">
+                <Plus className="w-5 h-5" /> Add New User
+              </button>
+            ) : (
+              <form onSubmit={handleCreateUser} className="bg-muted/30 rounded-xl p-4 space-y-3 border border-border/30">
+                <h3 className="font-semibold text-foreground">Create New User</h3>
+                <Input placeholder="Username" value={newUsername} onChange={e => setNewUsername(e.target.value)} className="bg-background border-border/50" />
+                <Input placeholder="Display Name (optional)" value={newDisplayName} onChange={e => setNewDisplayName(e.target.value)} className="bg-background border-border/50" />
+                <Input type="password" placeholder="Password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="bg-background border-border/50" />
+                <label className="flex items-center gap-2 text-sm text-foreground">
+                  <input type="checkbox" checked={newIsAdmin} onChange={e => setNewIsAdmin(e.target.checked)} className="rounded" />
+                  Admin privileges
+                </label>
+                <div className="flex gap-2">
+                  <button type="submit" disabled={creatingUser || !newUsername.trim() || !newPassword} className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 flex items-center gap-2">
+                    {creatingUser && <Loader2 className="w-4 h-4 animate-spin" />} Create
+                  </button>
+                  <button type="button" onClick={() => setShowCreateUser(false)} className="px-4 py-2.5 rounded-lg bg-secondary text-secondary-foreground text-sm">Cancel</button>
+                </div>
+              </form>
+            )}
+
+            {/* Users List */}
+            {usersLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
+            ) : (
+              <div className="space-y-2">
+                {managedUsers.map(user => (
+                  <div key={user.id} className={`flex items-center justify-between gap-3 p-4 rounded-xl border border-border/30 ${user.is_active ? 'bg-muted/20' : 'bg-muted/10 opacity-60'}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-foreground truncate">{user.display_name || user.username}</p>
+                        {user.is_admin && <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">Admin</span>}
+                        {!user.is_active && <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded-full">Disabled</span>}
+                      </div>
+                      <p className="text-xs text-muted-foreground">@{user.username} · Joined {new Date(user.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => handleToggleAdmin(user)} disabled={user.id === session?.user?.id} className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center disabled:opacity-30" title={user.is_admin ? 'Remove admin' : 'Make admin'}>
+                        {user.is_admin ? <ShieldOff className="w-4 h-4 text-accent" /> : <Shield className="w-4 h-4 text-muted-foreground" />}
+                      </button>
+                      <button onClick={() => handleToggleActive(user)} className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center" title={user.is_active ? 'Disable' : 'Enable'}>
+                        {user.is_active ? <UserX className="w-4 h-4 text-muted-foreground" /> : <UserCheck className="w-4 h-4 text-primary" />}
+                      </button>
+                      <button onClick={() => handleDeleteUser(user)} disabled={user.id === session?.user?.id} className="w-9 h-9 rounded-lg hover:bg-destructive/10 flex items-center justify-center disabled:opacity-30" title="Delete">
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {managedUsers.length === 0 && !usersLoading && (
+                  <p className="text-center text-muted-foreground py-6">No users found</p>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <input
         ref={fileInputRef}
         type="file"
