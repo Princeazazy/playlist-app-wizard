@@ -489,6 +489,7 @@ const shortenGroupName = (name: string): string => {
   }
 
   // Specific genres
+  if (lower.includes('tv show') || lower.includes('برامج') || lower.includes('program')) return 'TV Shows';
   if (lower.includes('islamic') || lower.includes('islam') || lower.includes('إسلام') || lower.includes('اسلام') || lower.includes('ديني')) return 'Islamic';
   if (lower.includes('documentary') || lower.includes('docu') || lower.includes('وثائقي')) return 'Documentaries';
   if (lower.includes('christmas') || lower.includes('كريسماس')) return 'Christmas';
