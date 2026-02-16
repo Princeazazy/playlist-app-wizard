@@ -695,7 +695,13 @@ export const MiMediaGrid = ({
     // === 6. Seasonal content (priority 500) ===
     if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas')) return 500;
     
-    // === 7. Everything else (priority 900+) ===
+    // === 7. Misc content pushed to bottom (priority 800+) ===
+    if (g.includes('song') || groupName.includes('أغاني') || groupName.includes('اغاني') || g.includes('music clip')) return 850;
+    if (g.includes('masrah') || groupName.includes('مسرح') || g.includes('theater') || g.includes('theatre')) return 840;
+    if (g.includes('islamic') || g.includes('islam') || groupName.includes('إسلام') || groupName.includes('اسلام') || groupName.includes('ديني')) return 830;
+    if (g.includes('tv show') || groupName.includes('برامج') || g.includes('program')) return 820;
+    
+    // === 8. Everything else (priority 900+) ===
     return 900;
   };
 
