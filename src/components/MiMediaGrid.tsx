@@ -87,13 +87,31 @@ import crimeMysteryLogo from '@/assets/category-logos/crime-mystery.png';
 import historicalBiographyLogo from '@/assets/category-logos/historical-biography.png';
 import warMilitaryLogo from '@/assets/category-logos/war-military.png';
 import sportsSeriesLogo from '@/assets/category-logos/sports-series.png';
+import serTvShowsLogo from '@/assets/category-logos/ser-tv-shows.png';
+import serIslamicLogo from '@/assets/category-logos/ser-islamic.png';
+import serEnglish2022SubLogo from '@/assets/category-logos/ser-english-2022-sub.png';
+import serForeign2023Logo from '@/assets/category-logos/ser-foreign-2023.png';
+import serForeign2026Logo from '@/assets/category-logos/ser-foreign-2026.png';
+import serRamadanMaghreb2026Logo from '@/assets/category-logos/ser-ramadan-maghreb-2026.png';
 
 // Series-specific category logo matcher
 const getSeriesCategoryLogo = (groupName: string): string | null => {
   const g = (groupName + ' ' + translateGroupName(groupName)).toLowerCase();
   
   // Ramadan
+  if (g.includes('ramadan') && (g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب'))) return serRamadanMaghreb2026Logo;
   if (g.includes('ramadan') || g.includes('رمضان')) return ramadanSeriesLogo;
+  
+  // TV Shows / Programs
+  if (g.includes('tv show') || g.includes('program') || g.includes('برامج')) return serTvShowsLogo;
+  
+  // Islamic
+  if (g.includes('islamic') || g.includes('islam') || g.includes('إسلام') || g.includes('ديني')) return serIslamicLogo;
+
+  // Foreign/English Subtitled Years (Specific)
+  if ((g.includes('foreign') || g.includes('english')) && g.includes('sub') && g.includes('2022')) return serEnglish2022SubLogo;
+  if ((g.includes('foreign') || g.includes('english')) && g.includes('sub') && g.includes('2023')) return serForeign2023Logo;
+  if ((g.includes('foreign') || g.includes('english')) && g.includes('sub') && g.includes('2026')) return serForeign2026Logo;
   
   // Arabic Series by Year
   if ((g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && g.includes('2026')) return serArabic2026Logo;
