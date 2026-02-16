@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Cache TMDB poster lookups in localStorage
-const POSTER_CACHE_KEY = 'mi-player-tmdb-poster-cache';
+const POSTER_CACHE_KEY = 'mi-player-tmdb-poster-cache-v2'; // v2: year-aware matching
 const CACHE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 interface PosterCacheEntry {
@@ -80,14 +80,14 @@ const cleanForSearch = (name: string): string => {
  * Hook that resolves TMDB posters for a list of channels.
  * Searches TMDB by channel name and returns proper movie/show poster URLs.
  */
-export const useTMDBPosters = (channels: { name: string; logo?: string }[]) => {
+export const useTMDBPosters = (channels: { name: string; logo?: string; year?: string }[]) => {
   const [posterMap, setPosterMap] = useState<Record<string, string>>({});
   const processedRef = useRef(new Set<string>());
   const isProcessingRef = useRef(false);
   const batchIdRef = useRef(0);
 
   useEffect(() => {
-    const needPosters: string[] = [];
+    const needPosters: { name: string; year?: string }[] = [];
     const initialMap: Record<string, string> = {};
 
     for (const ch of channels) {
@@ -101,31 +101,37 @@ export const useTMDBPosters = (channels: { name: string; logo?: string }[]) => {
         continue;
       }
 
-      needPosters.push(ch.name);
+      needPosters.push({ name: ch.name, year: ch.year });
     }
 
     if (Object.keys(initialMap).length > 0) {
       setPosterMap(prev => ({ ...prev, ...initialMap }));
     }
 
-    const uniqueNames = [...new Set(needPosters)];
-    if (uniqueNames.length === 0 || isProcessingRef.current) return;
+    // Deduplicate by name
+    const seenNames = new Set<string>();
+    const uniqueItems = needPosters.filter(item => {
+      if (seenNames.has(item.name)) return false;
+      seenNames.add(item.name);
+      return true;
+    });
+    if (uniqueItems.length === 0 || isProcessingRef.current) return;
 
     isProcessingRef.current = true;
     const currentBatch = ++batchIdRef.current;
 
     const searchBatch = async () => {
       // Process in batches of 3 to avoid overwhelming TMDB
-      for (let i = 0; i < uniqueNames.length; i += 3) {
+      for (let i = 0; i < uniqueItems.length; i += 3) {
         if (batchIdRef.current !== currentBatch) return; // Cancelled
 
-        const batch = uniqueNames.slice(i, i + 3);
-        batch.forEach(name => processedRef.current.add(name));
+        const batch = uniqueItems.slice(i, i + 3);
+        batch.forEach(item => processedRef.current.add(item.name));
 
         const results: Record<string, string | null> = {};
 
         // Search each name on TMDB
-        await Promise.all(batch.map(async (name) => {
+        await Promise.all(batch.map(async ({ name, year }) => {
           const searchTerm = cleanForSearch(name);
           if (!searchTerm || searchTerm.length < 2) {
             results[name] = null;
@@ -151,15 +157,31 @@ export const useTMDBPosters = (channels: { name: string; logo?: string }[]) => {
               });
 
               if (!error && data?.success && data.results?.length > 0) {
-                // Find best match - prefer exact or close title match
+                // Find best match - prefer exact or close title match, and filter by year if available
                 const termLower = term.toLowerCase();
-                const bestMatch = data.results.find((r: any) => {
+                const itemYear = year || '';
+                
+                // First try: match by title AND year
+                let bestMatch = year ? data.results.find((r: any) => {
                   const title = (r.title || '').toLowerCase();
                   const origTitle = (r.original_title || r.originalTitle || '').toLowerCase();
-                  return title === termLower || origTitle === termLower ||
+                  const resultYear = (r.year || r.release_date || r.first_air_date || '').substring(0, 4);
+                  const titleMatch = title === termLower || origTitle === termLower ||
                          title.includes(termLower) || termLower.includes(title) ||
                          origTitle.includes(termLower) || termLower.includes(origTitle);
-                }) || data.results[0];
+                  return titleMatch && resultYear === itemYear;
+                }) : null;
+
+                // Second try: match by title only
+                if (!bestMatch) {
+                  bestMatch = data.results.find((r: any) => {
+                    const title = (r.title || '').toLowerCase();
+                    const origTitle = (r.original_title || r.originalTitle || '').toLowerCase();
+                    return title === termLower || origTitle === termLower ||
+                           title.includes(termLower) || termLower.includes(title) ||
+                           origTitle.includes(termLower) || termLower.includes(origTitle);
+                  }) || data.results[0];
+                }
 
                 if (bestMatch.poster) {
                   foundPoster = bestMatch.poster;
@@ -186,7 +208,7 @@ export const useTMDBPosters = (channels: { name: string; logo?: string }[]) => {
         }
 
         // Delay between batches
-        if (i + 3 < uniqueNames.length) {
+        if (i + 3 < uniqueItems.length) {
           await new Promise(r => setTimeout(r, 800));
         }
       }
