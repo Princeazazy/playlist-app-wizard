@@ -899,7 +899,7 @@ export const MiMediaGrid = ({
     return filtered;
   }, [items, searchQuery, selectedGroup, sortBy, showFavoritesOnly, favorites]);
 
-  const { visibleItems, onScroll, hasMore } = useProgressiveList(filteredItems, {
+  const { visibleItems, onScroll, hasMore, loadMore } = useProgressiveList(filteredItems, {
     initial: 60,
     step: 60,
   });
@@ -1147,6 +1147,34 @@ export const MiMediaGrid = ({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     onItemSelect(item, selectedGroup);
+                  }
+                  if (['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
+                    e.preventDefault();
+                    const container = e.currentTarget.parentElement;
+                    if (!container) return;
+                    const cards = Array.from(container.querySelectorAll(':scope > [role="button"]')) as HTMLElement[];
+                    const currentIdx = cards.indexOf(e.currentTarget as HTMLElement);
+                    if (currentIdx === -1) return;
+                    const gridStyle = window.getComputedStyle(container);
+                    const cols = gridStyle.gridTemplateColumns.split(' ').length || 1;
+                    let targetIdx = currentIdx;
+                    if (e.key === 'ArrowRight') targetIdx = currentIdx + 1;
+                    else if (e.key === 'ArrowLeft') targetIdx = currentIdx - 1;
+                    else if (e.key === 'ArrowDown') targetIdx = currentIdx + cols;
+                    else if (e.key === 'ArrowUp') targetIdx = currentIdx - cols;
+                    if (targetIdx >= 0 && targetIdx < cards.length) {
+                      cards[targetIdx].focus();
+                      cards[targetIdx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    } else if (targetIdx >= cards.length && hasMore) {
+                      loadMore();
+                      setTimeout(() => {
+                        const updated = Array.from(container.querySelectorAll(':scope > [role="button"]')) as HTMLElement[];
+                        if (updated[targetIdx]) {
+                          updated[targetIdx].focus();
+                          updated[targetIdx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                        }
+                      }, 100);
+                    }
                   }
                 }}
               >
