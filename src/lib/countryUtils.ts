@@ -24,7 +24,7 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'hulu': { name: 'Hulu', code: 'hulu', flagUrl: '', priority: 1005, isStreamingService: true },
   'paramount': { name: 'Paramount+', code: 'paramount', flagUrl: '', priority: 1006, isStreamingService: true },
   'paramount+': { name: 'Paramount+', code: 'paramount', flagUrl: '', priority: 1006, isStreamingService: true },
-  'peacock': { name: 'Peacock', code: 'peacock', flagUrl: '', priority: 1007, isStreamingService: true },
+  'peacock': { name: 'Peacock', code: 'peacock', flagUrl: '/images/peacock-logo.png', priority: 1007, isStreamingService: true },
   'max': { name: 'Max', code: 'max', flagUrl: '', priority: 1008, isStreamingService: true },
   'starz': { name: 'Starz', code: 'starz', flagUrl: '', priority: 1009, isStreamingService: true },
   'showtime': { name: 'Showtime', code: 'showtime', flagUrl: '', priority: 1010, isStreamingService: true },
