@@ -348,16 +348,6 @@ export const MiSeriesDetail = ({
                           <span className="text-lg font-bold text-foreground">{index + 1}</span>
                         </div>
                         
-                        {/* Episode Thumbnail (if available) */}
-                        {episode.info?.movie_image && (
-                          <div className="w-24 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-secondary">
-                            <img
-                              src={episode.info.movie_image}
-                              alt={`Episode ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
                         
                         {/* Episode Info */}
                         <div className="flex-1 min-w-0">
