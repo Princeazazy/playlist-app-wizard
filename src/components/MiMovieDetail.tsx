@@ -74,8 +74,8 @@ export const MiMovieDetail = ({
     year: tmdbData?.year || item.year || 'Unknown',
   };
 
-  // Get poster URL - prefer TMDB, fall back to item data
-  const posterUrl = tmdbData?.posterUrl || tmdbData?.poster || item.backdrop_path?.[0] || item.logo || 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=400&h=600&fit=crop';
+  // Get poster URL - prefer item's own logo (from playlist provider), only use TMDB poster if no local logo exists
+  const posterUrl = item.logo || tmdbData?.posterUrl || tmdbData?.poster || item.backdrop_path?.[0] || 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=400&h=600&fit=crop';
 
   const trailerKey = tmdbData?.trailer?.key;
 
@@ -148,11 +148,12 @@ export const MiMovieDetail = ({
           {/* Poster */}
           <div className="w-[350px] flex-shrink-0">
             <div className="rounded-2xl overflow-hidden shadow-2xl bg-card">
-              {item.logo ? (
+              {posterUrl ? (
                 <img 
                   src={posterUrl}
                   alt={item.name}
                   className="w-full object-contain"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               ) : (
                 <div className="w-full aspect-[2/3] bg-card flex items-center justify-center">
