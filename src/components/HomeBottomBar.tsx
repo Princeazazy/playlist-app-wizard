@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tv, Film, Clapperboard, Trophy, TrendingUp, Play, Zap, Globe, Music, Gamepad2, Baby, Newspaper } from 'lucide-react';
-import { InfiniteMarquee } from '@/components/shared/InfiniteMarquee';
 import { getRecentLastPlayed } from '@/hooks/useWatchProgress';
 
 interface HomeBottomBarProps {
@@ -103,6 +102,7 @@ export const HomeBottomBar = ({
   currentlyPlaying,
   onResumeClick,
 }: HomeBottomBarProps) => {
+  const [tickerOffset, setTickerOffset] = useState(0);
   const [updateKey, setUpdateKey] = useState(0);
 
   // Generate trending items from real watch history
@@ -131,6 +131,17 @@ export const HomeBottomBar = ({
     const interval = setInterval(() => {
       setUpdateKey(prev => prev + 1);
     }, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Animate ticker
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTickerOffset((prev) => {
+        if (prev < -1500) return 0;
+        return prev - 1;
+      });
+    }, 30);
     return () => clearInterval(interval);
   }, []);
 
@@ -201,14 +212,21 @@ export const HomeBottomBar = ({
               <TrendingUp className="w-3 h-3" />
               <span className="text-[10px] uppercase tracking-wider font-medium">Trending Now</span>
             </div>
-            <InfiniteMarquee speed={40} direction="left" pauseOnHover className="h-6">
-              {trendingItems.map((item, index) => (
-                <span key={index} className="flex items-center gap-2 text-sm text-foreground/80 whitespace-nowrap">
-                  <span>{item.icon}</span>
-                  <span>{item.text}</span>
-                </span>
-              ))}
-            </InfiniteMarquee>
+            <div className="overflow-hidden">
+              <motion.div
+                className="flex gap-8 whitespace-nowrap"
+                animate={{ x: tickerOffset }}
+                transition={{ type: 'tween', ease: 'linear', duration: 0 }}
+                style={{ width: 'fit-content' }}
+              >
+                {[...trendingItems, ...trendingItems, ...trendingItems].map((item, index) => (
+                  <span key={index} className="flex items-center gap-2 text-sm text-foreground/80">
+                    <span>{item.icon}</span>
+                    <span>{item.text}</span>
+                  </span>
+                ))}
+              </motion.div>
+            </div>
           </div>
 
           {/* Divider */}
