@@ -1,5 +1,5 @@
-import { useState, useEffect, memo } from 'react';
-import { ChevronLeft, Play, Star, Clock, Globe, Calendar, User, Search, Film, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronLeft, Play, Star, Clock, Globe, Calendar, User, Search, Film, X } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useWeather } from '@/hooks/useWeather';
 import { useTMDB, TMDBDetailedItem } from '@/hooks/useTMDB';
@@ -23,6 +23,7 @@ export const MiMovieDetail = ({
   const [time, setTime] = useState(new Date());
   const [tmdbData, setTmdbData] = useState<TMDBDetailedItem | null>(null);
   const [isLoadingTMDB, setIsLoadingTMDB] = useState(true);
+  const [showTrailer, setShowTrailer] = useState(false);
   const weather = useWeather();
   const { search, getDetails } = useTMDB();
 
@@ -76,8 +77,32 @@ export const MiMovieDetail = ({
   // Get poster URL - prefer TMDB, fall back to item data
   const posterUrl = tmdbData?.posterUrl || tmdbData?.poster || item.backdrop_path?.[0] || item.logo || 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=400&h=600&fit=crop';
 
+  const trailerKey = tmdbData?.trailer?.key;
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Trailer Modal */}
+      {showTrailer && trailerKey && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+          <div className="relative w-full max-w-4xl mx-4">
+            <button
+              onClick={() => setShowTrailer(false)}
+              className="absolute -top-12 right-0 w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
+            >
+              <X className="w-5 h-5 text-foreground" />
+            </button>
+            <div className="rounded-2xl overflow-hidden aspect-video shadow-2xl">
+              <iframe
+                src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`}
+                title="Trailer"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+        </div>
+      )}
       {/* Background blur image */}
       <div 
         className="absolute inset-0 bg-cover bg-center opacity-20 blur-xl scale-110"
@@ -197,7 +222,11 @@ export const MiMovieDetail = ({
 
             {/* Action Buttons */}
             <div className="flex gap-4 mt-8">
-              <button className="flex-1 flex items-center justify-center gap-3 px-8 py-4 mi-card hover:bg-card transition-colors">
+              <button 
+                onClick={() => trailerKey && setShowTrailer(true)}
+                className={`flex-1 flex items-center justify-center gap-3 px-8 py-4 mi-card transition-colors ${trailerKey ? 'hover:bg-card cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                title={trailerKey ? 'Watch Trailer' : 'No trailer available'}
+              >
                 <Film className="w-6 h-6 text-muted-foreground" />
                 <span className="text-foreground font-medium text-lg">Trailer</span>
               </button>
