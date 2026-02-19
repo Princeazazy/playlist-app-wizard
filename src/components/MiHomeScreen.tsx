@@ -49,10 +49,10 @@ const useAnimatedCount = (target: number, duration = 1200) => {
 const FloatingOrbs = () => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden">
     {[
-      { size: 200, left: '5%', top: '15%', color: 'hsl(200 90% 55% / 0.06)', dur: 7 },
-      { size: 150, left: '80%', top: '10%', color: 'hsl(30 95% 55% / 0.05)', dur: 9 },
-      { size: 120, left: '50%', top: '60%', color: 'hsl(280 80% 60% / 0.05)', dur: 6 },
-      { size: 90,  left: '20%', top: '75%', color: 'hsl(200 90% 55% / 0.04)', dur: 8 },
+      { size: 300, left: '-5%', top: '-10%', color: 'hsl(220 80% 50% / 0.08)', dur: 8 },
+      { size: 250, left: '85%', top: '-5%', color: 'hsl(240 80% 55% / 0.06)', dur: 10 },
+      { size: 180, left: '40%', top: '50%', color: 'hsl(220 70% 50% / 0.04)', dur: 7 },
+      { size: 120, left: '15%', top: '70%', color: 'hsl(250 80% 60% / 0.03)', dur: 9 },
     ].map((orb, i) => (
       <motion.div
         key={i}
@@ -63,6 +63,7 @@ const FloatingOrbs = () => (
           left: orb.left,
           top: orb.top,
           background: `radial-gradient(circle, ${orb.color} 0%, transparent 70%)`,
+          filter: 'blur(40px)',
         }}
         animate={{ y: [0, -25, 0], x: [0, 12, 0], scale: [1, 1.15, 1] }}
         transition={{ duration: orb.dur, repeat: Infinity, ease: 'easeInOut', delay: i * 1.2 }}
@@ -304,17 +305,22 @@ export const MiHomeScreen = ({
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-x-hidden">
-      {/* Background */}
+      {/* PulseGOC-inspired background with blue corner glows */}
       <div className="absolute inset-0" style={{
-        background: 'radial-gradient(ellipse at 20% 20%, hsl(280 60% 8%) 0%, transparent 55%), radial-gradient(ellipse at 80% 80%, hsl(200 50% 6%) 0%, transparent 55%), radial-gradient(ellipse at 50% 50%, hsl(270 40% 5%) 0%, hsl(260 50% 3%) 100%)'
+        background: 'radial-gradient(ellipse at 0% 0%, hsl(220 80% 30% / 0.35) 0%, transparent 50%), radial-gradient(ellipse at 100% 0%, hsl(240 80% 35% / 0.3) 0%, transparent 45%), radial-gradient(ellipse at 50% 100%, hsl(260 60% 15% / 0.4) 0%, transparent 50%), hsl(240 30% 4%)'
       }} />
 
-      {/* Ambient floating orbs */}
+      {/* Top blue glow band (PulseGOC signature) */}
+      <div className="absolute top-0 left-0 right-0 h-[400px] pointer-events-none" style={{
+        background: 'linear-gradient(180deg, hsl(220 80% 40% / 0.12) 0%, transparent 100%)',
+      }} />
+
+      {/* Ambient floating orbs - now blue-toned */}
       <FloatingOrbs />
 
       {/* Subtle grid overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{
-        backgroundImage: 'linear-gradient(hsl(200 90% 55%) 1px, transparent 1px), linear-gradient(90deg, hsl(200 90% 55%) 1px, transparent 1px)',
+      <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{
+        backgroundImage: 'linear-gradient(hsl(220 80% 60%) 1px, transparent 1px), linear-gradient(90deg, hsl(220 80% 60%) 1px, transparent 1px)',
         backgroundSize: '60px 60px',
       }} />
 

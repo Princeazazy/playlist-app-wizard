@@ -4,6 +4,7 @@ import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
 import { useTMDBPosters } from '@/hooks/useTMDBPosters';
 import { Channel } from '@/hooks/useIPTV';
+import { InfiniteMarquee } from './shared/InfiniteMarquee';
 
 interface TMDBBrowseSectionProps {
   onSelectItem?: (item: TMDBItem) => void;
@@ -11,379 +12,175 @@ interface TMDBBrowseSectionProps {
   onChannelSelect?: (channel: Channel) => void;
 }
 
-const ITEMS_PER_PAGE = 6;
-
-const MediaCard = ({ item, onClick, index }: { item: TMDBItem; onClick?: () => void; index: number }) => (
+const MediaMarqueeCard = ({ item, onClick }: { item: TMDBItem; onClick?: () => void }) => (
   <motion.button
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay: index * 0.05, duration: 0.2 }}
-    whileHover={{ scale: 1.05, y: -5 }}
-    whileTap={{ scale: 0.98 }}
+    whileHover={{ scale: 1.05, y: -8 }}
+    whileTap={{ scale: 0.97 }}
     onClick={onClick}
-    className="flex-shrink-0 w-full group relative"
+    className="group relative w-[180px]"
   >
-    {/* Poster */}
-    <div className="aspect-[2/3] rounded-xl overflow-hidden bg-card border border-border/30 relative">
+    <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-card border border-white/[0.06] relative shadow-lg shadow-black/40 group-hover:shadow-primary/20 group-hover:border-primary/30 transition-all duration-300">
       {item.poster ? (
-        <img
-          src={item.poster}
-          alt={item.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-          loading="lazy"
-        />
+        <img src={item.poster} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" draggable={false} />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-muted">
-          {item.mediaType === 'tv' ? (
-            <Tv className="w-10 h-10 text-muted-foreground" />
-          ) : (
-            <Film className="w-10 h-10 text-muted-foreground" />
-          )}
+          {item.mediaType === 'tv' ? <Tv className="w-10 h-10 text-muted-foreground" /> : <Film className="w-10 h-10 text-muted-foreground" />}
         </div>
       )}
-      
-      {/* Hover overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
-        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-          <Play className="w-5 h-5 text-primary-foreground fill-current" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-primary/30">
+            <Play className="w-4 h-4 text-primary-foreground fill-current ml-0.5" />
+          </div>
+          <div className="text-left">
+            <p className="text-white text-xs font-semibold truncate max-w-[100px]">{item.title}</p>
+            {item.year && <p className="text-white/60 text-[10px]">{item.year}</p>}
+          </div>
         </div>
       </div>
-      
-      {/* Rating badge */}
       {item.rating && item.rating > 0 && (
-        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm">
+        <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-sm">
           <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-          <span className="text-xs font-medium text-white">{item.rating.toFixed(1)}</span>
+          <span className="text-[10px] font-bold text-white">{item.rating.toFixed(1)}</span>
         </div>
       )}
-      
-      {/* Media type badge */}
-      <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-primary/80 backdrop-blur-sm">
-        <span className="text-[10px] font-bold text-primary-foreground uppercase">
-          {item.mediaType === 'tv' ? 'TV' : 'Movie'}
-        </span>
+      <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-primary/80 backdrop-blur-sm">
+        <span className="text-[10px] font-bold text-primary-foreground uppercase">{item.mediaType === 'tv' ? 'TV' : 'Movie'}</span>
       </div>
-    </div>
-    
-    {/* Title */}
-    <div className="mt-2 px-1">
-      <h4 className="text-sm font-medium text-foreground truncate">{item.title}</h4>
-      {item.year && (
-        <p className="text-xs text-muted-foreground">{item.year}</p>
-      )}
     </div>
   </motion.button>
 );
 
-// Card for playlist items (Arabic movies) - uses TMDB poster when available
-const PlaylistCard = ({ channel, onClick, index, tmdbPoster }: { channel: Channel; onClick?: () => void; index: number; tmdbPoster?: string }) => {
+const PlaylistMarqueeCard = ({ channel, onClick, tmdbPoster }: { channel: Channel; onClick?: () => void; tmdbPoster?: string }) => {
   const cleanName = (name: string) => name.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
-  const yearMatch = channel.name.match(/\b(19|20)\d{2}\b/);
-  const year = yearMatch ? yearMatch[0] : null;
-  // Prefer TMDB poster over playlist logo (which is often a scene still)
   const posterUrl = tmdbPoster || channel.logo;
-  
-  
+
   return (
     <motion.button
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.05, duration: 0.2 }}
-      whileHover={{ scale: 1.05, y: -5 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: 1.05, y: -8 }}
+      whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="flex-shrink-0 w-full group relative"
+      className="group relative w-[180px]"
     >
-      <div className="aspect-[2/3] rounded-xl overflow-hidden bg-card border border-border/30 relative">
+      <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-card border border-white/[0.06] relative shadow-lg shadow-black/40 group-hover:shadow-primary/20 group-hover:border-primary/30 transition-all duration-300">
         {posterUrl ? (
-          <>
-            <img
-              src={posterUrl}
-              alt={channel.name}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              loading="lazy"
-              onError={(e) => {
-                if (tmdbPoster && channel.logo && e.currentTarget.src !== channel.logo) {
-                  e.currentTarget.src = channel.logo;
-                } else {
-                  e.currentTarget.style.display = 'none';
-                }
-              }}
-            />
-          </>
+          <img src={posterUrl} alt={channel.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" draggable={false}
+            onError={(e) => {
+              if (tmdbPoster && channel.logo && e.currentTarget.src !== channel.logo) {
+                e.currentTarget.src = channel.logo;
+              } else {
+                e.currentTarget.style.display = 'none';
+              }
+            }}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
             <Film className="w-10 h-10 text-primary/50" />
           </div>
         )}
-        
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-            <Play className="w-5 h-5 text-primary-foreground fill-current" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-primary/30">
+              <Play className="w-4 h-4 text-primary-foreground fill-current ml-0.5" />
+            </div>
+            <p className="text-white text-xs font-semibold truncate max-w-[100px]">{cleanName(channel.name)}</p>
           </div>
         </div>
-        
-        <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-emerald-500/80 backdrop-blur-sm">
+        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-emerald-500/80 backdrop-blur-sm">
           <span className="text-[10px] font-bold text-white uppercase">Arabic</span>
         </div>
-      </div>
-      
-      <div className="mt-2 px-1">
-        <h4 className="text-sm font-medium text-foreground truncate">{cleanName(channel.name)}</h4>
-        {year && <p className="text-xs text-muted-foreground">{year}</p>}
       </div>
     </motion.button>
   );
 };
 
-const CategoryRow = ({ 
-  title, 
-  icon: Icon, 
-  items, 
-  onSelectItem,
-  loading 
-}: { 
-  title: string; 
+// Section wrapper with PulseGOC-style curved container
+const MarqueeSection = ({
+  title,
+  icon: Icon,
+  badge,
+  children,
+}: {
+  title: string;
   icon: typeof Film;
-  items: TMDBItem[]; 
-  onSelectItem?: (item: TMDBItem) => void;
-  loading?: boolean;
-}) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  
-  const visibleItems = items.slice(
-    currentPage * ITEMS_PER_PAGE,
-    (currentPage + 1) * ITEMS_PER_PAGE
-  );
-
-  // Auto-cycle through pages
-  useEffect(() => {
-    if (items.length <= ITEMS_PER_PAGE || isPaused) return;
-    
-    const interval = setInterval(() => {
-      setCurrentPage((prev) => (prev + 1) % totalPages);
-    }, 5000); // Change page every 5 seconds
-    
-    return () => clearInterval(interval);
-  }, [items.length, totalPages, isPaused]);
-
-  return (
-    <div 
-      className="space-y-3"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <Icon className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+  badge?: string;
+  children: React.ReactNode;
+}) => (
+  <div className="relative">
+    {/* Curved container top */}
+    <div className="relative rounded-t-[2.5rem] overflow-hidden" style={{
+      background: 'linear-gradient(180deg, hsl(265 45% 10%) 0%, transparent 100%)',
+    }}>
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: 'linear-gradient(hsl(200 90% 55%) 1px, transparent 1px), linear-gradient(90deg, hsl(200 90% 55%) 1px, transparent 1px)',
+        backgroundSize: '40px 40px',
+      }} />
+      <div className="px-6 pt-6 pb-2 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{
+          background: 'linear-gradient(135deg, hsl(200 90% 55% / 0.2), hsl(240 80% 60% / 0.1))',
+          border: '1px solid hsl(200 90% 55% / 0.2)',
+        }}>
+          <Icon className="w-4 h-4 text-primary" />
         </div>
-        
-        {/* Page dots indicator */}
-        {!loading && totalPages > 1 && (
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-              />
-            ))}
-          </div>
+        <h3 className="text-lg font-bold text-foreground tracking-tight">{title}</h3>
+        {badge && (
+          <span className="ml-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-primary-foreground" style={{
+            background: 'linear-gradient(135deg, hsl(200 90% 55%), hsl(240 80% 60%))',
+            boxShadow: '0 0 12px hsl(200 90% 55% / 0.4)',
+          }}>{badge}</span>
         )}
       </div>
-      
-      {loading ? (
-        <div className="flex items-center justify-center h-[200px]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      ) : items.length > 0 ? (
-        <AnimatePresence mode="wait">
-          <motion.div 
-            key={currentPage}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="grid grid-cols-3 md:grid-cols-6 gap-3"
-          >
-            {visibleItems.map((item, index) => (
-              <MediaCard
-                key={`${item.id}-${item.mediaType}`}
-                item={item}
-                index={index}
-                onClick={() => onSelectItem?.(item)}
-              />
-            ))}
-          </motion.div>
-        </AnimatePresence>
-      ) : (
-        <div className="flex items-center justify-center h-[200px] text-muted-foreground">
-          No content available
-        </div>
-      )}
     </div>
-  );
-};
-
-// Row for playlist items (Arabic movies) - resolves TMDB posters
-const PlaylistRow = ({ 
-  title, 
-  icon: Icon, 
-  channels, 
-  onChannelSelect 
-}: { 
-  title: string; 
-  icon: typeof Film;
-  channels: Channel[]; 
-  onChannelSelect?: (channel: Channel) => void;
-}) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const totalPages = Math.ceil(channels.length / ITEMS_PER_PAGE);
-  const { getPosterForChannel } = useTMDBPosters(channels);
-  
-  const visibleItems = channels.slice(
-    currentPage * ITEMS_PER_PAGE,
-    (currentPage + 1) * ITEMS_PER_PAGE
-  );
-
-  useEffect(() => {
-    if (channels.length <= ITEMS_PER_PAGE || isPaused) return;
-    
-    const interval = setInterval(() => {
-      setCurrentPage((prev) => (prev + 1) % totalPages);
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [channels.length, totalPages, isPaused]);
-
-  if (channels.length === 0) return null;
-
-  return (
-    <div 
-      className="space-y-3"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <Icon className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-        </div>
-        
-        {totalPages > 1 && (
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-      
-      <AnimatePresence mode="wait">
-        <motion.div 
-          key={currentPage}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.3 }}
-          className="grid grid-cols-3 md:grid-cols-6 gap-3"
-        >
-          {visibleItems.map((channel, index) => (
-            <PlaylistCard
-              key={channel.id}
-              channel={channel}
-              index={index}
-              tmdbPoster={getPosterForChannel(channel.name)}
-              onClick={() => onChannelSelect?.(channel)}
-            />
-          ))}
-        </motion.div>
-      </AnimatePresence>
+    <div className="py-4">
+      {children}
     </div>
-  );
-};
+  </div>
+);
 
 export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect }: TMDBBrowseSectionProps) => {
   const { getTrending, getMovies, getTVShows, error } = useTMDB();
   const [trending, setTrending] = useState<TMDBItem[]>([]);
   const [popularMovies, setPopularMovies] = useState<TMDBItem[]>([]);
   const [popularTV, setPopularTV] = useState<TMDBItem[]>([]);
-  const [loadingState, setLoadingState] = useState({
-    trending: true,
-    movies: true,
-    tv: true,
-  });
+  const [loadingState, setLoadingState] = useState({ trending: true, movies: true, tv: true });
 
-  // Helper to exclude sports/WWE content
   const isSportsContent = (ch: Channel) => {
     const nameLower = ch.name.toLowerCase();
     const groupLower = ch.group?.toLowerCase() || '';
-    return nameLower.includes('wwe') || 
-           nameLower.includes('wrestling') ||
-           nameLower.includes('sport') ||
-           groupLower.includes('sport') ||
-           groupLower.includes('wwe');
+    return nameLower.includes('wwe') || nameLower.includes('wrestling') || nameLower.includes('sport') || groupLower.includes('sport') || groupLower.includes('wwe');
   };
 
-  // Ramadan 2026 Egyptian Series
   const ramadanShows = useMemo(() => {
-    const ramadanContent = channels.filter(ch => {
+    return channels.filter(ch => {
       const group = ch.group || '';
-      const isRamadan2026Egypt = group.includes('رمضان 2026 مسلسلات مصرية') ||
-                                 (group.includes('مسلسلات مصرية') && group.includes('2026'));
-      return isRamadan2026Egypt && !isSportsContent(ch);
-    });
-
-    return ramadanContent.slice(0, 24);
-  }, [channels]);
-
-  // Latest Arabic Series - from AR SER 2026 groups
-  const arabicSeries = useMemo(() => {
-    const arabicContent = channels.filter(ch => {
-      const group = ch.group || '';
-      const groupLower = group.toLowerCase();
-      const isTargetGroup = groupLower.includes('ar ser 2026') || 
-                           groupLower.includes('arabic series 2026') ||
-                           group.includes('مسلسلات عربي 2026') ||
-                           group.includes('مسلسلات عربية 2026');
-      return isTargetGroup && !isSportsContent(ch);
-    });
-
-    return arabicContent.slice(0, 24);
-  }, [channels]);
-
-  // Latest Arabic Movies - from AR MOV 2025 AND AR MOV 2026 combined
-  const arabicMovies = useMemo(() => {
-    const arabicContent = channels.filter(ch => {
-      const group = ch.group || '';
-      const groupLower = group.toLowerCase();
-      const isTargetGroup = groupLower.includes('ar mov 2026') || 
-                           groupLower.includes('ar mov 2025') ||
-                           groupLower.includes('arabic movies 2026') || 
-                           groupLower.includes('arabic movies 2025') ||
-                           group.includes('أفلام عربية') && (group.includes('2026') || group.includes('2025'));
-      return isTargetGroup && !isSportsContent(ch);
-    });
-
-    // Sort by year (2026 first, then 2025)
-    return arabicContent.sort((a, b) => {
-      const groupA = a.group?.includes('2026') ? 2026 : 2025;
-      const groupB = b.group?.includes('2026') ? 2026 : 2025;
-      return groupB - groupA;
+      return (group.includes('رمضان 2026 مسلسلات مصرية') || (group.includes('مسلسلات مصرية') && group.includes('2026'))) && !isSportsContent(ch);
     }).slice(0, 24);
   }, [channels]);
+
+  const arabicSeries = useMemo(() => {
+    return channels.filter(ch => {
+      const group = ch.group || '';
+      const gl = group.toLowerCase();
+      return (gl.includes('ar ser 2026') || gl.includes('arabic series 2026') || group.includes('مسلسلات عربي 2026') || group.includes('مسلسلات عربية 2026')) && !isSportsContent(ch);
+    }).slice(0, 24);
+  }, [channels]);
+
+  const arabicMovies = useMemo(() => {
+    return channels.filter(ch => {
+      const group = ch.group || '';
+      const gl = group.toLowerCase();
+      return (gl.includes('ar mov 2026') || gl.includes('ar mov 2025') || gl.includes('arabic movies 2026') || gl.includes('arabic movies 2025') || (group.includes('أفلام عربية') && (group.includes('2026') || group.includes('2025')))) && !isSportsContent(ch);
+    }).sort((a, b) => {
+      const gA = a.group?.includes('2026') ? 2026 : 2025;
+      const gB = b.group?.includes('2026') ? 2026 : 2025;
+      return gB - gA;
+    }).slice(0, 24);
+  }, [channels]);
+
+  // TMDB poster hooks for playlist rows
+  const { getPosterForChannel: getRamadanPoster } = useTMDBPosters(ramadanShows);
+  const { getPosterForChannel: getSeriesPoster } = useTMDBPosters(arabicSeries);
+  const { getPosterForChannel: getMoviePoster } = useTMDBPosters(arabicMovies);
 
   useEffect(() => {
     const loadContent = async () => {
@@ -392,18 +189,12 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
         getMovies('popular').finally(() => setLoadingState(s => ({ ...s, movies: false }))),
         getTVShows('popular').finally(() => setLoadingState(s => ({ ...s, tv: false }))),
       ]);
-      
       setTrending(trendingData.slice(0, 18));
       setPopularMovies(moviesData.results.slice(0, 18));
       setPopularTV(tvData.results.slice(0, 18));
     };
-    
     loadContent();
-    
-    const refreshInterval = setInterval(() => {
-      loadContent();
-    }, 30 * 60 * 1000);
-    
+    const refreshInterval = setInterval(loadContent, 30 * 60 * 1000);
     return () => clearInterval(refreshInterval);
   }, [getTrending, getMovies, getTVShows]);
 
@@ -415,10 +206,21 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
     );
   }
 
+  const renderLoading = () => (
+    <div className="flex items-center justify-center h-[200px]">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+    <div className="space-y-4">
+      {/* Hero header */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{
+          background: 'linear-gradient(135deg, hsl(200 90% 55% / 0.2), hsl(240 80% 60% / 0.1))',
+          border: '1px solid hsl(200 90% 55% / 0.25)',
+          boxShadow: '0 0 20px hsl(200 90% 55% / 0.15)',
+        }}>
           <TrendingUp className="w-5 h-5 text-primary" />
         </div>
         <div>
@@ -426,62 +228,72 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
           <p className="text-sm text-muted-foreground">Discover trending content • Click to view details & trailers</p>
         </div>
       </div>
-      
-      <div className="space-y-6">
-        {/* Ramadan 2026 Egyptian Series */}
-        {ramadanShows.length > 0 && (
-          <PlaylistRow
-            title="Ramadan 2026 Series"
-            icon={Moon}
-            channels={ramadanShows}
-            onChannelSelect={onChannelSelect}
-          />
-        )}
-        
-        {/* Latest Arabic Series 2026 */}
-        {arabicSeries.length > 0 && (
-          <PlaylistRow
-            title="Latest Arabic Series"
-            icon={Tv}
-            channels={arabicSeries}
-            onChannelSelect={onChannelSelect}
-          />
-        )}
-        
-        {/* Latest Arabic Movies 2025-2026 */}
-        {arabicMovies.length > 0 && (
-          <PlaylistRow
-            title="Latest Arabic Movies"
-            icon={Film}
-            channels={arabicMovies}
-            onChannelSelect={onChannelSelect}
-          />
-        )}
-        
-        <CategoryRow
-          title="Trending Now"
-          icon={TrendingUp}
-          items={trending}
-          onSelectItem={onSelectItem}
-          loading={loadingState.trending}
-        />
-        
-        <CategoryRow
-          title="Popular Movies"
-          icon={Film}
-          items={popularMovies}
-          onSelectItem={onSelectItem}
-          loading={loadingState.movies}
-        />
-        
-        <CategoryRow
-          title="Popular TV Shows"
-          icon={Tv}
-          items={popularTV}
-          onSelectItem={onSelectItem}
-          loading={loadingState.tv}
-        />
-      </div>
+
+      {/* Ramadan 2026 */}
+      {ramadanShows.length > 0 && (
+        <MarqueeSection title="Ramadan 2026 Series" icon={Moon} badge="NEW">
+          <InfiniteMarquee speed={40} direction="left">
+            {ramadanShows.map(ch => (
+              <PlaylistMarqueeCard key={ch.id} channel={ch} tmdbPoster={getRamadanPoster(ch.name)} onClick={() => onChannelSelect?.(ch)} />
+            ))}
+          </InfiniteMarquee>
+        </MarqueeSection>
+      )}
+
+      {/* Arabic Series */}
+      {arabicSeries.length > 0 && (
+        <MarqueeSection title="Latest Arabic Series" icon={Tv}>
+          <InfiniteMarquee speed={35} direction="right">
+            {arabicSeries.map(ch => (
+              <PlaylistMarqueeCard key={ch.id} channel={ch} tmdbPoster={getSeriesPoster(ch.name)} onClick={() => onChannelSelect?.(ch)} />
+            ))}
+          </InfiniteMarquee>
+        </MarqueeSection>
+      )}
+
+      {/* Arabic Movies */}
+      {arabicMovies.length > 0 && (
+        <MarqueeSection title="Latest Arabic Movies" icon={Film}>
+          <InfiniteMarquee speed={38} direction="left">
+            {arabicMovies.map(ch => (
+              <PlaylistMarqueeCard key={ch.id} channel={ch} tmdbPoster={getMoviePoster(ch.name)} onClick={() => onChannelSelect?.(ch)} />
+            ))}
+          </InfiniteMarquee>
+        </MarqueeSection>
+      )}
+
+      {/* Trending */}
+      <MarqueeSection title="Trending Now" icon={TrendingUp} badge="HOT">
+        {loadingState.trending ? renderLoading() : trending.length > 0 ? (
+          <InfiniteMarquee speed={45} direction="left">
+            {trending.map(item => (
+              <MediaMarqueeCard key={`${item.id}-${item.mediaType}`} item={item} onClick={() => onSelectItem?.(item)} />
+            ))}
+          </InfiniteMarquee>
+        ) : <div className="h-[200px] flex items-center justify-center text-muted-foreground">No content</div>}
+      </MarqueeSection>
+
+      {/* Popular Movies */}
+      <MarqueeSection title="Popular Movies" icon={Film}>
+        {loadingState.movies ? renderLoading() : popularMovies.length > 0 ? (
+          <InfiniteMarquee speed={42} direction="right">
+            {popularMovies.map(item => (
+              <MediaMarqueeCard key={`${item.id}-${item.mediaType}`} item={item} onClick={() => onSelectItem?.(item)} />
+            ))}
+          </InfiniteMarquee>
+        ) : <div className="h-[200px] flex items-center justify-center text-muted-foreground">No content</div>}
+      </MarqueeSection>
+
+      {/* Popular TV */}
+      <MarqueeSection title="Popular TV Shows" icon={Tv}>
+        {loadingState.tv ? renderLoading() : popularTV.length > 0 ? (
+          <InfiniteMarquee speed={40} direction="left">
+            {popularTV.map(item => (
+              <MediaMarqueeCard key={`${item.id}-${item.mediaType}`} item={item} onClick={() => onSelectItem?.(item)} />
+            ))}
+          </InfiniteMarquee>
+        ) : <div className="h-[200px] flex items-center justify-center text-muted-foreground">No content</div>}
+      </MarqueeSection>
     </div>
   );
 };
