@@ -6,6 +6,7 @@ import { getProfileInitial } from '@/lib/profileStorage';
 import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ContinueWatching } from './ContinueWatching';
+import { TrendingCarousel } from './TrendingCarousel';
 import { TMDBBrowseSection } from './TMDBBrowseSection';
 import { TMDBItem } from '@/hooks/useTMDB';
 import { WeatherIcon } from './shared/WeatherIcon';
@@ -450,6 +451,11 @@ export const MiHomeScreen = ({
               <ActionButton icon={RefreshCw} label="Refresh All" onClick={onReload} />
             </div>
 
+            {/* PulseGOC-style Trending Carousel */}
+            <div className="mt-6">
+              <TrendingCarousel onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
+            </div>
+
             <div className="mt-6">
               <TMDBBrowseSection onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
             </div>
@@ -539,6 +545,11 @@ export const MiHomeScreen = ({
                     </div>
                   </div>
                 </TileCard>
+              </div>
+
+              {/* PulseGOC-style Trending Carousel */}
+              <div className="mt-6">
+                <TrendingCarousel onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
               </div>
 
               {/* TMDB Section */}
