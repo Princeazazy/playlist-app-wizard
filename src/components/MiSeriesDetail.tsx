@@ -161,8 +161,8 @@ export const MiSeriesDetail = ({
     fetchSeriesInfo();
   }, [item.series_id]);
 
-  // Get poster URL - prefer TMDB, then item logo (usually correct poster from Xtream), then provider cover
-  const posterUrl = tmdbData?.posterUrl || tmdbData?.poster || item.logo || seriesInfo?.info?.cover || item.backdrop_path?.[0] || 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=400&h=600&fit=crop';
+  // Get poster URL - always prefer the provider's own cover/logo first (correct art), only use TMDB as last resort
+  const posterUrl = seriesInfo?.info?.cover || item.logo || tmdbData?.posterUrl || tmdbData?.poster || item.backdrop_path?.[0] || 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=400&h=600&fit=crop';
 
   const currentSeason = seriesInfo?.seasons?.find(s => s.season_number === selectedSeason);
   const episodes = currentSeason?.episodes || [];
