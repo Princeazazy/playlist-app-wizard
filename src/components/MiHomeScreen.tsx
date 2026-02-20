@@ -560,8 +560,7 @@ export const MiHomeScreen = ({
 
               {/* Time & Weather */}
               <motion.div
-                className="text-right p-4 rounded-2xl border border-white/5"
-                style={{ background: 'linear-gradient(145deg, hsl(265 45% 14% / 0.6), hsl(265 40% 9% / 0.8))' }}
+                className="text-right p-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
