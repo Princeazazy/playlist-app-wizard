@@ -30,7 +30,6 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [useMobileBrowse, setUseMobileBrowse] = useState(true);
-  const [trailerPlaying, setTrailerPlaying] = useState(false);
   const isMobile = useIsMobile();
 
   const nav = useAppNavigation();
@@ -327,7 +326,6 @@ const Index = () => {
               onPlay={nav.handlePlayFromDetail}
               onToggleFavorite={() => nav.handleToggleFavorite(nav.selectedItem!.id)}
               isFavorite={nav.favorites.has(nav.selectedItem.id)}
-              onTrailerStateChange={setTrailerPlaying}
             />
           );
         }
@@ -342,7 +340,6 @@ const Index = () => {
               onPlayEpisode={nav.handlePlayEpisode}
               onToggleFavorite={() => nav.handleToggleFavorite(nav.selectedItem!.id)}
               isFavorite={nav.favorites.has(nav.selectedItem.id)}
-              onTrailerStateChange={setTrailerPlaying}
             />
           );
         }
@@ -414,7 +411,6 @@ const Index = () => {
         src="/audio/arabian-ambient.mp3"
         autoPlay={!nav.isFullscreen}
         defaultVolume={0.25}
-        muted={trailerPlaying}
       />
 
       <AnimatePresence>

@@ -4,14 +4,12 @@ interface BackgroundMusicProps {
   src: string;
   autoPlay?: boolean;
   defaultVolume?: number;
-  muted?: boolean;
 }
 
 export const BackgroundMusic = ({ 
   src, 
   autoPlay = true, 
-  defaultVolume = 0.3,
-  muted = false,
+  defaultVolume = 0.3 
 }: BackgroundMusicProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -23,18 +21,18 @@ export const BackgroundMusic = ({
     audio.volume = defaultVolume;
     audio.loop = true;
 
-    if (autoPlay && hasInteracted && !muted) {
+    if (autoPlay && hasInteracted) {
       audio.play().catch(() => {});
-    } else if (!autoPlay || muted) {
+    } else if (!autoPlay) {
       audio.pause();
     }
-  }, [autoPlay, defaultVolume, hasInteracted, muted]);
+  }, [autoPlay, defaultVolume, hasInteracted]);
 
   // Listen for first user interaction on the page
   useEffect(() => {
     const handleInteraction = () => {
       setHasInteracted(true);
-      if (audioRef.current && !muted) {
+      if (audioRef.current) {
         audioRef.current.play().catch(() => {});
       }
     };
@@ -48,7 +46,7 @@ export const BackgroundMusic = ({
       document.removeEventListener('keydown', handleInteraction);
       document.removeEventListener('touchstart', handleInteraction);
     };
-  }, [muted]);
+  }, []);
 
   return <audio ref={audioRef} src={src} preload="auto" />;
 };
