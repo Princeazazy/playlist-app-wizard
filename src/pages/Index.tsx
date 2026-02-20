@@ -407,11 +407,6 @@ const Index = () => {
     <>
       {renderScreen()}
 
-      <BackgroundMusic
-        src="/audio/arabian-ambient.mp3"
-        autoPlay={!nav.isFullscreen}
-        defaultVolume={0.25}
-      />
 
       <AnimatePresence>
         {nav.showMiniPlayer && nav.currentChannel && nav.currentScreen !== 'home' && (
