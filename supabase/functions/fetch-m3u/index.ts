@@ -214,6 +214,32 @@ async function fetchXtreamLive(
   }
 }
 
+// Priority sort: Arabic/year-based categories first to ensure they're fetched before hitting limits
+function prioritizeCategories(entries: [string, string][]): [string, string][] {
+  return entries.sort(([, nameA], [, nameB]) => {
+    const a = nameA.toLowerCase();
+    const b = nameB.toLowerCase();
+    const scoreA = getCategoryPriority(a);
+    const scoreB = getCategoryPriority(b);
+    return scoreA - scoreB;
+  });
+}
+
+function getCategoryPriority(name: string): number {
+  // Highest priority: Arabic 2026 content
+  if ((name.includes('ar ') || name.includes('arabic') || name.includes('عرب')) && name.includes('2026')) return 0;
+  // Ramadan
+  if (name.includes('ramadan') || name.includes('رمضان')) return 1;
+  // Arabic 2025
+  if ((name.includes('ar ') || name.includes('arabic') || name.includes('عرب')) && name.includes('2025')) return 2;
+  // Any other Arabic
+  if (name.includes('ar ') || name.includes('arabic') || name.includes('عرب')) return 3;
+  // Year-based categories
+  if (/20\d{2}/.test(name)) return 4;
+  // Everything else
+  return 5;
+}
+
 // Fallback: fetch live streams category by category if bulk fetch fails
 async function fetchXtreamLiveByCategory(
   baseUrl: string,
@@ -225,7 +251,8 @@ async function fetchXtreamLiveByCategory(
   const items: any[] = [];
   const seenStreamIds = new Set<string>();
   let total = 0;
-  const categoryIds = Array.from(categoryMap.keys());
+  const categoryEntries = prioritizeCategories(Array.from(categoryMap.entries()));
+  const categoryIds = categoryEntries.map(([id]) => id);
 
   // Fetch categories in parallel batches of 5
   const batchSize = 5;
@@ -340,7 +367,7 @@ async function fetchXtreamVodByCategory(
   const items: any[] = [];
   const seenStreamIds = new Set<string>();
   let total = 0;
-  const categoryEntries = Array.from(categoryMap.entries());
+  const categoryEntries = prioritizeCategories(Array.from(categoryMap.entries()));
 
   // Fetch in parallel batches of 5
   const batchSize = 5;
@@ -449,7 +476,7 @@ async function fetchXtreamSeriesByCategory(
   const items: any[] = [];
   const seenSeriesIds = new Set<string>();
   let total = 0;
-  const categoryEntries = Array.from(categoryMap.entries());
+  const categoryEntries = prioritizeCategories(Array.from(categoryMap.entries()));
 
   // Fetch in parallel batches of 5
   const batchSize = 5;
