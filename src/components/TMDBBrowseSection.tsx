@@ -349,31 +349,32 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
     return ramadanContent.slice(0, 24);
   }, [channels]);
 
-  // Latest Arabic Series - from AR SER 2026 groups
+  // Latest Arabic Series - from Arabic 2026 / 2026 groups (cleaned from AR SER 2026)
   const arabicSeries = useMemo(() => {
     const arabicContent = channels.filter(ch => {
+      if (ch.type !== 'series') return false;
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
-      const isTargetGroup = groupLower.includes('ar ser 2026') || 
+      const isTargetGroup = groupLower.includes('arabic') && groupLower.includes('2026') ||
+                           groupLower === '2026' ||
                            groupLower.includes('arabic series 2026') ||
                            group.includes('مسلسلات عربي 2026') ||
-                           group.includes('مسلسلات عربية 2026');
+                           group.includes('مسلسلات عربية 2026') ||
+                           group.includes('عربي') && group.includes('2026');
       return isTargetGroup && !isSportsContent(ch);
     });
 
     return arabicContent.slice(0, 24);
   }, [channels]);
 
-  // Latest Arabic Movies - from AR MOV 2025 AND AR MOV 2026 combined
+  // Latest Arabic Movies - from Arabic 2025/2026 groups (cleaned from AR MOV 2025/2026)
   const arabicMovies = useMemo(() => {
     const arabicContent = channels.filter(ch => {
+      if (ch.type !== 'movies') return false;
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
-      const isTargetGroup = groupLower.includes('ar mov 2026') || 
-                           groupLower.includes('ar mov 2025') ||
-                           groupLower.includes('arabic movies 2026') || 
-                           groupLower.includes('arabic movies 2025') ||
-                           group.includes('أفلام عربية') && (group.includes('2026') || group.includes('2025'));
+      const isTargetGroup = (groupLower.includes('arabic') || groupLower === '2026' || groupLower === '2025' || group.includes('عربي') || group.includes('أفلام')) &&
+                           (group.includes('2026') || group.includes('2025'));
       return isTargetGroup && !isSportsContent(ch);
     });
 
