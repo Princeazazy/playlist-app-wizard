@@ -31,15 +31,13 @@ export interface Channel {
 
 // Clean channel name by replacing underscores/dashes with spaces and stripping common IPTV prefixes
 // Examples: "AR:Al_Kahera_Wal_Nas" -> "Al Kahera Wal Nas", "UK-| BBC_News" -> "BBC News"
-const cleanChannelName = (name: string, isGroup: boolean = false): string => {
+const cleanChannelName = (name: string): string => {
   let cleaned = name;
-  if (!isGroup) {
-    cleaned = cleaned
-      // Remove leading country-ish prefixes (AR:, UK-|, EG |, etc.)
-      .replace(/^\s*[A-Z]{2,3}\s*[:\-|]\s*\|?\s*/i, '')
-      // Remove category prefixes like "EN MOV", "AR MOV", "AR SER", "EN SER", etc.
-      .replace(/^\s*[A-Z]{2}\s+(MOV|SER|SERIES|MOVIES?)\s*[:\-|]?\s*/i, '');
-  }
+  cleaned = cleaned
+    // Remove leading country-ish prefixes (AR:, UK-|, EG |, etc.)
+    .replace(/^\s*[A-Z]{2,3}\s*[:\-|]\s*\|?\s*/i, '')
+    // Remove category prefixes like "EN MOV", "AR MOV", "AR SER", "EN SER", etc.
+    .replace(/^\s*[A-Z]{2}\s+(MOV|SER|SERIES|MOVIES?)\s*[:\-|]?\s*/i, '');
   cleaned = cleaned
     // Replace underscores/dashes with spaces
     .replace(/[_-]/g, ' ')
@@ -70,7 +68,7 @@ const cleanChannelName = (name: string, isGroup: boolean = false): string => {
 const normalizeChannel = (ch: Channel): Channel => ({
   ...ch,
   name: cleanChannelName(ch.name),
-  group: ch.group ? cleanChannelName(ch.group, true) : ch.group,
+  group: ch.group ? cleanChannelName(ch.group) : ch.group,
 });
 
 const normalizeChannels = (chs: Channel[]): Channel[] => chs.map(normalizeChannel);
@@ -185,7 +183,7 @@ const fetchSinglePlaylist = async (
         name: cleanChannelName(ch.name),
         url: ch.url || '',
         logo: ch.logo || undefined,
-        group: cleanChannelName(ch.group || 'Live TV', true),
+        group: cleanChannelName(ch.group || 'Live TV'),
         type: ch.type || 'live',
         stream_id: ch.stream_id,
         series_id: ch.series_id,
@@ -471,7 +469,7 @@ const parseM3U = (content: string): Channel[] => {
       const nameMatch = line.split(',').pop();
 
       const name = cleanChannelName(nameMatch?.trim() || 'Unknown Channel');
-      const group = cleanChannelName(groupMatch ? groupMatch[1] : 'Uncategorized', true);
+      const group = cleanChannelName(groupMatch ? groupMatch[1] : 'Uncategorized');
 
       currentChannel = {
         id: `channel-${channels.length}`,
