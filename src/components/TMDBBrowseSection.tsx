@@ -351,11 +351,10 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
 
   // Latest Arabic Series - prioritize Egyptian 2026 series, then other Arabic 2026
   const arabicSeries = useMemo(() => {
-    // Debug: log all unique series groups
+    // Debug: log all unique series groups to find Arabic content
     if (channels.length > 0) {
       const seriesGroups = [...new Set(channels.filter(ch => ch.type === 'series').map(ch => ch.group || ''))];
-      const relevant = seriesGroups.filter(g => g.includes('2026') || g.includes('2025'));
-      console.log('[ArabicSeries] All series groups with 2025/2026:', relevant);
+      console.log('[ArabicSeries] ALL series groups:', seriesGroups.slice(0, 50));
     }
 
     const arabicContent = channels.filter(ch => {
@@ -366,16 +365,16 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
       // Exclude dedicated Ramadan groups (they have their own row)
       const isRamadanDedicated = groupLower.includes('ramadan 2026') || 
                                   group.includes('رمضان 2026') ||
-                                  groupLower.includes('ramadan series') ||
+                                  (groupLower.includes('ramadan') && groupLower.includes('egyptian')) ||
+                                  (groupLower.includes('ramadan') && groupLower.includes('gulf')) ||
+                                  (groupLower.includes('ramadan') && groupLower.includes('levant')) ||
+                                  (groupLower.includes('ramadan') && groupLower.includes('maghreb')) ||
                                   group.includes('مسلسلات رمضان');
       if (isRamadanDedicated) return false;
 
-      const has2026 = group.includes('2026');
-      // Broad Arabic/Egyptian detection including IPTV naming patterns like "AR SER"
+      // Match Arabic series from ANY Arabic-related group (not just 2026)
       const hasArabicKeyword = groupLower.includes('arabic') || 
-                                groupLower.includes('ar ') ||
-                                groupLower.includes('ar|') ||
-                                groupLower.includes('ar-') ||
+                                (groupLower.startsWith('ar ') || groupLower.includes('| ar ') || groupLower.includes('ar |')) ||
                                 group.includes('عربي') || 
                                 group.includes('مسلسلات') ||
                                 groupLower.includes('egypt') || 
@@ -383,19 +382,23 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
                                 group.includes('مصري') ||
                                 group.includes('مصرية');
       
-      return has2026 && hasArabicKeyword && !isSportsContent(ch);
+      return hasArabicKeyword && !isSportsContent(ch);
     });
 
-    // Sort: Egyptian content first, then the rest
+    // Sort: 2026 Egyptian first, then 2026 Arabic, then rest
     return arabicContent.sort((a, b) => {
       const groupA = a.group || '';
       const groupB = b.group || '';
+      const aIs2026 = groupA.includes('2026');
+      const bIs2026 = groupB.includes('2026');
       const aIsEgyptian = groupA.toLowerCase().includes('egypt') || groupA.includes('مصر') || groupA.includes('مصري');
       const bIsEgyptian = groupB.toLowerCase().includes('egypt') || groupB.includes('مصر') || groupB.includes('مصري');
-      if (aIsEgyptian && !bIsEgyptian) return -1;
-      if (!aIsEgyptian && bIsEgyptian) return 1;
-      return 0;
-    }).slice(0, 24);
+      
+      // Score: Egyptian 2026 = 3, other 2026 = 2, Egyptian other = 1, rest = 0
+      const scoreA = (aIs2026 ? 2 : 0) + (aIsEgyptian ? 1 : 0);
+      const scoreB = (bIs2026 ? 2 : 0) + (bIsEgyptian ? 1 : 0);
+      return scoreB - scoreA;
+    }).slice(0, 30);
   }, [channels]);
 
   // Latest Arabic Movies - from Arabic 2025/2026 groups (cleaned from AR MOV 2025/2026)
