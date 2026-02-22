@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
@@ -315,7 +315,7 @@ const PlaylistRow = ({
   );
 };
 
-export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect }: TMDBBrowseSectionProps) => {
+export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onChannelSelect }: TMDBBrowseSectionProps) => {
   const { getTrending, getMovies, getTVShows, error } = useTMDB();
   const [trending, setTrending] = useState<TMDBItem[]>([]);
   const [popularMovies, setPopularMovies] = useState<TMDBItem[]>([]);
@@ -504,4 +504,4 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
       </div>
     </div>
   );
-};
+});

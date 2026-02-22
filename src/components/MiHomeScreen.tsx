@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic, Zap, ChevronRight } from 'lucide-react';
 import universePlayLogo from '@/assets/universe-play-logo.png';
@@ -266,7 +266,7 @@ const ActionButton = ({
   );
 };
 
-export const MiHomeScreen = ({
+export const MiHomeScreen = React.memo(({
   channelCount,
   movieCount,
   seriesCount,
@@ -584,4 +584,4 @@ export const MiHomeScreen = ({
       </main>
     </div>
   );
-};
+});
