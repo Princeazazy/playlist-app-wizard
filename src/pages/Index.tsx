@@ -38,39 +38,41 @@ const Index = () => {
     setShowIntro(false);
   }, []);
 
-  // Filter channels by current screen category
+  // Count channels by type AND build typed maps in a single pass
+  const { liveCount, movieCount, seriesCount, sportsCount, channelsByType } = useMemo(() => {
+    let live = 0, movies = 0, series = 0, sports = 0;
+    const byType: Record<string, Channel[]> = { live: [], movies: [], series: [], sports: [] };
+    for (const ch of channels) {
+      if (ch.type === 'sports') { sports++; byType.sports.push(ch); }
+      else if (ch.type === 'movies') { movies++; byType.movies.push(ch); }
+      else if (ch.type === 'series') { series++; byType.series.push(ch); }
+      else { live++; byType.live.push(ch); }
+    }
+    return { liveCount: live, movieCount: movies, seriesCount: series, sportsCount: sports, channelsByType: byType };
+  }, [channels]);
+
+  // Filter channels by current screen category - uses pre-built type maps
   const filteredChannelsByCategory = useMemo(() => {
     if (nav.currentScreen === 'home' || nav.currentScreen === 'settings' || nav.currentScreen === 'detail') {
       return channels;
     }
     if (nav.currentScreen === 'live') {
-      return channels.filter((ch) => ch.type === 'live' || !ch.type);
+      return channelsByType.live;
     }
     if (nav.currentScreen === 'sports') {
-      // Include typed sports channels + live channels with sport-related names from any country
-      return channels.filter((ch) => {
-        if (ch.type === 'sports') return true;
-        // Also include live channels with sport-related names (e.g. Egyptian sports channels)
-        if (ch.type === 'live' || !ch.type) {
-          const nameLower = ch.name?.toLowerCase() || '';
-          const groupLower = ch.group?.toLowerCase() || '';
-          return nameLower.includes('sport') || nameLower.includes('bein') || 
-                 nameLower.includes('espn') || nameLower.includes('fox sport') ||
-                 nameLower.includes('sky sport') || nameLower.includes('رياض') ||
-                 nameLower.includes('ppv') || nameLower.includes('dazn') ||
-                 groupLower.includes('ppv') || groupLower.includes('dazn');
-        }
-        return false;
+      const sportLive = channelsByType.live.filter((ch) => {
+        const nameLower = ch.name?.toLowerCase() || '';
+        const groupLower = ch.group?.toLowerCase() || '';
+        return nameLower.includes('sport') || nameLower.includes('bein') || 
+               nameLower.includes('espn') || nameLower.includes('fox sport') ||
+               nameLower.includes('sky sport') || nameLower.includes('رياض') ||
+               nameLower.includes('ppv') || nameLower.includes('dazn') ||
+               groupLower.includes('ppv') || groupLower.includes('dazn');
       });
+      return [...channelsByType.sports, ...sportLive];
     }
-    return channels.filter((ch) => ch.type === nav.currentScreen);
-  }, [channels, nav.currentScreen]);
-
-  // Count channels by type
-  const liveCount = useMemo(() => channels.filter((ch) => ch.type === 'live' || !ch.type).length, [channels]);
-  const movieCount = useMemo(() => channels.filter((ch) => ch.type === 'movies').length, [channels]);
-  const seriesCount = useMemo(() => channels.filter((ch) => ch.type === 'series').length, [channels]);
-  const sportsCount = useMemo(() => channels.filter((ch) => ch.type === 'sports').length, [channels]);
+    return channelsByType[nav.currentScreen] || channels.filter((ch) => ch.type === nav.currentScreen);
+  }, [channels, channelsByType, nav.currentScreen]);
 
   const handlePlaylistChange = useCallback(() => {
     setPlaylistVersion(v => v + 1);
@@ -121,21 +123,8 @@ const Index = () => {
     const searchTitle = normalizeTitle(tmdbTitle);
     const searchTitleFull = tmdbTitle.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
     
-    // Include all VOD content - don't be too strict on type filtering
-    const contentPool = channels.filter(ch => {
-      // For TV shows, match series content
-      if (mediaType === 'tv') {
-        return ch.type === 'series' || 
-               ch.url?.includes('/series/') || 
-               ch.group?.toLowerCase().includes('series');
-      }
-      // For movies, include movies AND content that's not explicitly live/sports
-      return ch.type === 'movies' || 
-             ch.url?.includes('/movie/') || 
-             ch.group?.toLowerCase().includes('movie') ||
-             ch.group?.toLowerCase().includes('vod') ||
-             ch.group?.toLowerCase().includes('film');
-    });
+    // Use pre-built type maps instead of filtering 81k channels
+    const contentPool = mediaType === 'tv' ? channelsByType.series : channelsByType.movies;
 
     let bestMatch: Channel | null = null;
     let bestScore = 0;
@@ -188,7 +177,7 @@ const Index = () => {
 
     console.log(`TMDB Match: "${tmdbTitle}" -> ${bestMatch ? `"${bestMatch.name}" (score: ${bestScore})` : 'No match'}`);
     return bestMatch;
-  }, [channels, normalizeTitle]);
+  }, [channelsByType, normalizeTitle]);
 
   // Handle TMDB item selection
   const handleTMDBSelect = useCallback((item: TMDBItem) => {
