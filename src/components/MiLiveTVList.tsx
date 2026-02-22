@@ -532,7 +532,7 @@ export const MiLiveTVList = ({
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-11 h-11 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                 {getGroupLogo(group) ? (
                   <img 
                     src={getGroupLogo(group)!} 
