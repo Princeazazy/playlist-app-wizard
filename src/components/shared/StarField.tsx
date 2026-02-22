@@ -31,7 +31,7 @@ const StarField = memo(() => {
         startY: Math.random() * 60,
         angle: Math.random() * 40 + 20,
         delay: Math.random() * 20 + i * 3,
-        duration: Math.random() * 0.6 + 0.5,
+        duration: Math.random() * 1.0 + 1.2,
         length: Math.random() * 100 + 80,
         size: Math.random() * 1.5 + 1,
       });
