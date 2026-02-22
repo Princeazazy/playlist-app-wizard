@@ -905,7 +905,7 @@ export const MiMediaGrid = ({
   });
 
   // Resolve TMDB posters for visible items (replaces scene stills with proper posters)
-  const { getPosterForChannel } = useTMDBPosters(visibleItems);
+  const { getPosterForChannel } = useTMDBPosters(visibleItems, category === 'series' ? 'tv' : 'movie');
 
   const title = category === 'movies' ? 'Movies' : 'Series';
 

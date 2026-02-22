@@ -80,7 +80,7 @@ const cleanForSearch = (name: string): string => {
  * Hook that resolves TMDB posters for a list of channels.
  * Searches TMDB by channel name and returns proper movie/show poster URLs.
  */
-export const useTMDBPosters = (channels: { name: string; logo?: string; year?: string }[]) => {
+export const useTMDBPosters = (channels: { name: string; logo?: string; year?: string }[], mediaTypeHint?: 'movie' | 'tv') => {
   const [posterMap, setPosterMap] = useState<Record<string, string>>({});
   const processedRef = useRef(new Set<string>());
   const isProcessingRef = useRef(false);
@@ -157,12 +157,19 @@ export const useTMDBPosters = (channels: { name: string; logo?: string; year?: s
               });
 
               if (!error && data?.success && data.results?.length > 0) {
+                // Filter by mediaType hint if provided (e.g. only 'tv' for series)
+                let candidates = data.results;
+                if (mediaTypeHint) {
+                  const filtered = candidates.filter((r: any) => r.mediaType === mediaTypeHint);
+                  if (filtered.length > 0) candidates = filtered;
+                }
+
                 // Find best match - prefer exact or close title match, and filter by year if available
                 const termLower = term.toLowerCase();
                 const itemYear = year || '';
                 
                 // First try: match by title AND year
-                let bestMatch = year ? data.results.find((r: any) => {
+                let bestMatch = year ? candidates.find((r: any) => {
                   const title = (r.title || '').toLowerCase();
                   const origTitle = (r.original_title || r.originalTitle || '').toLowerCase();
                   const resultYear = (r.year || r.release_date || r.first_air_date || '').substring(0, 4);
@@ -173,15 +180,14 @@ export const useTMDBPosters = (channels: { name: string; logo?: string; year?: s
                 }) : null;
 
                 // Second try: match by title only, BUT only if no year was specified
-                // If a year IS specified, don't fall back to wrong-year results
                 if (!bestMatch && !year) {
-                  bestMatch = data.results.find((r: any) => {
+                  bestMatch = candidates.find((r: any) => {
                     const title = (r.title || '').toLowerCase();
                     const origTitle = (r.original_title || r.originalTitle || '').toLowerCase();
                     return title === termLower || origTitle === termLower ||
                            title.includes(termLower) || termLower.includes(title) ||
                            origTitle.includes(termLower) || termLower.includes(origTitle);
-                  }) || data.results[0];
+                  }) || candidates[0];
                 }
 
                 if (bestMatch.poster) {
