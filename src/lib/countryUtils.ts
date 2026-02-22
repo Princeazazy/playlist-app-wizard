@@ -625,6 +625,59 @@ export const mergeAndSortGroups = (
     }
   }
 
+  // Second pass: merge small groups (≤10 items) into the closest larger group
+  const SMALL_GROUP_THRESHOLD = 10;
+  const smallGroups: string[] = [];
+  const largeGroups: string[] = [];
+  
+  for (const [key, data] of mergedGroups.entries()) {
+    if (data.count <= SMALL_GROUP_THRESHOLD) {
+      smallGroups.push(key);
+    } else {
+      largeGroups.push(key);
+    }
+  }
+
+  // Find best match for each small group based on shared keywords
+  for (const smallKey of smallGroups) {
+    const smallData = mergedGroups.get(smallKey)!;
+    const smallWords = smallKey.toLowerCase().split(/[\s\-_]+/).filter(w => w.length > 1);
+    
+    let bestMatch: string | null = null;
+    let bestScore = 0;
+
+    for (const largeKey of largeGroups) {
+      const largeWords = largeKey.toLowerCase().split(/[\s\-_]+/).filter(w => w.length > 1);
+      // Count shared keywords
+      let score = 0;
+      for (const word of smallWords) {
+        if (largeWords.some(lw => lw.includes(word) || word.includes(lw))) {
+          score++;
+        }
+      }
+      // Bonus for same language/region keywords
+      const langKeywords = ['french', 'fr', 'german', 'deutsch', 'anime', 'korean', 'turkish', 'indian', 'arabic', 'english', 'albani', 'cartoon', 'documentary', 'comedy', 'drama', 'action', 'horror', 'kids', 'ramadan', 'islamic', 'songs', 'netflix', 'disney', 'hbo'];
+      for (const kw of langKeywords) {
+        if (smallKey.toLowerCase().includes(kw) && largeKey.toLowerCase().includes(kw)) {
+          score += 3;
+        }
+      }
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = largeKey;
+      }
+    }
+
+    // Only merge if we found a reasonable match (score >= 2)
+    if (bestMatch && bestScore >= 2) {
+      const targetData = mergedGroups.get(bestMatch)!;
+      targetData.count += smallData.count;
+      targetData.originalNames.push(...smallData.originalNames);
+      mergedGroups.delete(smallKey);
+    }
+  }
+
   // Convert to array, filter out groups with fewer than 3 channels, and sort
   return Array.from(mergedGroups.entries())
     .filter(([_, data]) => data.count >= 3) // Remove groups with fewer than 3 channels
