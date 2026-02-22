@@ -25,12 +25,12 @@ const StarField = memo(() => {
 
   const shootingStars = useMemo(() => {
     const result: { startX: number; startY: number; angle: number; delay: number; duration: number; length: number; size: number }[] = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 12; i++) {
       result.push({
-        startX: Math.random() * 100,
-        startY: Math.random() * 60,
+        startX: (i % 4) * 25 + Math.random() * 20,
+        startY: Math.floor(i / 4) * 30 + Math.random() * 25,
         angle: Math.random() * 40 + 20,
-        delay: Math.random() * 20 + i * 3,
+        delay: Math.random() * 25 + i * 2.5,
         duration: Math.random() * 1.5 + 2.5,
         length: Math.random() * 100 + 80,
         size: Math.random() * 1.5 + 1,
