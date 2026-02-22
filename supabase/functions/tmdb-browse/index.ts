@@ -155,7 +155,9 @@ serve(async (req) => {
           ...data,
           poster_url: data.poster_path ? `${TMDB_IMAGE_BASE}/w500${data.poster_path}` : null,
           backdrop_url: data.backdrop_path ? `${TMDB_IMAGE_BASE}/original${data.backdrop_path}` : null,
-          trailer: data.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube'),
+          trailer: data.videos?.results?.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer') 
+            || data.videos?.results?.find((v: any) => v.site === 'YouTube' && v.type === 'Teaser')
+            || data.videos?.results?.find((v: any) => v.site === 'YouTube'),
         },
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
