@@ -349,22 +349,36 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
     return ramadanContent.slice(0, 24);
   }, [channels]);
 
-  // Latest Arabic Series - from Arabic 2026 / 2026 groups (cleaned from AR SER 2026)
+  // Latest Arabic Series - prioritize Egyptian 2026 series, then other Arabic 2026
   const arabicSeries = useMemo(() => {
     const arabicContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
+      // Exclude Ramadan-specific groups (they have their own row)
+      const isRamadan = groupLower.includes('ramadan') || group.includes('رمضان');
+      if (isRamadan) return false;
       const isTargetGroup = groupLower.includes('arabic') && groupLower.includes('2026') ||
                            groupLower === '2026' ||
                            groupLower.includes('arabic series 2026') ||
                            group.includes('مسلسلات عربي 2026') ||
                            group.includes('مسلسلات عربية 2026') ||
-                           group.includes('عربي') && group.includes('2026');
+                           group.includes('عربي') && group.includes('2026') ||
+                           // Egyptian 2026 series
+                           (groupLower.includes('egypt') || group.includes('مصر') || group.includes('مصري')) && group.includes('2026');
       return isTargetGroup && !isSportsContent(ch);
     });
 
-    return arabicContent.slice(0, 24);
+    // Sort: Egyptian content first, then the rest
+    return arabicContent.sort((a, b) => {
+      const groupA = a.group || '';
+      const groupB = b.group || '';
+      const aIsEgyptian = groupA.toLowerCase().includes('egypt') || groupA.includes('مصر') || groupA.includes('مصري');
+      const bIsEgyptian = groupB.toLowerCase().includes('egypt') || groupB.includes('مصر') || groupB.includes('مصري');
+      if (aIsEgyptian && !bIsEgyptian) return -1;
+      if (!aIsEgyptian && bIsEgyptian) return 1;
+      return 0;
+    }).slice(0, 24);
   }, [channels]);
 
   // Latest Arabic Movies - from Arabic 2025/2026 groups (cleaned from AR MOV 2025/2026)
