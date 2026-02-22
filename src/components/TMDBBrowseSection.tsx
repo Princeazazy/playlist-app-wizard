@@ -351,22 +351,39 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
 
   // Latest Arabic Series - prioritize Egyptian 2026 series, then other Arabic 2026
   const arabicSeries = useMemo(() => {
+    // Debug: log all unique series groups
+    if (channels.length > 0) {
+      const seriesGroups = [...new Set(channels.filter(ch => ch.type === 'series').map(ch => ch.group || ''))];
+      const relevant = seriesGroups.filter(g => g.includes('2026') || g.includes('2025'));
+      console.log('[ArabicSeries] All series groups with 2025/2026:', relevant);
+    }
+
     const arabicContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
-      // Exclude Ramadan-specific groups (they have their own row)
-      const isRamadan = groupLower.includes('ramadan') || group.includes('رمضان');
-      if (isRamadan) return false;
-      const isTargetGroup = groupLower.includes('arabic') && groupLower.includes('2026') ||
-                           groupLower === '2026' ||
-                           groupLower.includes('arabic series 2026') ||
-                           group.includes('مسلسلات عربي 2026') ||
-                           group.includes('مسلسلات عربية 2026') ||
-                           group.includes('عربي') && group.includes('2026') ||
-                           // Egyptian 2026 series
-                           (groupLower.includes('egypt') || group.includes('مصر') || group.includes('مصري')) && group.includes('2026');
-      return isTargetGroup && !isSportsContent(ch);
+      
+      // Exclude dedicated Ramadan groups (they have their own row)
+      const isRamadanDedicated = groupLower.includes('ramadan 2026') || 
+                                  group.includes('رمضان 2026') ||
+                                  groupLower.includes('ramadan series') ||
+                                  group.includes('مسلسلات رمضان');
+      if (isRamadanDedicated) return false;
+
+      const has2026 = group.includes('2026');
+      // Broad Arabic/Egyptian detection including IPTV naming patterns like "AR SER"
+      const hasArabicKeyword = groupLower.includes('arabic') || 
+                                groupLower.includes('ar ') ||
+                                groupLower.includes('ar|') ||
+                                groupLower.includes('ar-') ||
+                                group.includes('عربي') || 
+                                group.includes('مسلسلات') ||
+                                groupLower.includes('egypt') || 
+                                group.includes('مصر') || 
+                                group.includes('مصري') ||
+                                group.includes('مصرية');
+      
+      return has2026 && hasArabicKeyword && !isSportsContent(ch);
     });
 
     // Sort: Egyptian content first, then the rest
