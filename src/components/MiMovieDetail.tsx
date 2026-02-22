@@ -40,8 +40,10 @@ export const MiMovieDetail = ({
         // Clean the item name for better search results
         const cleanName = item.name
           .replace(/[-_]/g, ' ')
-          .replace(/\s+/g, ' ')
+          .replace(/\b(HDCAM|HDTC|HDRip|WEBRip|WEB-DL|WEBDL|BluRay|BRRip|DVDRip|CAM|TS|HC|HD|4K|1080p|720p|480p|HEVC|x264|x265|AAC|MP4|MKV|AVI)\b/gi, '')
           .replace(/\(\d{4}\)/g, '')
+          .replace(/\d{4}$/g, '')
+          .replace(/\s+/g, ' ')
           .trim();
         
         const searchResults = await search(cleanName, 1);
