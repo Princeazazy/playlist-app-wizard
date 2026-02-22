@@ -461,7 +461,7 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
         {/* Latest Arabic Series 2026 */}
         {arabicSeries.length > 0 && (
           <PlaylistRow
-            title="Latest Arabic Series"
+            title="Top Rated Arabic Series"
             icon={Tv}
             channels={arabicSeries}
             onChannelSelect={onChannelSelect}
