@@ -172,8 +172,9 @@ export const useTMDBPosters = (channels: { name: string; logo?: string; year?: s
                   return titleMatch && resultYear === itemYear;
                 }) : null;
 
-                // Second try: match by title only
-                if (!bestMatch) {
+                // Second try: match by title only, BUT only if no year was specified
+                // If a year IS specified, don't fall back to wrong-year results
+                if (!bestMatch && !year) {
                   bestMatch = data.results.find((r: any) => {
                     const title = (r.title || '').toLowerCase();
                     const origTitle = (r.original_title || r.originalTitle || '').toLowerCase();
