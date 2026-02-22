@@ -351,53 +351,37 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
 
   // Latest Arabic Series - prioritize Egyptian 2026 series, then other Arabic 2026
   const arabicSeries = useMemo(() => {
-    // Debug: log all unique series groups to find Arabic content
-    if (channels.length > 0) {
-      const seriesGroups = [...new Set(channels.filter(ch => ch.type === 'series').map(ch => ch.group || ''))];
-      console.log('[ArabicSeries] ALL series groups:', seriesGroups.slice(0, 50));
-    }
+    // Target ONLY Arabic-original series groups (not "ARABIC" which has dubbed foreign content)
+    // Actual Arabic series groups: مسلسلات عربية 2026, مسلسلات عربية 2025, مسلسلات عربية تعرض حاليا
+    const targetGroups = [
+      'مسلسلات عربية 2026',
+      'مسلسلات عربية 2025',
+      'مسلسلات عربية تعرض حاليا',  // currently airing
+      'مسلسلات عربية 2024',
+    ];
 
     const arabicContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
       const group = ch.group || '';
-      const groupLower = group.toLowerCase();
       
-      // Exclude dedicated Ramadan groups (they have their own row)
-      const isRamadanDedicated = groupLower.includes('ramadan 2026') || 
-                                  group.includes('رمضان 2026') ||
-                                  (groupLower.includes('ramadan') && groupLower.includes('egyptian')) ||
-                                  (groupLower.includes('ramadan') && groupLower.includes('gulf')) ||
-                                  (groupLower.includes('ramadan') && groupLower.includes('levant')) ||
-                                  (groupLower.includes('ramadan') && groupLower.includes('maghreb')) ||
-                                  group.includes('مسلسلات رمضان');
-      if (isRamadanDedicated) return false;
+      // Exclude Ramadan groups (they have their own dedicated row)
+      if (group.includes('رمضان') || group.toLowerCase().includes('ramadan')) return false;
 
-      // Match Arabic series from ANY Arabic-related group (not just 2026)
-      const hasArabicKeyword = groupLower.includes('arabic') || 
-                                (groupLower.startsWith('ar ') || groupLower.includes('| ar ') || groupLower.includes('ar |')) ||
-                                group.includes('عربي') || 
-                                group.includes('مسلسلات') ||
-                                groupLower.includes('egypt') || 
-                                group.includes('مصر') || 
-                                group.includes('مصري') ||
-                                group.includes('مصرية');
-      
-      return hasArabicKeyword && !isSportsContent(ch);
+      // Only match specific Arabic-original series groups
+      return targetGroups.some(tg => group === tg) && !isSportsContent(ch);
     });
 
-    // Sort: 2026 Egyptian first, then 2026 Arabic, then rest
+    // Sort: 2026 first, then currently airing, then 2025, then 2024
     return arabicContent.sort((a, b) => {
       const groupA = a.group || '';
       const groupB = b.group || '';
-      const aIs2026 = groupA.includes('2026');
-      const bIs2026 = groupB.includes('2026');
-      const aIsEgyptian = groupA.toLowerCase().includes('egypt') || groupA.includes('مصر') || groupA.includes('مصري');
-      const bIsEgyptian = groupB.toLowerCase().includes('egypt') || groupB.includes('مصر') || groupB.includes('مصري');
-      
-      // Score: Egyptian 2026 = 3, other 2026 = 2, Egyptian other = 1, rest = 0
-      const scoreA = (aIs2026 ? 2 : 0) + (aIsEgyptian ? 1 : 0);
-      const scoreB = (bIs2026 ? 2 : 0) + (bIsEgyptian ? 1 : 0);
-      return scoreB - scoreA;
+      const scoreMap = (g: string) => {
+        if (g.includes('2026')) return 3;
+        if (g.includes('تعرض حاليا')) return 2;
+        if (g.includes('2025')) return 1;
+        return 0;
+      };
+      return scoreMap(groupB) - scoreMap(groupA);
     }).slice(0, 30);
   }, [channels]);
 
