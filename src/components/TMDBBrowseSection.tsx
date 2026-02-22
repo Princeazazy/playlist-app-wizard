@@ -373,9 +373,10 @@ export const TMDBBrowseSection = ({ onSelectItem, channels = [], onChannelSelect
       if (ch.type !== 'movies') return false;
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
-      const isTargetGroup = (groupLower.includes('arabic') || groupLower === '2026' || groupLower === '2025' || group.includes('عربي') || group.includes('أفلام')) &&
-                           (group.includes('2026') || group.includes('2025'));
-      return isTargetGroup && !isSportsContent(ch);
+      // Must explicitly be Arabic content — require 'arabic' or Arabic script keywords alongside year
+      const hasArabicKeyword = groupLower.includes('arabic') || group.includes('عربي') || group.includes('أفلام عربي');
+      const hasYear = group.includes('2026') || group.includes('2025');
+      return hasArabicKeyword && hasYear && !isSportsContent(ch);
     });
 
     // Sort by year (2026 first, then 2025)
