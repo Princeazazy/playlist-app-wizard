@@ -289,32 +289,34 @@ export const MiLiveTVList = ({
   };
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
+    const timer = setInterval(() => setTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
 
-  // Build groups with first channel logo for non-country groups
-  const groupsWithLogos = useMemo(() => {
+  // Build groups with first channel logo AND normalized group map in a single pass
+  const { groupsWithLogos, normalizedGroupMap } = useMemo(() => {
     const groupData = new Map<string, { count: number; firstLogo?: string; originalNames: string[] }>();
-    channels.forEach((ch) => {
+    const normMap = new Map<string, string[]>();
+    for (const ch of channels) {
       const group = ch.group || 'Uncategorized';
       const normalizedKey = normalizeGroupName(group);
       const existing = groupData.get(normalizedKey);
       if (!existing) {
         groupData.set(normalizedKey, { count: 1, firstLogo: ch.logo, originalNames: [group] });
+        normMap.set(normalizedKey, [group]);
       } else {
         existing.count++;
         if (!existing.originalNames.includes(group)) {
           existing.originalNames.push(group);
+          const normList = normMap.get(normalizedKey)!;
+          if (!normList.includes(group)) normList.push(group);
         }
       }
-    });
-    return groupData;
+    }
+    return { groupsWithLogos: groupData, normalizedGroupMap: normMap };
   }, [channels]);
 
-  const groups = useMemo(() => {
-    return mergeAndSortGroups(groupsWithLogos);
-  }, [groupsWithLogos]);
+  const groups = useMemo(() => mergeAndSortGroups(groupsWithLogos), [groupsWithLogos]);
 
   // Auto-select first group when groups load and no group is selected
   useEffect(() => {
@@ -322,22 +324,6 @@ export const MiLiveTVList = ({
       setSelectedGroup(groups[0].name);
     }
   }, [groups, selectedGroup]);
-
-  // Create a mapping of normalized keys to original group names for filtering
-  const normalizedGroupMap = useMemo(() => {
-    const map = new Map<string, string[]>();
-    channels.forEach((ch) => {
-      const group = ch.group || 'Uncategorized';
-      const normalizedKey = normalizeGroupName(group);
-      const existing = map.get(normalizedKey);
-      if (!existing) {
-        map.set(normalizedKey, [group]);
-      } else if (!existing.includes(group)) {
-        existing.push(group);
-      }
-    });
-    return map;
-  }, [channels]);
 
   const filteredChannels = useMemo(() => {
     const hasSearchQuery = effectiveSearchQuery.trim().length > 0;
