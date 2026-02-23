@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useTransition } from 'react';
 import { Channel } from '@/hooks/useIPTV';
 import { WatchProgress, getChannelProgress } from '@/hooks/useWatchProgress';
 import { TMDBItem } from '@/hooks/useTMDB';
@@ -38,7 +38,7 @@ interface UseAppNavigationReturn {
 }
 
 export const useAppNavigation = (): UseAppNavigationReturn => {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('home');
+  const [currentScreen, setCurrentScreenRaw] = useState<Screen>('home');
   const [previousScreen, setPreviousScreen] = useState<Screen>('home');
   const [selectedItem, setSelectedItem] = useState<Channel | null>(null);
   const [currentChannel, setCurrentChannel] = useState<Channel | null>(null);
@@ -56,12 +56,20 @@ export const useAppNavigation = (): UseAppNavigationReturn => {
 
   const { toast } = useToast();
 
+  const setCurrentScreen = useCallback((screen: Screen) => {
+    startTransition(() => setCurrentScreenRaw(screen));
+  }, []);
+
+  const [isPending, startTransition] = useTransition();
+
   const handleNavigate = useCallback((section: 'live' | 'movies' | 'series' | 'sports' | 'settings' | 'home') => {
-    setCurrentScreen(section);
-    if (section === 'home') {
-      setShowMiniPlayer(false);
-      setCurrentChannel(null);
-    }
+    startTransition(() => {
+      setCurrentScreenRaw(section);
+      if (section === 'home') {
+        setShowMiniPlayer(false);
+        setCurrentChannel(null);
+      }
+    });
   }, []);
 
   const handleChannelSelect = useCallback((channel: Channel) => {
