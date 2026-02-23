@@ -46,15 +46,15 @@ const useAnimatedCount = (target: number, duration = 1200) => {
 };
 
 // Floating ambient orbs
-const FloatingOrbs = () => (
+const FloatingOrbs = React.memo(() => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden">
     {[
-      { size: 200, left: '5%', top: '15%', color: 'hsl(200 90% 55% / 0.06)', dur: 7 },
-      { size: 150, left: '80%', top: '10%', color: 'hsl(30 95% 55% / 0.05)', dur: 9 },
-      { size: 120, left: '50%', top: '60%', color: 'hsl(280 80% 60% / 0.05)', dur: 6 },
-      { size: 90,  left: '20%', top: '75%', color: 'hsl(200 90% 55% / 0.04)', dur: 8 },
+      { size: 200, left: '5%', top: '15%', color: 'hsl(200 90% 55% / 0.06)' },
+      { size: 150, left: '80%', top: '10%', color: 'hsl(30 95% 55% / 0.05)' },
+      { size: 120, left: '50%', top: '60%', color: 'hsl(280 80% 60% / 0.05)' },
+      { size: 90,  left: '20%', top: '75%', color: 'hsl(200 90% 55% / 0.04)' },
     ].map((orb, i) => (
-      <motion.div
+      <div
         key={i}
         className="absolute rounded-full"
         style={{
@@ -64,12 +64,10 @@ const FloatingOrbs = () => (
           top: orb.top,
           background: `radial-gradient(circle, ${orb.color} 0%, transparent 70%)`,
         }}
-        animate={{ y: [0, -25, 0], x: [0, 12, 0], scale: [1, 1.15, 1] }}
-        transition={{ duration: orb.dur, repeat: Infinity, ease: 'easeInOut', delay: i * 1.2 }}
       />
     ))}
   </div>
-);
+));
 
 // 3D tilt tile card
 const TileCard = ({
@@ -211,12 +209,6 @@ const TileCard = ({
 const PulsingIcon = ({ children, color = 'primary' }: { children: React.ReactNode; color?: string }) => (
   <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center`}
     style={{ background: `hsl(${color === 'primary' ? '200 90% 55%' : '30 95% 55%'} / 0.15)`, border: `1px solid hsl(${color === 'primary' ? '200 90% 55%' : '30 95% 55%'} / 0.3)` }}>
-    <motion.div
-      className="absolute inset-0 rounded-2xl"
-      style={{ border: `1px solid hsl(${color === 'primary' ? '200 90% 55%' : '30 95% 55%'} / 0.4)` }}
-      animate={{ scale: [1, 1.3, 1], opacity: [0.8, 0, 0.8] }}
-      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut' }}
-    />
     {children}
   </div>
 );
@@ -293,7 +285,7 @@ export const MiHomeScreen = React.memo(({
   const animSports = useAnimatedCount(sportsCount);
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
+    const timer = setInterval(() => setTime(new Date()), 60000); // Update every minute, not every second
     return () => clearInterval(timer);
   }, []);
 
@@ -374,11 +366,6 @@ export const MiHomeScreen = React.memo(({
             <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <span className="text-white font-bold text-lg">{getProfileInitial()}</span>
             </div>
-            <motion.div
-              className="absolute inset-0 rounded-full border-2 border-primary/60"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.8, 0, 0.8] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
           </motion.div>
         </div>
       </motion.header>

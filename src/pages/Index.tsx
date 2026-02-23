@@ -105,6 +105,11 @@ const Index = () => {
     window.location.reload();
   }, []);
 
+  // Stable callback for channel select from home (avoids breaking React.memo)
+  const handleHomeChannelSelect = useCallback((channel: Channel) => {
+    nav.handleItemSelect(channel, 'home');
+  }, [nav]);
+
   // Normalize title for matching - more aggressive normalization
   const normalizeTitle = useCallback((title: string) => {
     return title
@@ -265,7 +270,7 @@ const Index = () => {
             <MobileBrowseScreen
               channels={channels}
               onTMDBSelect={handleTMDBSelect}
-              onChannelSelect={(channel) => nav.handleItemSelect(channel, 'home')}
+              onChannelSelect={handleHomeChannelSelect}
               onNavigate={nav.handleNavigate}
               onSearchClick={() => nav.setIsSearchOpen(true)}
             />
@@ -286,7 +291,7 @@ const Index = () => {
             onContinueWatchingSelect={nav.handleContinueWatchingSelect}
             onTMDBSelect={handleTMDBSelect}
             channels={channels}
-            onChannelSelect={(channel) => nav.handleItemSelect(channel, 'home')}
+            onChannelSelect={handleHomeChannelSelect}
           />
         );
 
@@ -386,7 +391,7 @@ const Index = () => {
             onContinueWatchingSelect={nav.handleContinueWatchingSelect}
             onTMDBSelect={handleTMDBSelect}
             channels={channels}
-            onChannelSelect={(channel) => nav.handleItemSelect(channel, 'home')}
+            onChannelSelect={handleHomeChannelSelect}
           />
         );
     }
