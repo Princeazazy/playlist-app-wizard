@@ -262,6 +262,7 @@ const OTHER_COUNTRIES: Record<string, CountryInfo> = {
   'new zealand': { name: 'New Zealand', code: 'nz', flagUrl: 'https://flagcdn.com/w80/nz.png', priority: 76 },
   'ca': { name: 'Canada', code: 'ca', flagUrl: 'https://flagcdn.com/w80/ca.png', priority: 77 },
   'canada': { name: 'Canada', code: 'ca', flagUrl: 'https://flagcdn.com/w80/ca.png', priority: 77 },
+  'canadian': { name: 'Canada', code: 'ca', flagUrl: 'https://flagcdn.com/w80/ca.png', priority: 77 },
   'mx': { name: 'Mexico', code: 'mx', flagUrl: 'https://flagcdn.com/w80/mx.png', priority: 78 },
   'mexico': { name: 'Mexico', code: 'mx', flagUrl: 'https://flagcdn.com/w80/mx.png', priority: 78 },
   'br': { name: 'Brazil', code: 'br', flagUrl: 'https://flagcdn.com/w80/br.png', priority: 79 },
