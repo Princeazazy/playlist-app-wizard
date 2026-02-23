@@ -129,15 +129,11 @@ const LivePreviewChannelTile = memo(({
   };
 
   return (
-    <motion.button
+    <button
       onClick={onClick}
       onMouseEnter={() => { setIsHovered(true); onHover(channel); }}
       onMouseLeave={() => { setIsHovered(false); onHover(null); }}
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 10 }}
-      whileHover={{ scale: 1.01 }}
-      className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all group mb-1 ${
+      className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors group mb-1 ${
         isActive
           ? 'bg-card border-l-4 border-l-accent shadow-lg shadow-accent/10'
           : isFocused
@@ -203,15 +199,14 @@ const LivePreviewChannelTile = memo(({
       {/* Badges & Favorite */}
       <div className="flex items-center gap-2">
         <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded">HD</span>
-        <motion.button
+        <button
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          whileHover={{ scale: 1.2 }}
-          whileTap={{ scale: 0.9 }}
+          className="hover:scale-110 active:scale-90 transition-transform"
         >
           <Star className={`w-5 h-5 ${isFavorite ? 'fill-accent text-accent' : 'text-muted-foreground hover:text-accent'}`} />
-        </motion.button>
+        </button>
       </div>
-    </motion.button>
+    </button>
   );
 });
 
@@ -354,7 +349,7 @@ export const MiLiveTVList = ({
     return filtered;
   }, [channels, effectiveSearchQuery, selectedGroup, localShowFavoritesOnly, favorites, sortBy]);
 
-  const { visibleItems: visibleChannels, onScroll, ensureIndexVisible, hasMore } = useProgressiveList(filteredChannels, { initial: 120, step: 120 });
+  const { visibleItems: visibleChannels, onScroll, ensureIndexVisible, hasMore } = useProgressiveList(filteredChannels, { initial: 50, step: 50 });
 
   // Keyboard navigation
   useEffect(() => {
@@ -507,12 +502,10 @@ export const MiLiveTVList = ({
         {/* Category List */}
         <div className="flex-1 overflow-y-auto px-2 space-y-1 mi-scrollbar">
           {groups.map((group) => (
-            <motion.button
+            <button
               key={group.name}
               onClick={() => handleGroupSelect(group.name)}
-              whileHover={{ scale: 1.02, x: 2 }}
-              whileTap={{ scale: 0.98 }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
                 selectedGroup === group.name
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
@@ -529,24 +522,17 @@ export const MiLiveTVList = ({
                   <span className="text-base">{getCategoryEmoji(group.displayName)}</span>
                 )}
               </div>
-              <AnimatePresence>
-                {(!sidebarCollapsed || isMobile) && (
-                  <motion.div 
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    className="flex-1 text-left min-w-0"
-                  >
-                    <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
-                      {translateGroupName(group.displayName)}
-                    </p>
-                    {selectedGroup === group.name && (
-                      <p className="text-xs text-muted-foreground">{group.count} Channels</p>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
+              {(!sidebarCollapsed || isMobile) && (
+                <div className="flex-1 text-left min-w-0">
+                  <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
+                    {translateGroupName(group.displayName)}
+                  </p>
+                  {selectedGroup === group.name && (
+                    <p className="text-xs text-muted-foreground">{group.count} Channels</p>
+                  )}
+                </div>
+              )}
+            </button>
           ))}
         </div>
 
@@ -663,7 +649,6 @@ export const MiLiveTVList = ({
 
         {/* Channel Rows with Live Preview */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-2 mi-scrollbar" onScroll={onScroll}>
-          <AnimatePresence mode="popLayout">
             {visibleChannels.map((channel, index) => (
               <LivePreviewChannelTile
                 key={channel.id}
@@ -677,7 +662,6 @@ export const MiLiveTVList = ({
                 onHover={setHoveredChannel}
               />
             ))}
-          </AnimatePresence>
 
           {hasMore && <div className="py-4 text-center text-muted-foreground text-sm">Loading more…</div>}
           
