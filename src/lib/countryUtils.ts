@@ -309,6 +309,8 @@ const OTHER_COUNTRIES: Record<string, CountryInfo> = {
   'czech': { name: 'Czech Republic', code: 'cz', flagUrl: 'https://flagcdn.com/w80/cz.png', priority: 98 },
   'hu': { name: 'Hungary', code: 'hu', flagUrl: 'https://flagcdn.com/w80/hu.png', priority: 99 },
   'hungary': { name: 'Hungary', code: 'hu', flagUrl: 'https://flagcdn.com/w80/hu.png', priority: 99 },
+  'hungaria': { name: 'Hungary', code: 'hu', flagUrl: 'https://flagcdn.com/w80/hu.png', priority: 99 },
+  'hungarian': { name: 'Hungary', code: 'hu', flagUrl: 'https://flagcdn.com/w80/hu.png', priority: 99 },
   'ro': { name: 'Romania', code: 'ro', flagUrl: 'https://flagcdn.com/w80/ro.png', priority: 100 },
   'romania': { name: 'Romania', code: 'ro', flagUrl: 'https://flagcdn.com/w80/ro.png', priority: 100 },
   'romanian': { name: 'Romania', code: 'ro', flagUrl: 'https://flagcdn.com/w80/ro.png', priority: 100 },
@@ -395,8 +397,11 @@ const OTHER_COUNTRIES: Record<string, CountryInfo> = {
   'cameroon': { name: 'Cameroon', code: 'cm', flagUrl: 'https://flagcdn.com/w80/cm.png', priority: 139 },
   'ci': { name: 'Ivory Coast', code: 'ci', flagUrl: 'https://flagcdn.com/w80/ci.png', priority: 140 },
   'ivory coast': { name: 'Ivory Coast', code: 'ci', flagUrl: 'https://flagcdn.com/w80/ci.png', priority: 140 },
-  'kurdish': { name: 'Kurdish', code: 'iq', flagUrl: 'https://flagcdn.com/w80/iq.png', priority: 141 },
-  'kurd': { name: 'Kurdish', code: 'iq', flagUrl: 'https://flagcdn.com/w80/iq.png', priority: 141 },
+  'kurdish': { name: 'Kurdistan', code: 'kurdistan', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Flag_of_Kurdistan.svg/80px-Flag_of_Kurdistan.svg.png', priority: 141 },
+  'kurd': { name: 'Kurdistan', code: 'kurdistan', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Flag_of_Kurdistan.svg/80px-Flag_of_Kurdistan.svg.png', priority: 141 },
+  'kurdistan': { name: 'Kurdistan', code: 'kurdistan', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Flag_of_Kurdistan.svg/80px-Flag_of_Kurdistan.svg.png', priority: 141 },
+  'كردي': { name: 'Kurdistan', code: 'kurdistan', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Flag_of_Kurdistan.svg/80px-Flag_of_Kurdistan.svg.png', priority: 141 },
+  'كردية': { name: 'Kurdistan', code: 'kurdistan', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Flag_of_Kurdistan.svg/80px-Flag_of_Kurdistan.svg.png', priority: 141 },
   'latino': { name: 'Latino', code: 'mx', flagUrl: 'https://flagcdn.com/w80/mx.png', priority: 142 },
   'latin': { name: 'Latin', code: 'mx', flagUrl: 'https://flagcdn.com/w80/mx.png', priority: 142 },
   'caribbean': { name: 'Caribbean', code: 'jm', flagUrl: 'https://flagcdn.com/w80/jm.png', priority: 143 },
@@ -717,8 +722,8 @@ export const sortGroupsByPriority = (groups: { name: string; count: number }[]):
 export const translateGroupName = (groupName: string): string => {
   // Exact overrides for malformed group names (case-insensitive check)
   const exactOverrides: Record<string, string> = {
-    'kids jlkids': 'Arabic Kids',
-    'jlkids': 'Arabic Kids',
+    'kids jlkids': 'Kids',
+    'jlkids': 'Kids',
   };
   const lowerName = groupName.toLowerCase().trim();
   if (exactOverrides[lowerName]) return exactOverrides[lowerName];
