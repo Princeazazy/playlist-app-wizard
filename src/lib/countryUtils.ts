@@ -412,6 +412,10 @@ const OTHER_COUNTRIES: Record<string, CountryInfo> = {
   'asia': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 146 },
   'asian': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 146 },
   'آسيا': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 146 },
+  'christian': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 147 },
+  'مسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 147 },
+  'المسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 147 },
+  'لمسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 147 },
 };
 
 // Merged all countries (not including streaming services - checked separately)
