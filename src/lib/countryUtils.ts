@@ -409,6 +409,9 @@ const OTHER_COUNTRIES: Record<string, CountryInfo> = {
   'african': { name: 'African', code: 'za', flagUrl: 'https://flagcdn.com/w80/za.png', priority: 144 },
   'africa': { name: 'Africa', code: 'za', flagUrl: 'https://flagcdn.com/w80/za.png', priority: 144 },
   'scandinavian': { name: 'Scandinavian', code: 'se', flagUrl: 'https://flagcdn.com/w80/se.png', priority: 145 },
+  'asia': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 146 },
+  'asian': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 146 },
+  'آسيا': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 146 },
 };
 
 // Merged all countries (not including streaming services - checked separately)
