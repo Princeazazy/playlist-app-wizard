@@ -1,13 +1,11 @@
 import { useState, useMemo, useEffect, useRef, memo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Calendar, Heart, Loader2, Mic, MicOff } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
-import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getCountryInfo, getCountryFlagUrl, getCategoryEmoji, mergeAndSortGroups, normalizeGroupName, translateGroupName } from '@/lib/countryUtils';
 import { EPGGuide } from './EPGGuide';
-import { WeatherIcon } from './shared/WeatherIcon';
 import Hls from 'hls.js';
 import { supabase } from '@/integrations/supabase/client';
 import { useBulkChannelLogos } from '@/hooks/useBulkChannelLogos';
@@ -256,7 +254,6 @@ export const MiLiveTVList = ({
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const weather = useWeather();
   const isMobile = useIsMobile();
   const { getLogoForChannel } = useBulkChannelLogos(channels);
 
@@ -349,7 +346,7 @@ export const MiLiveTVList = ({
     return filtered;
   }, [channels, effectiveSearchQuery, selectedGroup, localShowFavoritesOnly, favorites, sortBy]);
 
-  const { visibleItems: visibleChannels, onScroll, ensureIndexVisible, hasMore } = useProgressiveList(filteredChannels, { initial: 50, step: 50 });
+  const { visibleItems: visibleChannels, onScroll, ensureIndexVisible, hasMore } = useProgressiveList(filteredChannels, { initial: 80, step: 80 });
 
   // Keyboard navigation
   useEffect(() => {
@@ -447,31 +444,28 @@ export const MiLiveTVList = ({
       )}
 
       {/* Left Sidebar - Country/Category List with Collapse Toggle */}
-      <motion.div 
-        animate={{ width: isMobile ? 256 : sidebarCollapsed ? 72 : 224 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+      <div 
+        style={{ width: isMobile ? 256 : sidebarCollapsed ? 72 : 224 }}
         className={`
           ${isMobile 
             ? `fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
-            : 'flex-shrink-0 relative'
+            : 'flex-shrink-0 relative transition-[width] duration-200 ease-out'
           } 
           flex flex-col border-r border-border/30 bg-background
         `}
       >
         {/* Collapse toggle button - Desktop only */}
         {!isMobile && (
-          <motion.button
+          <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute -right-3 top-20 z-10 w-6 h-6 rounded-full bg-card border border-border/30 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors shadow-md"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            className="absolute -right-3 top-20 z-10 w-6 h-6 rounded-full bg-card border border-border/30 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors shadow-md hover:scale-110 active:scale-90"
           >
             {sidebarCollapsed ? (
               <ChevronRight className="w-4 h-4" />
             ) : (
               <ChevronLeft className="w-4 h-4" />
             )}
-          </motion.button>
+          </button>
         )}
         
         {/* Back Button & Title */}
@@ -485,18 +479,11 @@ export const MiLiveTVList = ({
               <ChevronLeft className="w-5 h-5 text-muted-foreground" />
             </button>
           )}
-          <AnimatePresence>
-            {(!sidebarCollapsed || isMobile) && (
-              <motion.h1 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="text-lg font-semibold text-foreground whitespace-nowrap overflow-hidden"
-              >
-                {getCategoryTitle(category)}
-              </motion.h1>
-            )}
-          </AnimatePresence>
+          {(!sidebarCollapsed || isMobile) && (
+            <h1 className="text-lg font-semibold text-foreground whitespace-nowrap overflow-hidden">
+              {getCategoryTitle(category)}
+            </h1>
+          )}
         </div>
 
         {/* Category List */}
@@ -548,7 +535,7 @@ export const MiLiveTVList = ({
             <Heart className={`w-5 h-5 ${localShowFavoritesOnly ? 'fill-white text-white' : ''}`} />
           </button>
         </div>
-      </motion.div>
+      </div>
 
       {/* Center - Channel List */}
       <div className="flex-1 flex flex-col min-w-0">
@@ -594,10 +581,6 @@ export const MiLiveTVList = ({
           {!isMobile && (
             <div className="flex items-center gap-4">
               <span className="text-foreground font-medium">{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <WeatherIcon icon={weather.icon} />
-                <span>{weather.displayTemp}</span>
-              </div>
             </div>
           )}
 
