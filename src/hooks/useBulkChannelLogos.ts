@@ -14,10 +14,9 @@ export const useBulkChannelLogos = (channels: { name: string; logo?: string }[])
     const initialMap: Record<string, string> = {};
 
     for (const ch of channels) {
-      if (ch.logo) continue; // Already has a logo
-      if (processedRef.current.has(ch.name)) continue; // Already processed
+      if (ch.logo) continue;
+      if (processedRef.current.has(ch.name)) continue;
 
-      // Check cache first
       const cached = getCachedLogo(ch.name);
       if (cached !== undefined) {
         if (cached) initialMap[ch.name] = cached;
@@ -28,23 +27,36 @@ export const useBulkChannelLogos = (channels: { name: string; logo?: string }[])
       needLogos.push(ch.name);
     }
 
-    // Apply cached results immediately
     if (Object.keys(initialMap).length > 0) {
       setLogoMap(prev => ({ ...prev, ...initialMap }));
     }
 
-    // Deduplicate
     const uniqueNames = [...new Set(needLogos)];
     if (uniqueNames.length === 0 || isProcessingRef.current) return;
 
-    // Process in batches
-    isProcessingRef.current = true;
-    const processBatches = async () => {
+    // Defer logo fetching so the list renders instantly first
+    const startFetching = () => {
+      isProcessingRef.current = true;
+      processBatches(uniqueNames);
+    };
+
+    // Use requestIdleCallback if available, otherwise setTimeout 1s
+    if ('requestIdleCallback' in window) {
+      const id = (window as any).requestIdleCallback(startFetching, { timeout: 2000 });
+      return () => (window as any).cancelIdleCallback(id);
+    } else {
+      const id = setTimeout(startFetching, 1000);
+      return () => clearTimeout(id);
+    }
+  }, [channels]);
+
+  const processBatches = async (uniqueNames: string[]) => {
+    // Mark as processed to prevent re-requests
+    uniqueNames.forEach(name => processedRef.current.add(name));
+
+    const processBatchWork = async () => {
       for (let i = 0; i < uniqueNames.length; i += 5) {
         const batch = uniqueNames.slice(i, i + 5);
-        
-        // Mark as processed to prevent re-requests
-        batch.forEach(name => processedRef.current.add(name));
 
         try {
           const { data, error } = await supabase.functions.invoke('find-channel-logo', {
@@ -76,8 +88,8 @@ export const useBulkChannelLogos = (channels: { name: string; logo?: string }[])
       isProcessingRef.current = false;
     };
 
-    processBatches();
-  }, [channels]);
+    processBatchWork();
+  };
 
   // Returns the resolved logo for a channel
   const getLogoForChannel = useCallback((channelName: string, existingLogo?: string): string | undefined => {
