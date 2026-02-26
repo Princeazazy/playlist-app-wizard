@@ -25,23 +25,43 @@ export const TMDBDetailModal = ({ item, allChannels, onClose, onPlayIPTV }: TMDB
     loadDetails();
   }, [item.id, item.mediaType, getDetails]);
 
+  const searchableTitles = useMemo(() => {
+    return Array.from(
+      new Set(
+        [item.title, item.originalTitle, details?.title, details?.originalTitle]
+          .filter((value): value is string => Boolean(value?.trim()))
+          .map(value => value.trim())
+      )
+    );
+  }, [item.title, item.originalTitle, details?.title, details?.originalTitle]);
+
   // Find matching IPTV content by title similarity
   const matchingChannels = useMemo(() => {
-    if (!allChannels.length) return [];
+    if (!allChannels.length || searchableTitles.length === 0) return [];
 
-    const matches = rankChannelsForTMDB(item, allChannels, {
-      minScore: 45,
-      limit: 5,
-      enforceMediaType: true,
-    });
+    const [primaryTitle, ...aliases] = searchableTitles;
+    const matches = rankChannelsForTMDB(
+      {
+        title: primaryTitle,
+        aliases,
+        year: item.year,
+        mediaType: item.mediaType,
+      },
+      allChannels,
+      {
+        minScore: 50,
+        limit: 5,
+        enforceMediaType: true,
+      }
+    );
 
     console.log(
-      `TMDB Modal Match: "${item.title}" found ${matches.length} matches:`,
+      `TMDB Modal Match: "${item.title}" titles=[${searchableTitles.join(' | ')}] found ${matches.length} matches:`,
       matches.map(match => `${match.channel.name} (${match.score})`)
     );
 
     return matches.map(match => match.channel);
-  }, [allChannels, item]);
+  }, [allChannels, item.title, item.year, item.mediaType, searchableTitles]);
 
   const trailerUrl = details?.trailer?.key 
     ? `https://www.youtube.com/embed/${details.trailer.key}?autoplay=1&rel=0`

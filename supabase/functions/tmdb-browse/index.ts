@@ -13,6 +13,9 @@ interface TMDBContent {
   id: number;
   title?: string;
   name?: string;
+  original_title?: string;
+  original_name?: string;
+  original_language?: string;
   poster_path?: string | null;
   backdrop_path?: string | null;
   overview?: string;
@@ -171,6 +174,8 @@ serve(async (req) => {
     results = (data.results || []).map((item: TMDBContent) => ({
       id: item.id,
       title: item.title || item.name,
+      originalTitle: item.original_title || item.original_name,
+      originalLanguage: item.original_language,
       poster: item.poster_path ? `${TMDB_IMAGE_BASE}/w342${item.poster_path}` : null,
       backdrop: item.backdrop_path ? `${TMDB_IMAGE_BASE}/w780${item.backdrop_path}` : null,
       overview: item.overview,
