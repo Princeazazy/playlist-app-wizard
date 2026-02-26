@@ -136,15 +136,10 @@ const Index = () => {
     return isHighConfidence ? best.channel : null;
   }, [channelsByType]);
 
-  // Handle TMDB item selection
+  // Handle TMDB item selection — always open detail modal for accurate info & library matching
   const handleTMDBSelect = useCallback((item: TMDBItem) => {
-    const match = findIPTVMatch(item);
-    if (match) {
-      nav.handleItemSelect(match, 'home');
-    } else {
-      nav.setSelectedTMDBItem(item);
-    }
-  }, [findIPTVMatch, nav]);
+    nav.setSelectedTMDBItem(item);
+  }, [nav]);
 
   // Handle playing IPTV match from TMDB modal
   const handlePlayIPTVFromTMDB = useCallback((channel: Channel) => {
