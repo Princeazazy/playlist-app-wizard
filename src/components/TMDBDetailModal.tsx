@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Star, Clock, Calendar, Film, Tv, Search, Loader2, AlertCircle, ChevronLeft, ThumbsUp, Heart } from 'lucide-react';
 import { TMDBItem, TMDBDetailedItem, useTMDB } from '@/hooks/useTMDB';
 import { Channel } from '@/hooks/useIPTV';
+import { rankChannelsForTMDB } from '@/lib/tmdbMatcher';
 
 interface TMDBDetailModalProps {
   item: TMDBItem;
@@ -24,83 +25,23 @@ export const TMDBDetailModal = ({ item, allChannels, onClose, onPlayIPTV }: TMDB
     loadDetails();
   }, [item.id, item.mediaType, getDetails]);
 
-  // Find matching IPTV content by title similarity - improved algorithm
+  // Find matching IPTV content by title similarity
   const matchingChannels = useMemo(() => {
     if (!allChannels.length) return [];
-    
-    // More aggressive normalization - remove articles too
-    const normalizeTitle = (title: string) => 
-      title.toLowerCase()
-        .replace(/^(the|a|an)\s+/i, '')
-        .replace(/[^a-z0-9\s]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-    
-    const searchTitle = normalizeTitle(item.title);
-    const searchTitleFull = item.title.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
-    const searchYear = item.year;
-    
-    // Include all VOD content - more lenient filtering
-    const vodContent = allChannels.filter(ch => 
-      ch.type === 'movies' || ch.type === 'series' || 
-      ch.url?.includes('/movie/') || ch.url?.includes('/series/') ||
-      ch.group?.toLowerCase().includes('movie') ||
-      ch.group?.toLowerCase().includes('vod') ||
-      ch.group?.toLowerCase().includes('film') ||
-      ch.group?.toLowerCase().includes('series')
-    );
-    
-    // Score and rank matches
-    const scored = vodContent.map(channel => {
-      const channelTitle = normalizeTitle(channel.name);
-      const channelTitleFull = channel.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
-      let score = 0;
-      
-      // Exact match
-      if (channelTitle === searchTitle || channelTitleFull === searchTitleFull) {
-        score = 100;
-      }
-      // Contains full title
-      else if (channelTitle.includes(searchTitle) || channelTitleFull.includes(searchTitleFull)) {
-        score = 85;
-      }
-      // Search contains channel (e.g., "Avatar" matches channel "Avatar 2009")
-      else if (searchTitle.includes(channelTitle) && channelTitle.length > 3) {
-        score = 80;
-      }
-      // Word matching
-      else {
-        const searchWords = searchTitle.split(' ').filter(w => w.length > 2);
-        const channelWords = channelTitle.split(' ').filter(w => w.length > 2);
-        
-        if (searchWords.length > 0 && channelWords.length > 0) {
-          const matchedWords = searchWords.filter(sw => 
-            channelWords.some(cw => cw === sw || cw.includes(sw) || sw.includes(cw))
-          );
-          const matchRatio = matchedWords.length / searchWords.length;
-          if (matchRatio >= 0.5) {
-            score = matchRatio * 70;
-          }
-        }
-      }
-      
-      // Year bonus
-      if (score > 0 && searchYear && channel.name.includes(searchYear)) {
-        score += 15;
-      }
-      
-      return { channel, score };
+
+    const matches = rankChannelsForTMDB(item, allChannels, {
+      minScore: 45,
+      limit: 5,
+      enforceMediaType: true,
     });
-    
-    const matches = scored
-      .filter(s => s.score >= 35)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
-    
-    console.log(`TMDB Modal Match: "${item.title}" found ${matches.length} matches:`, matches.map(m => `${m.channel.name} (${m.score})`));
-    
-    return matches.map(s => s.channel);
-  }, [allChannels, item.title, item.year]);
+
+    console.log(
+      `TMDB Modal Match: "${item.title}" found ${matches.length} matches:`,
+      matches.map(match => `${match.channel.name} (${match.score})`)
+    );
+
+    return matches.map(match => match.channel);
+  }, [allChannels, item]);
 
   const trailerUrl = details?.trailer?.key 
     ? `https://www.youtube.com/embed/${details.trailer.key}?autoplay=1&rel=0`
