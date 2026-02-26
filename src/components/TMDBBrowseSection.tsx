@@ -200,7 +200,7 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const [ramadanData, arabicSeriesData, arabicMoviesData] = await Promise.all([
         discoverByGenre(18, 'tv', 1, { language: 'ar', year: 2026 }).finally(() => setLoadingState(s => ({ ...s, ramadan: false }))),
         discoverByGenre(null, 'tv', 1, { language: 'ar' }).finally(() => setLoadingState(s => ({ ...s, arabicSeries: false }))),
-        discoverByGenre(null, 'movie', 1, { language: 'ar' }).finally(() => setLoadingState(s => ({ ...s, arabicMovies: false }))),
+        discoverByGenre(null, 'movie', 1, { language: 'ar', year: 2025 }).finally(() => setLoadingState(s => ({ ...s, arabicMovies: false }))),
       ]);
 
       setRamadanSeries(ramadanData.results.slice(0, 18));
