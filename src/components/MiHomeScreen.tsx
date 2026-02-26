@@ -319,29 +319,44 @@ export const MiHomeScreen = React.memo(({
       >
         <img src={universePlayLogo} alt="Universe TV" className="h-14 md:h-20 w-auto" />
 
+        {/* Time & Weather - Center/Right of header on desktop */}
         {!isMobile && (
-          <div className="flex items-center gap-3">
-            <motion.button
-              onClick={onVoiceSearchClick}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="relative w-12 h-12 rounded-full border border-white/10 flex items-center justify-center transition-colors overflow-hidden group"
-              style={{ background: 'linear-gradient(145deg, hsl(265 45% 14%), hsl(265 40% 9%))' }}
-            >
-              <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Mic className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors relative z-10" />
-            </motion.button>
-            <motion.button
-              onClick={onSearchClick}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-3 backdrop-blur-sm rounded-full px-6 py-3 min-w-[240px] border border-white/10 hover:border-primary/30 transition-all group relative overflow-hidden"
-              style={{ background: 'linear-gradient(145deg, hsl(265 45% 14% / 0.9), hsl(265 40% 9% / 0.9))' }}
-            >
-              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Search className="w-5 h-5 text-muted-foreground" />
-              <span className="text-muted-foreground">Search channels, movies...</span>
-            </motion.button>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <motion.button
+                onClick={onVoiceSearchClick}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="relative w-12 h-12 rounded-full border border-white/10 flex items-center justify-center transition-colors overflow-hidden group"
+                style={{ background: 'linear-gradient(145deg, hsl(265 45% 14%), hsl(265 40% 9%))' }}
+              >
+                <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Mic className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors relative z-10" />
+              </motion.button>
+              <motion.button
+                onClick={onSearchClick}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-3 backdrop-blur-sm rounded-full px-6 py-3 min-w-[240px] border border-white/10 hover:border-primary/30 transition-all group relative overflow-hidden"
+                style={{ background: 'linear-gradient(145deg, hsl(265 45% 14% / 0.9), hsl(265 40% 9% / 0.9))' }}
+              >
+                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Search className="w-5 h-5 text-muted-foreground" />
+                <span className="text-muted-foreground">Search channels, movies...</span>
+              </motion.button>
+            </div>
+
+            <div className="flex items-center gap-3 px-4 py-2 rounded-xl border border-white/5" style={{ background: 'linear-gradient(145deg, hsl(265 45% 14% / 0.6), hsl(265 40% 9% / 0.6))' }}>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <WeatherIcon icon={weather.icon} />
+                <span className="text-sm">{weather.displayTemp}</span>
+              </div>
+              <div className="w-px h-6 bg-border/30" />
+              <div className="text-right">
+                <p className="text-lg font-light text-foreground tabular-nums leading-tight">{formatTime()}</p>
+                <p className="text-muted-foreground text-[10px]">{formatDate()}</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -442,129 +457,107 @@ export const MiHomeScreen = React.memo(({
             </div>
           </div>
         ) : (
-          <div className="flex gap-6 h-full">
-            <div className="flex-1 flex flex-col gap-4">
-              <div className="grid grid-cols-3 grid-rows-2 gap-4" style={{ minHeight: '320px' }}>
-                {/* Live TV - Large */}
-                <TileCard onClick={() => onNavigate('live')} size="large" delay={0} accentColor="primary" className="row-span-2">
-                  <div className="flex-1 flex flex-col justify-between h-full">
-                    <PulsingIcon color="primary">
-                      <Tv className="w-8 h-8 text-primary" />
-                    </PulsingIcon>
-                    <div>
-                      <motion.p
-                        className="text-4xl font-bold text-foreground tabular-nums"
-                        key={animChannels}
-                      >Live TV</motion.p>
-                      <p className="text-muted-foreground mt-1">
-                        {loading ? (
-                          <motion.span animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.2, repeat: Infinity }}>Loading...</motion.span>
-                        ) : (
-                          <span>+{animChannels.toLocaleString()} Channels</span>
-                        )}
-                      </p>
+          <div className="flex flex-col gap-4">
+            {/* Top row: tiles + action buttons + continue watching */}
+            <div className="flex gap-6">
+              <div className="flex-1">
+                <div className="grid grid-cols-3 grid-rows-2 gap-4" style={{ minHeight: '320px' }}>
+                  {/* Live TV - Large */}
+                  <TileCard onClick={() => onNavigate('live')} size="large" delay={0} accentColor="primary" className="row-span-2">
+                    <div className="flex-1 flex flex-col justify-between h-full">
+                      <PulsingIcon color="primary">
+                        <Tv className="w-8 h-8 text-primary" />
+                      </PulsingIcon>
+                      <div>
+                        <motion.p className="text-4xl font-bold text-foreground tabular-nums" key={animChannels}>Live TV</motion.p>
+                        <p className="text-muted-foreground mt-1">
+                          {loading ? (
+                            <motion.span animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.2, repeat: Infinity }}>Loading...</motion.span>
+                          ) : (
+                            <span>+{animChannels.toLocaleString()} Channels</span>
+                          )}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
 
-                {/* Movies */}
-                <TileCard onClick={() => onNavigate('movies')} delay={1} accentColor="accent">
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(30 95% 55% / 0.12)', border: '1px solid hsl(30 95% 55% / 0.25)' }}>
-                      <Film className="w-6 h-6 text-accent" />
+                  {/* Movies */}
+                  <TileCard onClick={() => onNavigate('movies')} delay={1} accentColor="accent">
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(30 95% 55% / 0.12)', border: '1px solid hsl(30 95% 55% / 0.25)' }}>
+                        <Film className="w-6 h-6 text-accent" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground">Movies</h3>
+                        <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animMovies.toLocaleString()} Movies`}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Movies</h3>
-                      <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animMovies.toLocaleString()} Movies`}</p>
-                    </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
 
-                {/* Sports */}
-                <TileCard onClick={() => onNavigate('sports')} delay={2} accentColor="emerald">
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(160 80% 45% / 0.12)', border: '1px solid hsl(160 80% 45% / 0.25)' }}>
-                      <Trophy className="w-6 h-6" style={{ color: 'hsl(160 80% 55%)' }} />
+                  {/* Sports */}
+                  <TileCard onClick={() => onNavigate('sports')} delay={2} accentColor="emerald">
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(160 80% 45% / 0.12)', border: '1px solid hsl(160 80% 45% / 0.25)' }}>
+                        <Trophy className="w-6 h-6" style={{ color: 'hsl(160 80% 55%)' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground">Sports Guide</h3>
+                        <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animSports.toLocaleString()} in playlist`}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Sports Guide</h3>
-                      <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animSports.toLocaleString()} in playlist`}</p>
-                    </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
 
-                {/* Series */}
-                <TileCard onClick={() => onNavigate('series')} delay={3} accentColor="violet">
-                  <div className="absolute top-3 right-3 z-20">
-                    <motion.span
-                      animate={{ scale: [1, 1.06, 1], boxShadow: ['0 0 0px hsl(200 90% 55% / 0)', '0 0 12px hsl(200 90% 55% / 0.5)', '0 0 0px hsl(200 90% 55% / 0)'] }}
-                      transition={{ duration: 2.5, repeat: Infinity }}
-                      className="px-2.5 py-1 rounded-md text-xs font-bold text-white"
-                      style={{ background: 'linear-gradient(135deg, hsl(200 90% 55%), hsl(280 80% 60%))' }}
-                    >New</motion.span>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(270 80% 60% / 0.12)', border: '1px solid hsl(270 80% 60% / 0.25)' }}>
-                      <Clapperboard className="w-6 h-6" style={{ color: 'hsl(270 80% 70%)' }} />
+                  {/* Series */}
+                  <TileCard onClick={() => onNavigate('series')} delay={3} accentColor="violet">
+                    <div className="absolute top-3 right-3 z-20">
+                      <motion.span
+                        animate={{ scale: [1, 1.06, 1], boxShadow: ['0 0 0px hsl(200 90% 55% / 0)', '0 0 12px hsl(200 90% 55% / 0.5)', '0 0 0px hsl(200 90% 55% / 0)'] }}
+                        transition={{ duration: 2.5, repeat: Infinity }}
+                        className="px-2.5 py-1 rounded-md text-xs font-bold text-white"
+                        style={{ background: 'linear-gradient(135deg, hsl(200 90% 55%), hsl(280 80% 60%))' }}
+                      >New</motion.span>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Series</h3>
-                      <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animSeries.toLocaleString()} Series`}</p>
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(270 80% 60% / 0.12)', border: '1px solid hsl(270 80% 60% / 0.25)' }}>
+                        <Clapperboard className="w-6 h-6" style={{ color: 'hsl(270 80% 70%)' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground">Series</h3>
+                        <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animSeries.toLocaleString()} Series`}</p>
+                      </div>
                     </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
 
-                {/* Catch Up */}
-                <TileCard onClick={onCatchUp} delay={4} accentColor="rose">
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(350 80% 60% / 0.12)', border: '1px solid hsl(350 80% 60% / 0.25)' }}>
-                      <Clock className="w-6 h-6" style={{ color: 'hsl(350 80% 65%)' }} />
+                  {/* Catch Up */}
+                  <TileCard onClick={onCatchUp} delay={4} accentColor="rose">
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(350 80% 60% / 0.12)', border: '1px solid hsl(350 80% 60% / 0.25)' }}>
+                        <Clock className="w-6 h-6" style={{ color: 'hsl(350 80% 65%)' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground">Catch Up</h3>
+                        <p className="text-muted-foreground text-sm">Resume watching</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Catch Up</h3>
-                      <p className="text-muted-foreground text-sm">Resume watching</p>
-                    </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
+                </div>
               </div>
 
-              {/* TMDB Section */}
-              <div className="mt-6">
-                <TMDBBrowseSection onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
+              {/* Side panel: actions + continue watching */}
+              <div className="w-72 flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <ActionButton icon={User} label="Account" onClick={() => onNavigate('settings')} />
+                  <ActionButton icon={RefreshCw} label="Refresh All" onClick={onReload} />
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <ContinueWatching onSelect={(id) => onContinueWatchingSelect?.(id)} onRemove={handleContinueWatchingRemove} compact />
+                </div>
               </div>
             </div>
 
-            {/* Right Panel */}
-            <div className="w-72 flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <ActionButton icon={User} label="Account" onClick={() => onNavigate('settings')} />
-                <ActionButton icon={RefreshCw} label="Refresh All" onClick={onReload} />
-              </div>
-
-              <div className="flex-1 overflow-hidden">
-                <ContinueWatching onSelect={(id) => onContinueWatchingSelect?.(id)} onRemove={handleContinueWatchingRemove} compact />
-              </div>
-
-              {/* Time & Weather */}
-              <motion.div
-                className="text-right p-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                <div className="flex items-center justify-end gap-2 text-muted-foreground mb-2">
-                  <WeatherIcon icon={weather.icon} />
-                  <span className="text-sm">{weather.displayTemp}</span>
-                </div>
-                <motion.p
-                  className="text-5xl font-light text-foreground tabular-nums"
-                  key={formatTime()}
-                  initial={{ opacity: 0.7 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >{formatTime()}</motion.p>
-                <p className="text-muted-foreground text-sm mt-1">{formatDate()}</p>
-              </motion.div>
+            {/* TMDB Section - Full width edge to edge */}
+            <div className="mt-4">
+              <TMDBBrowseSection onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
             </div>
           </div>
         )}
