@@ -396,10 +396,14 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       if (ch.type !== 'movies') return false;
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
+      const nameLower = ch.name.toLowerCase();
+
       // Must explicitly be Arabic content — require 'arabic' or Arabic script keywords alongside year
       const hasArabicKeyword = groupLower.includes('arabic') || group.includes('عربي') || group.includes('أفلام عربي');
       const hasYear = group.includes('2026') || group.includes('2025');
-      return hasArabicKeyword && hasYear && !isSportsContent(ch);
+      const isExcluded = nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere') || ch.name.includes('جرس إنذار');
+
+      return hasArabicKeyword && hasYear && !isSportsContent(ch) && !isExcluded;
     });
 
     // Sort by year (2026 first, then 2025)
