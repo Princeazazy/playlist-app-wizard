@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Star, Film, Tv, TrendingUp, Loader2 } from 'lucide-react';
+import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon, Sparkles } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
 import { Channel } from '@/hooks/useIPTV';
 
@@ -168,27 +168,21 @@ const CategoryRow = ({
 };
 
 export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onChannelSelect }: TMDBBrowseSectionProps) => {
-  const { getTrending, getMovies, getTVShows, error } = useTMDB();
+  const { getTrending, getMovies, getTVShows, discoverByGenre, error } = useTMDB();
   const [trending, setTrending] = useState<TMDBItem[]>([]);
   const [popularMovies, setPopularMovies] = useState<TMDBItem[]>([]);
   const [popularTV, setPopularTV] = useState<TMDBItem[]>([]);
+  const [ramadanSeries, setRamadanSeries] = useState<TMDBItem[]>([]);
+  const [arabicSeries, setArabicSeries] = useState<TMDBItem[]>([]);
+  const [arabicMovies, setArabicMovies] = useState<TMDBItem[]>([]);
   const [loadingState, setLoadingState] = useState({
     trending: true,
     movies: true,
     tv: true,
+    ramadan: true,
+    arabicSeries: true,
+    arabicMovies: true,
   });
-
-  // Helper to exclude sports/WWE content
-  const isSportsContent = (ch: Channel) => {
-    const nameLower = ch.name.toLowerCase();
-    const groupLower = ch.group?.toLowerCase() || '';
-    return nameLower.includes('wwe') || 
-           nameLower.includes('wrestling') ||
-           nameLower.includes('sport') ||
-           groupLower.includes('sport') ||
-           groupLower.includes('wwe');
-  };
-
 
   useEffect(() => {
     const loadContent = async () => {
@@ -201,6 +195,17 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       setTrending(trendingData.slice(0, 18));
       setPopularMovies(moviesData.results.slice(0, 18));
       setPopularTV(tvData.results.slice(0, 18));
+
+      // Load curated Arabic content
+      const [ramadanData, arabicSeriesData, arabicMoviesData] = await Promise.all([
+        discoverByGenre(18, 'tv', 1, { language: 'ar', year: 2026 }).finally(() => setLoadingState(s => ({ ...s, ramadan: false }))),
+        discoverByGenre(null, 'tv', 1, { language: 'ar' }).finally(() => setLoadingState(s => ({ ...s, arabicSeries: false }))),
+        discoverByGenre(null, 'movie', 1, { language: 'ar' }).finally(() => setLoadingState(s => ({ ...s, arabicMovies: false }))),
+      ]);
+
+      setRamadanSeries(ramadanData.results.slice(0, 18));
+      setArabicSeries(arabicSeriesData.results.slice(0, 18));
+      setArabicMovies(arabicMoviesData.results.slice(0, 18));
     };
     
     loadContent();
@@ -210,7 +215,7 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     }, 30 * 60 * 1000);
     
     return () => clearInterval(refreshInterval);
-  }, [getTrending, getMovies, getTVShows]);
+  }, [getTrending, getMovies, getTVShows, discoverByGenre]);
 
   if (error) {
     return (
@@ -256,6 +261,30 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
           items={popularTV}
           onSelectItem={onSelectItem}
           loading={loadingState.tv}
+        />
+
+        <CategoryRow
+          title="Ramadan 2026 Series"
+          icon={Moon}
+          items={ramadanSeries}
+          onSelectItem={onSelectItem}
+          loading={loadingState.ramadan}
+        />
+
+        <CategoryRow
+          title="Top Rated Arabic Series"
+          icon={Sparkles}
+          items={arabicSeries}
+          onSelectItem={onSelectItem}
+          loading={loadingState.arabicSeries}
+        />
+
+        <CategoryRow
+          title="Latest Arabic Movies"
+          icon={Film}
+          items={arabicMovies}
+          onSelectItem={onSelectItem}
+          loading={loadingState.arabicMovies}
         />
       </div>
     </div>

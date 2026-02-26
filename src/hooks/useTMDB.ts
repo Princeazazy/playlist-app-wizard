@@ -49,6 +49,9 @@ export const useTMDB = () => {
       query?: string;
       id?: number;
       mediaType?: 'movie' | 'tv';
+      language?: string;
+      keywords?: string;
+      year?: number;
     } = {}
   ) => {
     setLoading(true);
@@ -63,6 +66,9 @@ export const useTMDB = () => {
           query: options.query,
           id: options.id,
           mediaType: options.mediaType,
+          language: options.language,
+          keywords: options.keywords,
+          year: options.year,
         },
       });
 
@@ -168,12 +174,18 @@ export const useTMDB = () => {
     };
   }, [fetchTMDB]);
 
-  // Discover by genre
-  const discoverByGenre = useCallback(async (genreId: number, mediaType: 'movie' | 'tv' = 'movie', page = 1) => {
+  // Discover by genre/language/keywords
+  const discoverByGenre = useCallback(async (
+    genreId: number | null, 
+    mediaType: 'movie' | 'tv' = 'movie', 
+    page = 1,
+    extra?: { language?: string; keywords?: string; year?: number }
+  ) => {
     const data = await fetchTMDB('discover', { 
-      category: genreId.toString(), 
+      category: genreId?.toString() || undefined, 
       mediaType, 
-      page 
+      page,
+      ...extra,
     });
     return {
       results: data?.results as TMDBItem[] || [],
