@@ -346,6 +346,17 @@ export const MiHomeScreen = React.memo(({
         )}
 
         <div className="flex items-center gap-3 md:gap-4">
+          {/* Time & Weather in header */}
+          {!isMobile && (
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <WeatherIcon icon={weather.icon} className="w-4 h-4" />
+              <span className="text-sm">{weather.displayTemp}</span>
+              <span className="text-sm text-muted-foreground/40">|</span>
+              <span className="text-sm tabular-nums">{formatTime()}</span>
+              <span className="text-sm text-muted-foreground/40">|</span>
+              <span className="text-sm">{formatDate()}</span>
+            </div>
+          )}
           {isMobile && (
             <motion.button
               onClick={onSearchClick}
@@ -442,12 +453,13 @@ export const MiHomeScreen = React.memo(({
             </div>
           </div>
         ) : (
-          <div className="flex gap-6 h-full">
-            <div className="flex-1 flex flex-col gap-4">
-              <div className="grid grid-cols-3 grid-rows-2 gap-4" style={{ minHeight: '320px' }}>
-                {/* Live TV - Large */}
-                <TileCard onClick={() => onNavigate('live')} size="large" delay={0} accentColor="primary" className="row-span-2">
-                  <div className="flex-1 flex flex-col justify-between h-full">
+          <>
+            <div className="flex gap-6 h-full">
+              <div className="flex-1 flex flex-col gap-4">
+                <div className="grid grid-cols-3 grid-rows-2 gap-4" style={{ minHeight: '320px' }}>
+                  {/* Live TV - Large */}
+                  <TileCard onClick={() => onNavigate('live')} size="large" delay={0} accentColor="primary" className="row-span-2">
+                    <div className="flex-1 flex flex-col justify-between h-full">
                     <PulsingIcon color="primary">
                       <Tv className="w-8 h-8 text-primary" />
                     </PulsingIcon>
@@ -528,10 +540,6 @@ export const MiHomeScreen = React.memo(({
                 </TileCard>
               </div>
 
-              {/* TMDB Section */}
-              <div className="mt-6">
-                <TMDBBrowseSection onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
-              </div>
             </div>
 
             {/* Right Panel */}
@@ -544,30 +552,16 @@ export const MiHomeScreen = React.memo(({
               <div className="flex-1 overflow-hidden">
                 <ContinueWatching onSelect={(id) => onContinueWatchingSelect?.(id)} onRemove={handleContinueWatchingRemove} compact />
               </div>
-
-              {/* Time & Weather */}
-              <motion.div
-                className="text-right p-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                <div className="flex items-center justify-end gap-2 text-muted-foreground mb-2">
-                  <WeatherIcon icon={weather.icon} />
-                  <span className="text-sm">{weather.displayTemp}</span>
-                </div>
-                <motion.p
-                  className="text-5xl font-light text-foreground tabular-nums"
-                  key={formatTime()}
-                  initial={{ opacity: 0.7 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >{formatTime()}</motion.p>
-                <p className="text-muted-foreground text-sm mt-1">{formatDate()}</p>
-              </motion.div>
             </div>
-          </div>
+            </div>
+
+            {/* TMDB Section - Full width below tiles */}
+            <div className="mt-6">
+              <TMDBBrowseSection onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
+            </div>
+          </>
         )}
+
       </main>
     </div>
   );
