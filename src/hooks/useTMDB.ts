@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface TMDBItem {
   id: number;
   title: string;
+  originalTitle?: string;
   poster: string | null;
   backdrop: string | null;
   overview?: string;
@@ -134,6 +135,7 @@ export const useTMDB = () => {
     return {
       id: item.id,
       title: item.title || item.name,
+      originalTitle: item.original_title || item.original_name,
       poster: item.poster_url,
       backdrop: item.backdrop_url,
       overview: item.overview,
@@ -152,6 +154,7 @@ export const useTMDB = () => {
       similar: item.similar?.results?.slice(0, 8).map((s: any) => ({
         id: s.id,
         title: s.title || s.name,
+        originalTitle: s.original_title || s.original_name,
         poster: s.poster_path ? `https://image.tmdb.org/t/p/w342${s.poster_path}` : null,
         backdrop: s.backdrop_path ? `https://image.tmdb.org/t/p/w780${s.backdrop_path}` : null,
         rating: s.vote_average,
