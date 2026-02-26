@@ -13,9 +13,6 @@ interface TMDBContent {
   id: number;
   title?: string;
   name?: string;
-  original_title?: string;
-  original_name?: string;
-  original_language?: string;
   poster_path?: string | null;
   backdrop_path?: string | null;
   overview?: string;
@@ -43,7 +40,7 @@ serve(async (req) => {
       throw new Error('TMDB_API_KEY is not configured');
     }
 
-    const { action, category, page = 1, query, id, mediaType, language, keywords, year, region } = await req.json();
+    const { action, category, page = 1, query, id, mediaType } = await req.json();
 
     // Use v3 API key format (append to URL)
     const apiKeyParam = `api_key=${TMDB_API_KEY}`;
@@ -129,14 +126,11 @@ serve(async (req) => {
         });
 
       case 'discover':
-        // Discover content by genre, language, keywords, year
+        // Discover content by genre
         const genreParam = category ? `&with_genres=${category}` : '';
-        const langParam = language ? `&with_original_language=${language}` : '';
-        const keywordParam = keywords ? `&with_keywords=${keywords}` : '';
-        const yearParam = year ? (mediaType === 'tv' ? `&first_air_date_year=${year}` : `&primary_release_year=${year}`) : '';
         endpoint = mediaType === 'tv' 
-          ? `${TMDB_BASE}/discover/tv?${apiKeyParam}&page=${page}${genreParam}${langParam}${keywordParam}${yearParam}&sort_by=popularity.desc`
-          : `${TMDB_BASE}/discover/movie?${apiKeyParam}&page=${page}${genreParam}${langParam}${keywordParam}${yearParam}&sort_by=popularity.desc`;
+          ? `${TMDB_BASE}/discover/tv?${apiKeyParam}&page=${page}${genreParam}&sort_by=popularity.desc`
+          : `${TMDB_BASE}/discover/movie?${apiKeyParam}&page=${page}${genreParam}&sort_by=popularity.desc`;
         break;
 
       default:
@@ -174,14 +168,12 @@ serve(async (req) => {
     results = (data.results || []).map((item: TMDBContent) => ({
       id: item.id,
       title: item.title || item.name,
-      originalTitle: item.original_title || item.original_name,
-      originalLanguage: item.original_language,
       poster: item.poster_path ? `${TMDB_IMAGE_BASE}/w342${item.poster_path}` : null,
       backdrop: item.backdrop_path ? `${TMDB_IMAGE_BASE}/w780${item.backdrop_path}` : null,
       overview: item.overview,
       rating: item.vote_average,
       year: (item.release_date || item.first_air_date || '').split('-')[0],
-      mediaType: item.media_type || mediaType || (action === 'tv' ? 'tv' : 'movie'),
+      mediaType: item.media_type || (action === 'tv' ? 'tv' : 'movie'),
       genreIds: item.genre_ids,
       source: 'tmdb',
     }));

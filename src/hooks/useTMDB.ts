@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 export interface TMDBItem {
   id: number;
   title: string;
-  originalTitle?: string;
   poster: string | null;
   backdrop: string | null;
   overview?: string;
@@ -50,9 +49,6 @@ export const useTMDB = () => {
       query?: string;
       id?: number;
       mediaType?: 'movie' | 'tv';
-      language?: string;
-      keywords?: string;
-      year?: number;
     } = {}
   ) => {
     setLoading(true);
@@ -67,9 +63,6 @@ export const useTMDB = () => {
           query: options.query,
           id: options.id,
           mediaType: options.mediaType,
-          language: options.language,
-          keywords: options.keywords,
-          year: options.year,
         },
       });
 
@@ -135,7 +128,6 @@ export const useTMDB = () => {
     return {
       id: item.id,
       title: item.title || item.name,
-      originalTitle: item.original_title || item.original_name,
       poster: item.poster_url,
       backdrop: item.backdrop_url,
       overview: item.overview,
@@ -154,7 +146,6 @@ export const useTMDB = () => {
       similar: item.similar?.results?.slice(0, 8).map((s: any) => ({
         id: s.id,
         title: s.title || s.name,
-        originalTitle: s.original_title || s.original_name,
         poster: s.poster_path ? `https://image.tmdb.org/t/p/w342${s.poster_path}` : null,
         backdrop: s.backdrop_path ? `https://image.tmdb.org/t/p/w780${s.backdrop_path}` : null,
         rating: s.vote_average,
@@ -177,18 +168,12 @@ export const useTMDB = () => {
     };
   }, [fetchTMDB]);
 
-  // Discover by genre/language/keywords
-  const discoverByGenre = useCallback(async (
-    genreId: number | null, 
-    mediaType: 'movie' | 'tv' = 'movie', 
-    page = 1,
-    extra?: { language?: string; keywords?: string; year?: number }
-  ) => {
+  // Discover by genre
+  const discoverByGenre = useCallback(async (genreId: number, mediaType: 'movie' | 'tv' = 'movie', page = 1) => {
     const data = await fetchTMDB('discover', { 
-      category: genreId?.toString() || undefined, 
+      category: genreId.toString(), 
       mediaType, 
-      page,
-      ...extra,
+      page 
     });
     return {
       results: data?.results as TMDBItem[] || [],

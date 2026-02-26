@@ -20,7 +20,6 @@ import { MiCatchUpPage } from '@/components/MiCatchUpPage';
 import { TMDBDetailModal } from '@/components/TMDBDetailModal';
 import { MobileBrowseScreen } from '@/components/MobileBrowseScreen';
 import { TMDBItem } from '@/hooks/useTMDB';
-import { rankChannelsForTMDB } from '@/lib/tmdbMatcher';
 import universeLogo from '@/assets/universe-tv-logo.png';
 
 const Index = () => {
@@ -111,42 +110,89 @@ const Index = () => {
     nav.handleItemSelect(channel, 'home');
   }, [nav]);
 
-  // Find best IPTV match for a TMDB item - strict confidence guard to avoid wrong auto-play
-  const findIPTVMatch = useCallback((item: TMDBItem) => {
-    const contentPool = item.mediaType === 'tv' ? channelsByType.series : channelsByType.movies;
-    const rankedMatches = rankChannelsForTMDB(item, contentPool, {
-      minScore: 55,
-      limit: 3,
-      enforceMediaType: true,
-    });
+  // Normalize title for matching - more aggressive normalization
+  const normalizeTitle = useCallback((title: string) => {
+    return title
+      .toLowerCase()
+      // Remove articles
+      .replace(/^(the|a|an)\s+/i, '')
+      // Remove special chars except spaces
+      .replace(/[^a-z0-9\s]/g, '')
+      // Collapse spaces
+      .replace(/\s+/g, ' ')
+      .trim();
+  }, []);
 
-    const [best, second] = rankedMatches;
-    if (!best) {
-      console.log(`TMDB Match: "${item.title}" -> No confident match`);
-      return null;
+  // Find best IPTV match for a TMDB item - improved algorithm
+  const findIPTVMatch = useCallback((tmdbTitle: string, tmdbYear: string | undefined, mediaType: 'movie' | 'tv') => {
+    const searchTitle = normalizeTitle(tmdbTitle);
+    const searchTitleFull = tmdbTitle.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+    
+    // Use pre-built type maps instead of filtering 81k channels
+    const contentPool = mediaType === 'tv' ? channelsByType.series : channelsByType.movies;
+
+    let bestMatch: Channel | null = null;
+    let bestScore = 0;
+
+    for (const channel of contentPool) {
+      const channelTitle = normalizeTitle(channel.name);
+      const channelTitleFull = channel.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+      let score = 0;
+
+      // Exact match (after normalization)
+      if (channelTitle === searchTitle || channelTitleFull === searchTitleFull) {
+        score = 100;
+      }
+      // Channel contains full search title
+      else if (channelTitle.includes(searchTitle) || channelTitleFull.includes(searchTitleFull)) {
+        score = 85;
+      }
+      // Search title contains channel title (e.g., searching "Avatar" matches "Avatar 2009")
+      else if (searchTitle.includes(channelTitle) && channelTitle.length > 3) {
+        score = 80;
+      }
+      // Word-based matching
+      else {
+        const searchWords = searchTitle.split(' ').filter(w => w.length > 2);
+        const channelWords = channelTitle.split(' ').filter(w => w.length > 2);
+        
+        if (searchWords.length > 0 && channelWords.length > 0) {
+          const matchedWords = searchWords.filter(sw => 
+            channelWords.some(cw => cw === sw || cw.includes(sw) || sw.includes(cw))
+          );
+          const matchRatio = matchedWords.length / searchWords.length;
+          
+          if (matchRatio >= 0.5) {
+            score = matchRatio * 70;
+          }
+        }
+      }
+
+      // Year bonus
+      if (score > 0 && tmdbYear && channel.name.includes(tmdbYear)) {
+        score += 15;
+      }
+
+      // Lower threshold to 40 for more matches
+      if (score > bestScore && score >= 40) {
+        bestScore = score;
+        bestMatch = channel;
+      }
     }
 
-    const hasClearLead = !second || best.score - second.score >= 12;
-    const isHighConfidence = best.score >= 90 || (best.score >= 84 && hasClearLead);
+    console.log(`TMDB Match: "${tmdbTitle}" -> ${bestMatch ? `"${bestMatch.name}" (score: ${bestScore})` : 'No match'}`);
+    return bestMatch;
+  }, [channelsByType, normalizeTitle]);
 
-    console.log(
-      `TMDB Match: "${item.title}" -> ${isHighConfidence ? `"${best.channel.name}" (score: ${best.score})` : 'Ambiguous, opening details'}`
-    );
-
-    return isHighConfidence ? best.channel : null;
-  }, [channelsByType]);
-
-  // Handle TMDB item selection — auto-navigate to detail page if IPTV match found
+  // Handle TMDB item selection
   const handleTMDBSelect = useCallback((item: TMDBItem) => {
-    const match = findIPTVMatch(item);
+    const match = findIPTVMatch(item.title, item.year, item.mediaType);
     if (match) {
-      // Direct navigation to movie/series detail page
       nav.handleItemSelect(match, 'home');
     } else {
-      // No confident match — show TMDB detail modal for manual search
       nav.setSelectedTMDBItem(item);
     }
-  }, [nav, findIPTVMatch]);
+  }, [findIPTVMatch, nav]);
 
   // Handle playing IPTV match from TMDB modal
   const handlePlayIPTVFromTMDB = useCallback((channel: Channel) => {

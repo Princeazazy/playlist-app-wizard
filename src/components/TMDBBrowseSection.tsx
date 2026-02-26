@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon, Sparkles } from 'lucide-react';
+import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
+import { useTMDBPosters } from '@/hooks/useTMDBPosters';
 import { Channel } from '@/hooks/useIPTV';
 
 interface TMDBBrowseSectionProps {
@@ -74,6 +75,67 @@ const MediaCard = ({ item, onClick, index }: { item: TMDBItem; onClick?: () => v
   </motion.button>
 );
 
+// Card for playlist items (Arabic movies) - uses TMDB poster when available
+const PlaylistCard = ({ channel, onClick, index, tmdbPoster }: { channel: Channel; onClick?: () => void; index: number; tmdbPoster?: string }) => {
+  const cleanName = (name: string) => name.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+  const yearMatch = channel.name.match(/\b(19|20)\d{2}\b/);
+  const year = yearMatch ? yearMatch[0] : null;
+  // Prefer TMDB poster over playlist logo (which is often a scene still)
+  const posterUrl = tmdbPoster || channel.logo;
+  
+  
+  return (
+    <motion.button
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.05, duration: 0.2 }}
+      whileHover={{ scale: 1.05, y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="flex-shrink-0 w-full group relative"
+    >
+      <div className="aspect-[2/3] rounded-xl overflow-hidden bg-card border border-border/30 relative">
+        {posterUrl ? (
+          <>
+            <img
+              src={posterUrl}
+              alt={channel.name}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              loading="lazy"
+              onError={(e) => {
+                if (tmdbPoster && channel.logo && e.currentTarget.src !== channel.logo) {
+                  e.currentTarget.src = channel.logo;
+                } else {
+                  e.currentTarget.style.display = 'none';
+                }
+              }}
+            />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+            <Film className="w-10 h-10 text-primary/50" />
+          </div>
+        )}
+        
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+            <Play className="w-5 h-5 text-primary-foreground fill-current" />
+          </div>
+        </div>
+        
+        <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-emerald-500/80 backdrop-blur-sm">
+          <span className="text-[10px] font-bold text-white uppercase">Arabic</span>
+        </div>
+      </div>
+      
+      <div className="mt-2 px-1">
+        <h4 className="text-sm font-medium text-foreground truncate">{cleanName(channel.name)}</h4>
+        {year && <p className="text-xs text-muted-foreground">{year}</p>}
+      </div>
+    </motion.button>
+  );
+};
+
 const CategoryRow = ({ 
   title, 
   icon: Icon, 
@@ -102,7 +164,7 @@ const CategoryRow = ({
     
     const interval = setInterval(() => {
       setCurrentPage((prev) => (prev + 1) % totalPages);
-    }, 5000);
+    }, 5000); // Change page every 5 seconds
     
     return () => clearInterval(interval);
   }, [items.length, totalPages, isPaused]);
@@ -119,6 +181,7 @@ const CategoryRow = ({
           <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         </div>
         
+        {/* Page dots indicator */}
         {!loading && totalPages > 1 && (
           <div className="flex items-center gap-1.5">
             {Array.from({ length: totalPages }).map((_, i) => (
@@ -167,22 +230,180 @@ const CategoryRow = ({
   );
 };
 
+// Row for playlist items (Arabic movies) - resolves TMDB posters
+const PlaylistRow = ({ 
+  title, 
+  icon: Icon, 
+  channels, 
+  onChannelSelect 
+}: { 
+  title: string; 
+  icon: typeof Film;
+  channels: Channel[]; 
+  onChannelSelect?: (channel: Channel) => void;
+}) => {
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const totalPages = Math.ceil(channels.length / ITEMS_PER_PAGE);
+  const { getPosterForChannel } = useTMDBPosters(channels);
+  
+  const visibleItems = channels.slice(
+    currentPage * ITEMS_PER_PAGE,
+    (currentPage + 1) * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    if (channels.length <= ITEMS_PER_PAGE || isPaused) return;
+    
+    const interval = setInterval(() => {
+      setCurrentPage((prev) => (prev + 1) % totalPages);
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [channels.length, totalPages, isPaused]);
+
+  if (channels.length === 0) return null;
+
+  return (
+    <div 
+      className="space-y-3"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <Icon className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+        </div>
+        
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={currentPage}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+          className="grid grid-cols-3 md:grid-cols-6 gap-3"
+        >
+          {visibleItems.map((channel, index) => (
+            <PlaylistCard
+              key={channel.id}
+              channel={channel}
+              index={index}
+              tmdbPoster={getPosterForChannel(channel.name)}
+              onClick={() => onChannelSelect?.(channel)}
+            />
+          ))}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onChannelSelect }: TMDBBrowseSectionProps) => {
-  const { getTrending, getMovies, getTVShows, discoverByGenre, error } = useTMDB();
+  const { getTrending, getMovies, getTVShows, error } = useTMDB();
   const [trending, setTrending] = useState<TMDBItem[]>([]);
   const [popularMovies, setPopularMovies] = useState<TMDBItem[]>([]);
   const [popularTV, setPopularTV] = useState<TMDBItem[]>([]);
-  const [ramadanSeries, setRamadanSeries] = useState<TMDBItem[]>([]);
-  const [arabicSeries, setArabicSeries] = useState<TMDBItem[]>([]);
-  const [arabicMovies, setArabicMovies] = useState<TMDBItem[]>([]);
   const [loadingState, setLoadingState] = useState({
     trending: true,
     movies: true,
     tv: true,
-    ramadan: true,
-    arabicSeries: true,
-    arabicMovies: true,
   });
+
+  // Helper to exclude sports/WWE content
+  const isSportsContent = (ch: Channel) => {
+    const nameLower = ch.name.toLowerCase();
+    const groupLower = ch.group?.toLowerCase() || '';
+    return nameLower.includes('wwe') || 
+           nameLower.includes('wrestling') ||
+           nameLower.includes('sport') ||
+           groupLower.includes('sport') ||
+           groupLower.includes('wwe');
+  };
+
+  // Ramadan 2026 Egyptian Series
+  const ramadanShows = useMemo(() => {
+    const ramadanContent = channels.filter(ch => {
+      const group = ch.group || '';
+      const isRamadan2026Egypt = group.includes('رمضان 2026 مسلسلات مصرية') ||
+                                 (group.includes('مسلسلات مصرية') && group.includes('2026'));
+      return isRamadan2026Egypt && !isSportsContent(ch);
+    });
+
+    return ramadanContent.slice(0, 24);
+  }, [channels]);
+
+  // Latest Arabic Series - prioritize Egyptian 2026 series, then other Arabic 2026
+  const arabicSeries = useMemo(() => {
+    // Target ONLY Arabic-original series groups (not "ARABIC" which has dubbed foreign content)
+    // Actual Arabic series groups: مسلسلات عربية 2026, مسلسلات عربية 2025, مسلسلات عربية تعرض حاليا
+    const targetGroups = [
+      'مسلسلات عربية 2026',
+      'مسلسلات عربية 2025',
+      'مسلسلات عربية تعرض حاليا',  // currently airing
+      'مسلسلات عربية 2024',
+    ];
+
+    const arabicContent = channels.filter(ch => {
+      if (ch.type !== 'series') return false;
+      const group = ch.group || '';
+      
+      // Exclude Ramadan groups (they have their own dedicated row)
+      if (group.includes('رمضان') || group.toLowerCase().includes('ramadan')) return false;
+
+      // Only match specific Arabic-original series groups
+      return targetGroups.some(tg => group === tg) && !isSportsContent(ch);
+    });
+
+    // Sort: 2026 first, then currently airing, then 2025, then 2024
+    return arabicContent.sort((a, b) => {
+      const groupA = a.group || '';
+      const groupB = b.group || '';
+      const scoreMap = (g: string) => {
+        if (g.includes('2026')) return 3;
+        if (g.includes('تعرض حاليا')) return 2;
+        if (g.includes('2025')) return 1;
+        return 0;
+      };
+      return scoreMap(groupB) - scoreMap(groupA);
+    }).slice(0, 30);
+  }, [channels]);
+
+  // Latest Arabic Movies - from Arabic 2025/2026 groups (cleaned from AR MOV 2025/2026)
+  const arabicMovies = useMemo(() => {
+    const arabicContent = channels.filter(ch => {
+      if (ch.type !== 'movies') return false;
+      const group = ch.group || '';
+      const groupLower = group.toLowerCase();
+      // Must explicitly be Arabic content — require 'arabic' or Arabic script keywords alongside year
+      const hasArabicKeyword = groupLower.includes('arabic') || group.includes('عربي') || group.includes('أفلام عربي');
+      const hasYear = group.includes('2026') || group.includes('2025');
+      return hasArabicKeyword && hasYear && !isSportsContent(ch);
+    });
+
+    // Sort by year (2026 first, then 2025)
+    return arabicContent.sort((a, b) => {
+      const groupA = a.group?.includes('2026') ? 2026 : 2025;
+      const groupB = b.group?.includes('2026') ? 2026 : 2025;
+      return groupB - groupA;
+    }).slice(0, 24);
+  }, [channels]);
 
   useEffect(() => {
     const loadContent = async () => {
@@ -195,17 +416,6 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       setTrending(trendingData.slice(0, 18));
       setPopularMovies(moviesData.results.slice(0, 18));
       setPopularTV(tvData.results.slice(0, 18));
-
-      // Load curated Arabic content
-      const [ramadanData, arabicSeriesData, arabicMoviesData] = await Promise.all([
-        discoverByGenre(18, 'tv', 1, { language: 'ar', year: 2026 }).finally(() => setLoadingState(s => ({ ...s, ramadan: false }))),
-        discoverByGenre(null, 'tv', 1, { language: 'ar' }).finally(() => setLoadingState(s => ({ ...s, arabicSeries: false }))),
-        discoverByGenre(null, 'movie', 1, { language: 'ar' }).finally(() => setLoadingState(s => ({ ...s, arabicMovies: false }))),
-      ]);
-
-      setRamadanSeries(ramadanData.results.slice(0, 18));
-      setArabicSeries(arabicSeriesData.results.slice(0, 18));
-      setArabicMovies(arabicMoviesData.results.slice(0, 18));
     };
     
     loadContent();
@@ -215,7 +425,7 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     }, 30 * 60 * 1000);
     
     return () => clearInterval(refreshInterval);
-  }, [getTrending, getMovies, getTVShows, discoverByGenre]);
+  }, [getTrending, getMovies, getTVShows]);
 
   if (error) {
     return (
@@ -238,6 +448,35 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       </div>
       
       <div className="space-y-6">
+        {/* Ramadan 2026 Egyptian Series */}
+        {ramadanShows.length > 0 && (
+          <PlaylistRow
+            title="Ramadan 2026 Series"
+            icon={Moon}
+            channels={ramadanShows}
+            onChannelSelect={onChannelSelect}
+          />
+        )}
+        
+        {/* Latest Arabic Series 2026 */}
+        {arabicSeries.length > 0 && (
+          <PlaylistRow
+            title="Top Rated Arabic Series"
+            icon={Tv}
+            channels={arabicSeries}
+            onChannelSelect={onChannelSelect}
+          />
+        )}
+        
+        {/* Latest Arabic Movies 2025-2026 */}
+        {arabicMovies.length > 0 && (
+          <PlaylistRow
+            title="Latest Arabic Movies"
+            icon={Film}
+            channels={arabicMovies}
+            onChannelSelect={onChannelSelect}
+          />
+        )}
         
         <CategoryRow
           title="Trending Now"
@@ -261,30 +500,6 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
           items={popularTV}
           onSelectItem={onSelectItem}
           loading={loadingState.tv}
-        />
-
-        <CategoryRow
-          title="Ramadan 2026 Series"
-          icon={Moon}
-          items={ramadanSeries}
-          onSelectItem={onSelectItem}
-          loading={loadingState.ramadan}
-        />
-
-        <CategoryRow
-          title="Top Rated Arabic Series"
-          icon={Sparkles}
-          items={arabicSeries}
-          onSelectItem={onSelectItem}
-          loading={loadingState.arabicSeries}
-        />
-
-        <CategoryRow
-          title="Popular Arabic Movies"
-          icon={Film}
-          items={arabicMovies}
-          onSelectItem={onSelectItem}
-          loading={loadingState.arabicMovies}
         />
       </div>
     </div>

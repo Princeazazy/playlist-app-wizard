@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tv, Film, Clapperboard, Trophy, TrendingUp, Play, Zap, Globe, Music, Gamepad2, Baby, Newspaper } from 'lucide-react';
-
+import { InfiniteMarquee } from '@/components/shared/InfiniteMarquee';
 import { getRecentLastPlayed } from '@/hooks/useWatchProgress';
 
 interface HomeBottomBarProps {
@@ -195,22 +195,20 @@ export const HomeBottomBar = ({
           {/* Divider */}
           <div className="h-8 w-px bg-border/30" />
 
-          {/* Trending Ticker - horizontally scrollable */}
+          {/* Trending Ticker */}
           <div className="flex-1 overflow-hidden relative">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <TrendingUp className="w-3 h-3" />
               <span className="text-[10px] uppercase tracking-wider font-medium">Trending Now</span>
             </div>
-            <div className="overflow-x-auto scrollbar-none">
-              <div className="flex gap-3 w-max pb-1">
-                {trendingItems.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/30 border border-border/20 whitespace-nowrap flex-shrink-0">
-                    <span>{item.icon}</span>
-                    <span className="text-sm text-foreground/80">{item.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <InfiniteMarquee speed={40} direction="left" pauseOnHover className="h-6">
+              {trendingItems.map((item, index) => (
+                <span key={index} className="flex items-center gap-2 text-sm text-foreground/80 whitespace-nowrap">
+                  <span>{item.icon}</span>
+                  <span>{item.text}</span>
+                </span>
+              ))}
+            </InfiniteMarquee>
           </div>
 
           {/* Divider */}
