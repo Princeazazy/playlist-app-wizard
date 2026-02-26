@@ -341,9 +341,14 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
   const ramadanShows = useMemo(() => {
     const ramadanContent = channels.filter(ch => {
       const group = ch.group || '';
+      const nameLower = ch.name.toLowerCase();
       const isRamadan2026Egypt = group.includes('رمضان 2026 مسلسلات مصرية') ||
                                  (group.includes('مسلسلات مصرية') && group.includes('2026'));
-      return isRamadan2026Egypt && !isSportsContent(ch);
+      // Exclude premiere promos and duplicate SUB/DUB entries
+      const isExcluded = nameLower.includes('ramadan premiere') || 
+                         nameLower.includes('رمضان premiere') ||
+                         ch.name.includes('جرس إنذار');
+      return isRamadan2026Egypt && !isSportsContent(ch) && !isExcluded;
     });
 
     return ramadanContent.slice(0, 24);
