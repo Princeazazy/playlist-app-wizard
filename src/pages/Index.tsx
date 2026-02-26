@@ -136,10 +136,17 @@ const Index = () => {
     return isHighConfidence ? best.channel : null;
   }, [channelsByType]);
 
-  // Handle TMDB item selection — always open detail modal for accurate info & library matching
+  // Handle TMDB item selection — auto-navigate to detail page if IPTV match found
   const handleTMDBSelect = useCallback((item: TMDBItem) => {
-    nav.setSelectedTMDBItem(item);
-  }, [nav]);
+    const match = findIPTVMatch(item);
+    if (match) {
+      // Direct navigation to movie/series detail page
+      nav.handleItemSelect(match, 'home');
+    } else {
+      // No confident match — show TMDB detail modal for manual search
+      nav.setSelectedTMDBItem(item);
+    }
+  }, [nav, findIPTVMatch]);
 
   // Handle playing IPTV match from TMDB modal
   const handlePlayIPTVFromTMDB = useCallback((channel: Channel) => {
