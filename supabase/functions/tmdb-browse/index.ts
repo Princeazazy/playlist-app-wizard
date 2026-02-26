@@ -176,7 +176,7 @@ serve(async (req) => {
       overview: item.overview,
       rating: item.vote_average,
       year: (item.release_date || item.first_air_date || '').split('-')[0],
-      mediaType: item.media_type || (action === 'tv' ? 'tv' : 'movie'),
+      mediaType: item.media_type || mediaType || (action === 'tv' ? 'tv' : 'movie'),
       genreIds: item.genre_ids,
       source: 'tmdb',
     }));
