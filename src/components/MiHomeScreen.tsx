@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic, Zap, ChevronRight } from 'lucide-react';
-import universePlayLogo from '@/assets/universe-play-logo.png';
+import logoVideo from '@/assets/logo-transparent.mp4';
 import { getProfileInitial } from '@/lib/profileStorage';
 import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -317,7 +317,15 @@ export const MiHomeScreen = React.memo(({
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6"
       >
-        <img src={universePlayLogo} alt="Universe TV" className="h-14 md:h-20 w-auto" />
+        <video
+          src={logoVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="h-14 md:h-20 w-auto"
+          style={{ mixBlendMode: 'screen' }}
+        />
 
         {!isMobile && (
           <div className="flex items-center gap-3">
