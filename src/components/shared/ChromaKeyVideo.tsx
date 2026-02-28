@@ -1,66 +1,108 @@
 import { useRef, useEffect } from 'react';
 
+const VERTEX_SHADER = `
+  attribute vec2 a_position;
+  attribute vec2 a_texCoord;
+  varying vec2 v_texCoord;
+  void main() {
+    gl_Position = vec4(a_position, 0.0, 1.0);
+    v_texCoord = a_texCoord;
+  }
+`;
+
+const FRAGMENT_SHADER = `
+  precision mediump float;
+  varying vec2 v_texCoord;
+  uniform sampler2D u_image;
+  void main() {
+    vec4 color = texture2D(u_image, v_texCoord);
+    // Chroma key green removal
+    float greenDiff = color.g - max(color.r, color.b);
+    float alpha = 1.0 - smoothstep(0.15, 0.4, greenDiff);
+    gl_FragColor = vec4(color.rgb * alpha, alpha);
+  }
+`;
+
 interface ChromaKeyVideoProps {
   src: string;
   className?: string;
 }
 
 export const ChromaKeyVideo = ({ src, className = '' }: ChromaKeyVideoProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const rafRef = useRef<number>(0);
+  const glRef = useRef<WebGLRenderingContext | null>(null);
+  const textureRef = useRef<WebGLTexture | null>(null);
 
   useEffect(() => {
-    const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
 
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
+    const gl = canvas.getContext('webgl', { premultipliedAlpha: false, alpha: true });
+    if (!gl) return;
+    glRef.current = gl;
 
-    const processFrame = () => {
-      if (video.paused || video.ended) {
-        rafRef.current = requestAnimationFrame(processFrame);
-        return;
-      }
+    // Compile shaders
+    const vs = gl.createShader(gl.VERTEX_SHADER)!;
+    gl.shaderSource(vs, VERTEX_SHADER);
+    gl.compileShader(vs);
 
-      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-        canvas.width = video.videoWidth || 320;
-        canvas.height = video.videoHeight || 320;
-      }
+    const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
+    gl.shaderSource(fs, FRAGMENT_SHADER);
+    gl.compileShader(fs);
 
-      ctx.drawImage(video, 0, 0);
-      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = frame.data;
+    const program = gl.createProgram()!;
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+    gl.useProgram(program);
 
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
+    // Quad geometry
+    const posBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+    const posLoc = gl.getAttribLocation(program, 'a_position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-        // Chroma key: detect green screen pixels
-        // Green is dominant and significantly higher than red and blue
-        if (g > 80 && g > r * 1.2 && g > b * 1.2) {
-          data[i + 3] = 0; // Set alpha to 0 (transparent)
+    const texBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0,1, 1,1, 0,0, 1,0]), gl.STATIC_DRAW);
+    const texLoc = gl.getAttribLocation(program, 'a_texCoord');
+    gl.enableVertexAttribArray(texLoc);
+    gl.vertexAttribPointer(texLoc, 2, gl.FLOAT, false, 0, 0);
+
+    // Texture
+    const texture = gl.createTexture();
+    textureRef.current = texture;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    const render = () => {
+      if (!video.paused && !video.ended && video.readyState >= 2) {
+        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          gl.viewport(0, 0, canvas.width, canvas.height);
         }
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
-
-      ctx.putImageData(frame, 0, 0);
-      rafRef.current = requestAnimationFrame(processFrame);
+      rafRef.current = requestAnimationFrame(render);
     };
 
-    const handlePlay = () => {
-      rafRef.current = requestAnimationFrame(processFrame);
-    };
-
-    video.addEventListener('play', handlePlay);
-    // If already playing
-    if (!video.paused) {
-      rafRef.current = requestAnimationFrame(processFrame);
-    }
+    rafRef.current = requestAnimationFrame(render);
 
     return () => {
-      video.removeEventListener('play', handlePlay);
       cancelAnimationFrame(rafRef.current);
     };
   }, []);
