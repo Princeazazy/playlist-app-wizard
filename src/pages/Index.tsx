@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { useIPTV, Channel } from '@/hooks/useIPTV';
 import { isLoggedIn, clearAppSession } from '@/lib/appSession';
 import { LoginScreen } from '@/components/LoginScreen';
@@ -402,17 +401,15 @@ const Index = () => {
       {renderScreen()}
 
 
-      <AnimatePresence>
-        {nav.showMiniPlayer && nav.currentChannel && nav.currentScreen !== 'home' && (
-          <MiniPlayer
-            channel={nav.currentChannel}
-            onExpand={() => {
-              nav.handleChannelSelect(nav.currentChannel!);
-            }}
-            onClose={() => nav.handleCloseFullscreen(false)}
-          />
-        )}
-      </AnimatePresence>
+      {nav.showMiniPlayer && nav.currentChannel && nav.currentScreen !== 'home' && (
+        <MiniPlayer
+          channel={nav.currentChannel}
+          onExpand={() => {
+            nav.handleChannelSelect(nav.currentChannel!);
+          }}
+          onClose={() => nav.handleCloseFullscreen(false)}
+        />
+      )}
 
       <GlobalSearchModal
         isOpen={nav.isSearchOpen}
