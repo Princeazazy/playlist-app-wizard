@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, memo, useCallback } from 'react';
+import { LiveMatchesTicker } from './LiveMatchesTicker';
 import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Calendar, Heart, Loader2, Mic, MicOff } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
@@ -629,6 +630,12 @@ export const MiLiveTVList = ({
 
         {/* Channel Rows with Live Preview */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-2 mi-scrollbar" onScroll={onScroll}>
+          {/* Live Matches Ticker for Sports */}
+          {category === 'sports' && (
+            <div className="mb-4">
+              <LiveMatchesTicker sportsChannels={channels} onChannelSelect={onChannelSelect} />
+            </div>
+          )}
             {visibleChannels.map((channel, index) => (
               <LivePreviewChannelTile
                 key={channel.id}
