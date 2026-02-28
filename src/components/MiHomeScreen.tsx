@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic, Zap, ChevronRight } from 'lucide-react';
 import logoVideo from '@/assets/logo-transparent.mp4';
 import { ChromaKeyVideo } from './shared/ChromaKeyVideo';
@@ -7,7 +6,7 @@ import { getProfileInitial } from '@/lib/profileStorage';
 import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ContinueWatching } from './ContinueWatching';
-import { TMDBBrowseSection } from './TMDBBrowseSection';
+const TMDBBrowseSection = React.lazy(() => import('./TMDBBrowseSection').then(m => ({ default: m.TMDBBrowseSection })));
 import { TMDBItem } from '@/hooks/useTMDB';
 import { WeatherIcon } from './shared/WeatherIcon';
 import { Channel } from '@/hooks/useIPTV';
@@ -29,22 +28,8 @@ interface MiHomeScreenProps {
   onChannelSelect?: (channel: Channel) => void;
 }
 
-// Animated counter
-const useAnimatedCount = (target: number, duration = 1200) => {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!target) return;
-    let start = 0;
-    const step = target / (duration / 16);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= target) { setCount(target); clearInterval(timer); }
-      else setCount(Math.floor(start));
-    }, 16);
-    return () => clearInterval(timer);
-  }, [target, duration]);
-  return count;
-};
+// Simple counter - no setInterval, just use target directly for instant display
+const useAnimatedCount = (target: number) => target;
 
 // Floating ambient orbs
 const FloatingOrbs = React.memo(() => (
@@ -70,7 +55,7 @@ const FloatingOrbs = React.memo(() => (
   </div>
 ));
 
-// 3D tilt tile card
+// Lightweight tile card - CSS-only hover effects, no per-frame motion calculations
 const TileCard = ({
   children,
   onClick,
@@ -86,22 +71,6 @@ const TileCard = ({
   delay?: number;
   accentColor?: 'primary' | 'accent' | 'emerald' | 'rose' | 'violet';
 }) => {
-  const ref = useRef<HTMLButtonElement>(null);
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  const rotX = useTransform(my, [-50, 50], [6, -6]);
-  const rotY = useTransform(mx, [-50, 50], [-6, 6]);
-  const [ripple, setRipple] = useState(false);
-  const [hovered, setHovered] = useState(false);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    mx.set(e.clientX - rect.left - rect.width / 2);
-    my.set(e.clientY - rect.top - rect.height / 2);
-  };
-  const handleMouseLeave = () => { mx.set(0); my.set(0); setHovered(false); };
-
   const gradients: Record<string, string> = {
     primary: 'from-primary/25 to-primary/5',
     accent: 'from-accent/25 to-accent/5',
@@ -129,36 +98,28 @@ const TileCard = ({
   const sizeClasses = { large: 'col-span-1 row-span-2', normal: 'col-span-1 row-span-1', small: 'col-span-1 row-span-1' };
 
   return (
-    <motion.button
-      ref={ref}
-      onClick={() => { setRipple(true); setTimeout(() => setRipple(false), 500); onClick?.(); }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onMouseEnter={() => setHovered(true)}
-      initial={{ opacity: 0, y: 30, scale: 0.88 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: delay * 0.1, duration: 0.5, type: 'spring', stiffness: 130, damping: 16 }}
+    <button
+      onClick={onClick}
+      className={`${sizeClasses[size]} relative rounded-2xl overflow-hidden border transition-all duration-200 group ${className} hover:scale-[1.04] hover:-translate-y-1.5 active:scale-[0.97]`}
       style={{
-        rotateX: rotX,
-        rotateY: rotY,
-        transformStyle: 'preserve-3d',
-        boxShadow: hovered ? glows[accentColor] : '0 8px 30px hsl(0 0% 0% / 0.4)',
-        borderColor: hovered ? borders[accentColor] : 'hsl(265 30% 22% / 0.6)',
-      } as React.CSSProperties}
-      whileHover={{ scale: 1.04, y: -6, transition: { duration: 0.2 } }}
-      whileTap={{ scale: 0.97 }}
-      className={`${sizeClasses[size]} relative rounded-2xl overflow-hidden border transition-all duration-300 group ${className}`}
-      css-bg="true"
+        borderColor: 'hsl(265 30% 22% / 0.6)',
+        boxShadow: '0 8px 30px hsl(0 0% 0% / 0.4)',
+        animation: `fadeSlideIn 0.4s ease-out ${delay * 0.08}s both`,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = glows[accentColor];
+        e.currentTarget.style.borderColor = borders[accentColor];
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 8px 30px hsl(0 0% 0% / 0.4)';
+        e.currentTarget.style.borderColor = 'hsl(265 30% 22% / 0.6)';
+      }}
     >
       {/* Base gradient */}
       <div className="absolute inset-0" style={{ background: 'linear-gradient(145deg, hsl(265 45% 15%) 0%, hsl(265 40% 9%) 100%)' }} />
 
       {/* Hover gradient overlay */}
-      <motion.div
-        className={`absolute inset-0 bg-gradient-to-br ${gradients[accentColor]}`}
-        animate={{ opacity: hovered ? 1 : 0 }}
-        transition={{ duration: 0.3 }}
-      />
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradients[accentColor]} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
 
       {/* Shine sweep */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-600 pointer-events-none" />
@@ -166,43 +127,11 @@ const TileCard = ({
       {/* Top border highlight */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
-      {/* Ripple */}
-      <AnimatePresence>
-        {ripple && (
-          <motion.div
-            className="absolute inset-0 rounded-2xl"
-            style={{ background: `radial-gradient(circle, ${borders[accentColor].replace('0.4', '0.3')} 0%, transparent 70%)` }}
-            initial={{ scale: 0.3, opacity: 1 }}
-            animate={{ scale: 2.5, opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Content with z-lift */}
-      <div className="relative h-full flex flex-col p-5 text-left z-10" style={{ transform: 'translateZ(15px)' }}>
+      {/* Content */}
+      <div className="relative h-full flex flex-col p-5 text-left z-10">
         {children}
       </div>
-
-      {/* Corner accent lines */}
-      <motion.div
-        className="absolute top-0 left-0 pointer-events-none"
-        animate={{ opacity: hovered ? 1 : 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="absolute top-2.5 left-2.5 w-px h-5 bg-white/40" />
-        <div className="absolute top-2.5 left-2.5 w-5 h-px bg-white/40" />
-      </motion.div>
-      <motion.div
-        className="absolute bottom-0 right-0 pointer-events-none"
-        animate={{ opacity: hovered ? 1 : 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="absolute bottom-2.5 right-2.5 w-px h-5 bg-white/40" />
-        <div className="absolute bottom-2.5 right-2.5 w-5 h-px bg-white/40" />
-      </motion.div>
-    </motion.button>
+    </button>
   );
 };
 
@@ -214,50 +143,33 @@ const PulsingIcon = ({ children, color = 'primary' }: { children: React.ReactNod
   </div>
 );
 
-// Action button
+// Lightweight action button - no motion
 const ActionButton = ({
   icon: Icon,
   label,
   onClick,
   spinning,
-  color = 'primary',
 }: {
   icon: typeof User;
   label: string;
   onClick?: () => void;
   spinning?: boolean;
   color?: string;
-}) => {
-  const [pressed, setPressed] = useState(false);
-  return (
-    <motion.button
-      onClick={() => { setPressed(true); setTimeout(() => setPressed(false), 300); onClick?.(); }}
-      whileHover={{ scale: 1.02, x: 5 }}
-      whileTap={{ scale: 0.97 }}
-      className="relative w-full flex items-center gap-4 px-5 py-4 rounded-xl overflow-hidden border border-white/5 group"
-      style={{ background: 'linear-gradient(145deg, hsl(265 45% 14%) 0%, hsl(265 40% 9%) 100%)' }}
-    >
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <AnimatePresence>
-        {pressed && (
-          <motion.div className="absolute inset-0 bg-primary/15" initial={{ opacity: 1 }} animate={{ opacity: 0 }} transition={{ duration: 0.3 }} />
-        )}
-      </AnimatePresence>
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-      <div className="relative w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'hsl(200 90% 55% / 0.12)', border: '1px solid hsl(200 90% 55% / 0.2)' }}>
-        <Icon className={`w-4 h-4 text-primary ${spinning ? 'animate-spin' : ''}`} />
-      </div>
-      <span className="relative text-foreground font-medium">{label}</span>
-      <motion.div
-        className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
-        animate={{ x: [0, 3, 0] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
-      >
-        <ChevronRight className="w-4 h-4 text-primary/60" />
-      </motion.div>
-    </motion.button>
-  );
-};
+}) => (
+  <button
+    onClick={onClick}
+    className="relative w-full flex items-center gap-4 px-5 py-4 rounded-xl overflow-hidden border border-white/5 group hover:scale-[1.02] active:scale-[0.97] transition-transform duration-150"
+    style={{ background: 'linear-gradient(145deg, hsl(265 45% 14%) 0%, hsl(265 40% 9%) 100%)' }}
+  >
+    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+    <div className="relative w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'hsl(200 90% 55% / 0.12)', border: '1px solid hsl(200 90% 55% / 0.2)' }}>
+      <Icon className={`w-4 h-4 text-primary ${spinning ? 'animate-spin' : ''}`} />
+    </div>
+    <span className="relative text-foreground font-medium">{label}</span>
+    <ChevronRight className="w-4 h-4 text-primary/60 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+  </button>
+);
 
 export const MiHomeScreen = React.memo(({
   channelCount,
@@ -312,42 +224,32 @@ export const MiHomeScreen = React.memo(({
       }} />
 
       {/* Header */}
-      <motion.header
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6"
-      >
+      <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6" style={{ animation: 'fadeSlideIn 0.4s ease-out both' }}>
         <ChromaKeyVideo src={logoVideo} className="h-20 md:h-28" />
 
         {!isMobile && (
           <div className="flex items-center gap-3">
-            <motion.button
+            <button
               onClick={onVoiceSearchClick}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="relative w-12 h-12 rounded-full border border-white/10 flex items-center justify-center transition-colors overflow-hidden group"
+              className="relative w-12 h-12 rounded-full border border-white/10 flex items-center justify-center transition-all overflow-hidden group hover:scale-110 active:scale-90"
               style={{ background: 'linear-gradient(145deg, hsl(265 45% 14%), hsl(265 40% 9%))' }}
             >
               <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
               <Mic className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors relative z-10" />
-            </motion.button>
-            <motion.button
+            </button>
+            <button
               onClick={onSearchClick}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-3 backdrop-blur-sm rounded-full px-6 py-3 min-w-[240px] border border-white/10 hover:border-primary/30 transition-all group relative overflow-hidden"
+              className="flex items-center gap-3 backdrop-blur-sm rounded-full px-6 py-3 min-w-[240px] border border-white/10 hover:border-primary/30 transition-all group relative overflow-hidden hover:scale-[1.02] active:scale-[0.98]"
               style={{ background: 'linear-gradient(145deg, hsl(265 45% 14% / 0.9), hsl(265 40% 9% / 0.9))' }}
             >
               <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               <Search className="w-5 h-5 text-muted-foreground" />
               <span className="text-muted-foreground">Search channels, movies...</span>
-            </motion.button>
+            </button>
           </div>
         )}
 
         <div className="flex items-center gap-3 md:gap-4">
-          {/* Time & Weather in header */}
           {!isMobile && (
             <div className="flex items-center gap-3 text-muted-foreground">
               <WeatherIcon icon={weather.icon} className="w-4 h-4" />
@@ -359,28 +261,24 @@ export const MiHomeScreen = React.memo(({
             </div>
           )}
           {isMobile && (
-            <motion.button
+            <button
               onClick={onSearchClick}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center"
+              className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:scale-110 active:scale-90 transition-transform"
               style={{ background: 'linear-gradient(145deg, hsl(265 45% 14%), hsl(265 40% 9%))' }}
             >
               <Search className="w-5 h-5 text-muted-foreground" />
-            </motion.button>
+            </button>
           )}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden cursor-pointer"
+          <div
+            className="relative w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden cursor-pointer hover:scale-105 active:scale-95 transition-transform"
             style={{ boxShadow: '0 0 20px hsl(200 90% 55% / 0.4)' }}
           >
             <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <span className="text-white font-bold text-lg">{getProfileInitial()}</span>
             </div>
-          </motion.div>
+          </div>
         </div>
-      </motion.header>
+      </header>
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 px-6 md:px-10 pt-2 pb-32">
@@ -413,13 +311,11 @@ export const MiHomeScreen = React.memo(({
 
               <TileCard onClick={() => onNavigate('series')} delay={2} accentColor="violet" className="min-h-[140px]">
                 <div className="absolute top-3 right-3 z-20">
-                  <motion.span
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="px-2 py-0.5 rounded-md text-[10px] font-bold text-white"
-                    style={{ background: 'linear-gradient(135deg, hsl(200 90% 55%), hsl(280 80% 60%))' }}
-                  >New</motion.span>
-                </div>
+                    <span
+                      className="px-2 py-0.5 rounded-md text-[10px] font-bold text-white animate-pulse"
+                      style={{ background: 'linear-gradient(135deg, hsl(200 90% 55%), hsl(280 80% 60%))' }}
+                    >New</span>
+                  </div>
                 <div className="flex-1 flex flex-col justify-between">
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'hsl(270 80% 60% / 0.12)', border: '1px solid hsl(270 80% 60% / 0.25)' }}>
                     <Clapperboard className="w-5 h-5" style={{ color: 'hsl(270 80% 70%)' }} />
@@ -450,7 +346,9 @@ export const MiHomeScreen = React.memo(({
             </div>
 
             <div className="mt-6">
-              <TMDBBrowseSection onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
+              <React.Suspense fallback={<div className="h-40 flex items-center justify-center text-muted-foreground">Loading content...</div>}>
+                <TMDBBrowseSection onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
+              </React.Suspense>
             </div>
           </div>
         ) : (
@@ -465,13 +363,10 @@ export const MiHomeScreen = React.memo(({
                       <Tv className="w-8 h-8 text-primary" />
                     </PulsingIcon>
                     <div>
-                      <motion.p
-                        className="text-4xl font-bold text-foreground tabular-nums"
-                        key={animChannels}
-                      >Live TV</motion.p>
+                      <p className="text-4xl font-bold text-foreground tabular-nums">Live TV</p>
                       <p className="text-muted-foreground mt-1">
                         {loading ? (
-                          <motion.span animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.2, repeat: Infinity }}>Loading...</motion.span>
+                          <span className="animate-pulse">Loading...</span>
                         ) : (
                           <span>+{animChannels.toLocaleString()} Channels</span>
                         )}
@@ -509,12 +404,10 @@ export const MiHomeScreen = React.memo(({
                 {/* Series */}
                 <TileCard onClick={() => onNavigate('series')} delay={3} accentColor="violet">
                   <div className="absolute top-3 right-3 z-20">
-                    <motion.span
-                      animate={{ scale: [1, 1.06, 1], boxShadow: ['0 0 0px hsl(200 90% 55% / 0)', '0 0 12px hsl(200 90% 55% / 0.5)', '0 0 0px hsl(200 90% 55% / 0)'] }}
-                      transition={{ duration: 2.5, repeat: Infinity }}
-                      className="px-2.5 py-1 rounded-md text-xs font-bold text-white"
+                    <span
+                      className="px-2.5 py-1 rounded-md text-xs font-bold text-white animate-pulse"
                       style={{ background: 'linear-gradient(135deg, hsl(200 90% 55%), hsl(280 80% 60%))' }}
-                    >New</motion.span>
+                    >New</span>
                   </div>
                   <div className="flex-1 flex flex-col justify-between">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(270 80% 60% / 0.12)', border: '1px solid hsl(270 80% 60% / 0.25)' }}>
@@ -558,7 +451,9 @@ export const MiHomeScreen = React.memo(({
 
             {/* TMDB Section - Full width below tiles */}
             <div className="mt-6">
-              <TMDBBrowseSection onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
+              <React.Suspense fallback={<div className="h-40 flex items-center justify-center text-muted-foreground">Loading content...</div>}>
+                <TMDBBrowseSection onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
+              </React.Suspense>
             </div>
           </>
         )}

@@ -55,8 +55,9 @@ export const useBulkChannelLogos = (channels: { name: string; logo?: string }[])
     uniqueNames.forEach(name => processedRef.current.add(name));
 
     const processBatchWork = async () => {
-      for (let i = 0; i < uniqueNames.length; i += 5) {
-        const batch = uniqueNames.slice(i, i + 5);
+      // Use larger batches (10 instead of 5) and longer delay (2s instead of 500ms)
+      for (let i = 0; i < uniqueNames.length; i += 10) {
+        const batch = uniqueNames.slice(i, i + 10);
 
         try {
           const { data, error } = await supabase.functions.invoke('find-channel-logo', {
@@ -80,9 +81,9 @@ export const useBulkChannelLogos = (channels: { name: string; logo?: string }[])
           console.error('Batch logo fetch error:', e);
         }
 
-        // Small delay between batches to avoid overwhelming the edge function
-        if (i + 5 < uniqueNames.length) {
-          await new Promise(r => setTimeout(r, 500));
+        // Longer delay between batches to reduce network flooding
+        if (i + 10 < uniqueNames.length) {
+          await new Promise(r => setTimeout(r, 2000));
         }
       }
       isProcessingRef.current = false;
