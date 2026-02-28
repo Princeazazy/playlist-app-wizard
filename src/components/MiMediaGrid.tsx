@@ -1181,8 +1181,10 @@ export const MiMediaGrid = ({
                 {/* Poster */}
                 <div className="mi-poster-card bg-card aspect-[2/3] relative rounded-lg overflow-hidden">
                   {(() => {
+                    const providerPoster = item.logo || item.backdrop_path?.[0];
                     const tmdbPoster = getPosterForChannel(item.name);
-                    const posterSrc = tmdbPoster || item.logo || item.backdrop_path?.[0];
+                    // Prioritize provider's original artwork over TMDB to avoid wrong matches
+                    const posterSrc = providerPoster || tmdbPoster;
                     return posterSrc ? (
                       <>
                         <img
@@ -1192,10 +1194,13 @@ export const MiMediaGrid = ({
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             const target = e.currentTarget;
-                            if (tmdbPoster && item.backdrop_path?.[0] && target.src !== item.backdrop_path[0]) {
-                              target.src = item.backdrop_path[0];
-                            } else if (item.logo && target.src !== item.logo) {
+                            // Fallback chain: provider logo → TMDB poster → hide
+                            if (item.logo && target.src !== item.logo) {
                               target.src = item.logo;
+                            } else if (tmdbPoster && target.src !== tmdbPoster) {
+                              target.src = tmdbPoster;
+                            } else if (item.backdrop_path?.[0] && target.src !== item.backdrop_path[0]) {
+                              target.src = item.backdrop_path[0];
                             } else {
                               target.style.display = 'none';
                             }

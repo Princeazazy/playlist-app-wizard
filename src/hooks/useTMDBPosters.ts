@@ -226,8 +226,8 @@ export const useTMDBPosters = (channels: { name: string; logo?: string; year?: s
   }, [channels]);
 
   const getPosterForChannel = useCallback((channelName: string, existingLogo?: string): string | undefined => {
-    // Always prefer TMDB poster over playlist logo (which is often a scene still)
-    return posterMap[channelName] || existingLogo;
+    // Provider artwork takes priority; TMDB is fallback only
+    return existingLogo || posterMap[channelName];
   }, [posterMap]);
 
   return { posterMap, getPosterForChannel };
