@@ -1,4 +1,4 @@
-import { useState, useCallback, useTransition } from 'react';
+import { useState, useCallback } from 'react';
 import { Channel } from '@/hooks/useIPTV';
 import { WatchProgress, getChannelProgress } from '@/hooks/useWatchProgress';
 import { TMDBItem } from '@/hooks/useTMDB';
@@ -57,19 +57,15 @@ export const useAppNavigation = (): UseAppNavigationReturn => {
   const { toast } = useToast();
 
   const setCurrentScreen = useCallback((screen: Screen) => {
-    startTransition(() => setCurrentScreenRaw(screen));
+    setCurrentScreenRaw(screen);
   }, []);
 
-  const [isPending, startTransition] = useTransition();
-
   const handleNavigate = useCallback((section: 'live' | 'movies' | 'series' | 'sports' | 'settings' | 'home') => {
-    startTransition(() => {
-      setCurrentScreenRaw(section);
-      if (section === 'home') {
-        setShowMiniPlayer(false);
-        setCurrentChannel(null);
-      }
-    });
+    setCurrentScreenRaw(section);
+    if (section === 'home') {
+      setShowMiniPlayer(false);
+      setCurrentChannel(null);
+    }
   }, []);
 
   const handleChannelSelect = useCallback((channel: Channel) => {
