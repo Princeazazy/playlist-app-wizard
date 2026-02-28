@@ -318,7 +318,7 @@ export const MiHomeScreen = React.memo(({
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6"
       >
-        <ChromaKeyVideo src={logoVideo} className="h-14 md:h-20" />
+        <ChromaKeyVideo src={logoVideo} className="h-20 md:h-28" />
 
         {!isMobile && (
           <div className="flex items-center gap-3">
