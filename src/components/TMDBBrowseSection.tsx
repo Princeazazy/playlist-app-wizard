@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
 import { useTMDBPosters } from '@/hooks/useTMDBPosters';
@@ -255,15 +256,26 @@ const PlaylistRow = ({
         )}
       </div>
       
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 transition-opacity duration-300">
-        {visibleItems.map((channel) => (
-          <PlaylistCard
-            key={`${channel.id}-${currentPage}`}
-            channel={channel}
-            tmdbPoster={getPosterForChannel(channel.name)}
-            onClick={() => onChannelSelect?.(channel)}
-          />
-        ))}
+      <div className="relative overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPage}
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -60 }}
+            transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="grid grid-cols-3 md:grid-cols-6 gap-3"
+          >
+            {visibleItems.map((channel) => (
+              <PlaylistCard
+                key={`${channel.id}-${currentPage}`}
+                channel={channel}
+                tmdbPoster={getPosterForChannel(channel.name)}
+                onClick={() => onChannelSelect?.(channel)}
+              />
+            ))}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
