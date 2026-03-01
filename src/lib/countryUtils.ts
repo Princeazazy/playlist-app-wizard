@@ -9,6 +9,27 @@ export interface CountryInfo {
   isStreamingService?: boolean;
 }
 
+// Countries excluded from Live TV — channels in these groups are hidden
+export const EXCLUDED_COUNTRY_CODES = new Set([
+  'in',  // India
+  'il',  // Israel
+  'ge',  // Georgia
+  'lt',  // Lithuania
+  'cz',  // Czech Republic
+  'sk',  // Slovakia
+  'lv',  // Latvia
+  'ee',  // Estonia
+  'hu',  // Hungary
+  'bg',  // Bulgaria
+  'am',  // Armenia
+  'al',  // Albania
+  'se',  // Sweden (Nordic)
+  'no',  // Norway (Nordic)
+  'dk',  // Denmark (Nordic)
+  'fi',  // Finland (Nordic)
+  'is',  // Iceland (Nordic)
+]);
+
 // Streaming services - these should NEVER be mixed with countries (priority 1000+ to appear at bottom)
 const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'amazon': { name: 'Amazon', code: 'amazon', flagUrl: '', priority: 1000, isStreamingService: true },
@@ -478,7 +499,9 @@ export const getCountryInfo = (group: string): CountryInfo | null => {
 
   // Direct match for countries
   if (ALL_COUNTRIES[groupLower]) {
-    return ALL_COUNTRIES[groupLower];
+    const info = ALL_COUNTRIES[groupLower];
+    if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
+    return info;
   }
 
   // Check if any key (including Arabic text) appears as a substring in the group name
@@ -488,6 +511,7 @@ export const getCountryInfo = (group: string): CountryInfo | null => {
   // Check for full country name matches FIRST (before partial matching)
   for (const [key, info] of Object.entries(ALL_COUNTRIES)) {
     if (groupLower === info.name.toLowerCase()) {
+      if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
       return info;
     }
   }
@@ -495,7 +519,9 @@ export const getCountryInfo = (group: string): CountryInfo | null => {
   // Check if group starts with country code (e.g., "US | News", "AR: Sports")
   const codeMatch = groupLower.match(/^([a-z]{2})[\s|:\-]/);
   if (codeMatch && ALL_COUNTRIES[codeMatch[1]]) {
-    return ALL_COUNTRIES[codeMatch[1]];
+    const codeInfo = ALL_COUNTRIES[codeMatch[1]];
+    if (EXCLUDED_COUNTRY_CODES.has(codeInfo.code)) return null;
+    return codeInfo;
   }
 
   // Check if country name/key appears in group name
@@ -508,6 +534,7 @@ export const getCountryInfo = (group: string): CountryInfo | null => {
     if (isArabic) {
       // Arabic: simple substring match
       if (groupLower.includes(key) || group.includes(key)) {
+        if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
         return info;
       }
     } else {
@@ -515,11 +542,13 @@ export const getCountryInfo = (group: string): CountryInfo | null => {
       const countryName = info.name.toLowerCase();
       const nameRegex = new RegExp(`\\b${countryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
       if (nameRegex.test(groupLower)) {
+        if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
         return info;
       }
       if (key.length >= 3) {
         const keyRegex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
         if (keyRegex.test(groupLower)) {
+          if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
           return info;
         }
       }
@@ -529,7 +558,9 @@ export const getCountryInfo = (group: string): CountryInfo | null => {
   // For 2-letter codes, only match at start or after separator
   const twoLetterMatch = groupLower.match(/^([a-z]{2})(?:\s|$|[|:\-])/);
   if (twoLetterMatch && ALL_COUNTRIES[twoLetterMatch[1]]) {
-    return ALL_COUNTRIES[twoLetterMatch[1]];
+    const tlInfo = ALL_COUNTRIES[twoLetterMatch[1]];
+    if (EXCLUDED_COUNTRY_CODES.has(tlInfo.code)) return null;
+    return tlInfo;
   }
 
   return null;
