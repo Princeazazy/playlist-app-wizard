@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { setAppSession } from '@/lib/appSession';
 import { Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
-import universeLogo from '@/assets/universe-play-logo.png';
+import { ChromaKeyVideo } from '@/components/shared/ChromaKeyVideo';
+import logoVideo from '@/assets/logo-transparent.mp4';
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -44,7 +45,7 @@ export const LoginScreen = ({ onLogin }: LoginScreenProps) => {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="flex flex-col items-center gap-4">
-          <img src={universeLogo} alt="Universe TV" className="h-36 w-auto" />
+          <ChromaKeyVideo src={logoVideo} className="h-36" />
           <p className="text-muted-foreground text-sm">Sign in to continue</p>
         </div>
 
