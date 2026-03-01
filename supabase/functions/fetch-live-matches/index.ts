@@ -14,6 +14,7 @@ interface Match {
   statusText: string;
   channels: string[];
   league: string;
+  date: string; // YYYY-MM-DD
 }
 
 function parseMatches(html: string): Match[] {
@@ -29,8 +30,13 @@ function parseMatches(html: string): Match[] {
     const block = matchBlocks[i];
     
     try {
-      // Determine status from class
-      const isLive = block.startsWith(' live');
+      // Determine status from CSS class
+      let status = 'upcoming';
+      if (block.startsWith(' live')) {
+        status = 'live';
+      } else if (block.startsWith(' finished')) {
+        status = 'finished';
+      }
       
       // Extract team names
       const tmNameMatches = [...block.matchAll(/<div class="TM_Name">(.*?)<\/div>/g)];
@@ -44,7 +50,7 @@ function parseMatches(html: string): Match[] {
       const homeLogo = logoMatches.length > 0 ? logoMatches[0][1] : '';
       const awayLogo = logoMatches.length > 1 ? logoMatches[1][1] : '';
       
-      // Extract time - try multiple patterns
+      // Extract time
       const timeMatch = block.match(/MT_Time[^>]*>(.*?)<\/span>/);
       const time = timeMatch ? timeMatch[1].trim() : '';
       
@@ -58,12 +64,18 @@ function parseMatches(html: string): Match[] {
       const statMatch = block.match(/MT_Stat[^>]*>(.*?)<\/div>/);
       const statusText = statMatch ? statMatch[1].trim() : '';
       
-      let status = 'upcoming';
-      if (isLive || statusText.includes('جارية')) {
-        status = 'live';
-      } else if (statusText.includes('انتهت')) {
-        status = 'finished';
+      // Fallback status from text if CSS class didn't catch it
+      if (status === 'upcoming') {
+        if (statusText.includes('جارية')) {
+          status = 'live';
+        } else if (statusText.includes('انتهت')) {
+          status = 'finished';
+        }
       }
+      
+      // Extract date from the match link title attribute (بتاريخ YYYY-MM-DD)
+      const dateMatch = block.match(/بتاريخ\s+(\d{4}-\d{2}-\d{2})/);
+      const date = dateMatch ? dateMatch[1] : '';
       
       // Extract channels and league from MT_Info
       const infoMatch = block.match(/<div class="MT_Info"><ul>(.*?)<\/ul><\/div>/);
@@ -94,6 +106,7 @@ function parseMatches(html: string): Match[] {
         statusText,
         channels,
         league,
+        date,
       });
     } catch (e) {
       console.error('Error parsing match block:', e);
