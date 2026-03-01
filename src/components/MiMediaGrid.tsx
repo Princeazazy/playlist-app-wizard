@@ -872,6 +872,9 @@ export const MiMediaGrid = ({
     
     let filtered = items.filter((item) => {
       if (isIrrelevantGroup(item.group || '')) return false;
+      // Exclude known low-quality / promo entries
+      const nameLower = item.name.toLowerCase();
+      if (nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere')) return false;
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
       const effectiveGroup = selectedGroup || (groups.length > 0 ? groups[0].name : 'all');
       // Match against all raw group names that map to this display name
