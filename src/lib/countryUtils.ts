@@ -455,6 +455,9 @@ const ALL_COUNTRIES = { ...ARABIC_COUNTRIES, ...USA_ENTRY, ...OTHER_COUNTRIES };
 // All categories including streaming services
 const ALL_CATEGORIES = { ...STREAMING_SERVICES, ...ALL_COUNTRIES };
 
+// Pre-sorted country keys by length descending (computed once)
+const SORTED_COUNTRY_KEYS = Object.keys(ALL_COUNTRIES).sort((a, b) => b.length - a.length);
+
 // Check if a group name matches a streaming service (must check BEFORE countries)
 const getStreamingServiceInfo = (group: string): CountryInfo | null => {
   const groupLower = group.toLowerCase().trim();
@@ -487,8 +490,21 @@ const getStreamingServiceInfo = (group: string): CountryInfo | null => {
   return null;
 };
 
-// Get country info from group name
+// Memoization cache for getCountryInfo - avoids repeated expensive regex matching
+const _countryInfoCache = new Map<string, CountryInfo | null>();
+
+// Get country info from group name (memoized)
 export const getCountryInfo = (group: string): CountryInfo | null => {
+  const cacheKey = group;
+  const cached = _countryInfoCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const result = _getCountryInfoUncached(group);
+  _countryInfoCache.set(cacheKey, result);
+  return result;
+};
+
+const _getCountryInfoUncached = (group: string): CountryInfo | null => {
   const groupLower = group.toLowerCase().trim();
 
   // FIRST: Check for streaming services - they should NEVER match as countries
@@ -504,9 +520,8 @@ export const getCountryInfo = (group: string): CountryInfo | null => {
     return info;
   }
 
-  // Check if any key (including Arabic text) appears as a substring in the group name
-  // Sort by key length descending to match longer/more specific keys first
-  const sortedCountryKeys = Object.keys(ALL_COUNTRIES).sort((a, b) => b.length - a.length);
+  // Use pre-sorted keys (computed once at module level)
+  
   
   // Check for full country name matches FIRST (before partial matching)
   for (const [key, info] of Object.entries(ALL_COUNTRIES)) {
@@ -525,20 +540,16 @@ export const getCountryInfo = (group: string): CountryInfo | null => {
   }
 
   // Check if country name/key appears in group name
-  // For Arabic keys, use simple substring matching (word boundaries don't work for Arabic)
-  // For Latin keys, use word boundary matching
-  for (const key of sortedCountryKeys) {
+  for (const key of SORTED_COUNTRY_KEYS) {
     const info = ALL_COUNTRIES[key];
     const isArabic = /[\u0600-\u06FF]/.test(key);
     
     if (isArabic) {
-      // Arabic: simple substring match
       if (groupLower.includes(key) || group.includes(key)) {
         if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
         return info;
       }
     } else {
-      // Latin: word boundary match
       const countryName = info.name.toLowerCase();
       const nameRegex = new RegExp(`\\b${countryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
       if (nameRegex.test(groupLower)) {

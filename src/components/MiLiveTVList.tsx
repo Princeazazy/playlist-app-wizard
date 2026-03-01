@@ -197,12 +197,13 @@ const LivePreviewChannelTile = memo(({
       {/* Badges & Favorite */}
       <div className="flex items-center gap-2">
         <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded">HD</span>
-        <button
+        <span
+          role="button"
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          className="hover:scale-110 active:scale-90 transition-transform"
+          className="hover:scale-110 active:scale-90 transition-transform cursor-pointer"
         >
           <Star className={`w-5 h-5 ${isFavorite ? 'fill-accent text-accent' : 'text-muted-foreground hover:text-accent'}`} />
-        </button>
+        </span>
       </div>
     </button>
   );
@@ -255,7 +256,10 @@ export const MiLiveTVList = ({
   const recognitionRef = useRef<any>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const { getLogoForChannel } = useBulkChannelLogos(channels);
+  // Pass empty array initially - logos will be resolved lazily after first paint
+  const [logoChannelsReady, setLogoChannelsReady] = useState(false);
+  const logoChannels = useMemo(() => logoChannelsReady ? channels : [], [logoChannelsReady, channels]);
+  const { getLogoForChannel } = useBulkChannelLogos(logoChannels);
 
   const effectiveSearchQuery = localSearchQuery || searchQuery;
 
@@ -283,6 +287,14 @@ export const MiLiveTVList = ({
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 60000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Defer logo fetching until after first paint
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setTimeout(() => setLogoChannelsReady(true), 100);
+    });
+    return () => cancelAnimationFrame(id);
   }, []);
 
   // Build groups with first channel logo AND normalized group map in a single pass
@@ -346,7 +358,7 @@ export const MiLiveTVList = ({
     return filtered;
   }, [channels, effectiveSearchQuery, selectedGroup, localShowFavoritesOnly, favorites, sortBy]);
 
-  const { visibleItems: visibleChannels, onScroll, ensureIndexVisible, hasMore } = useProgressiveList(filteredChannels, { initial: 80, step: 80 });
+  const { visibleItems: visibleChannels, onScroll, ensureIndexVisible, hasMore } = useProgressiveList(filteredChannels, { initial: 40, step: 60 });
 
   // Keyboard navigation
   useEffect(() => {
