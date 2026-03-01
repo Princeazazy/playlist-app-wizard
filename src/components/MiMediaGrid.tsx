@@ -346,8 +346,9 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   // Netflix
   if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return enNetflixLogo;
   
-  // Latest English/Movies
+  // Latest English/Movies - includes "EN MOV 2025" style groups
   if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي') || g.includes('movie') || g.includes('film')) || g.includes('أفلام اجنبية جديدة')) return englishMoviesLogo;
+  if (/\ben\b/.test(g) && /mov|film|movie/.test(g)) return englishMoviesLogo;
   
   // Generic English movies
   if (g.includes('english') && (g.includes('mov') || g.includes('film') || g.includes('انجليزي'))) return englishMoviesLogo;
@@ -542,11 +543,16 @@ const shortenGroupName = (name: string): string => {
   }
   if (lower.includes('foreign') && lower.includes('sub')) return 'Foreign Subtitled';
   
-  // English - "Latest" must come BEFORE generic English checks
+  // English movies with year - "EN MOV 2025", "EN MOV 2026", etc.
+  if ((/\ben\b/i.test(lower) || lower.includes('english')) && (/mov|film|movie/i.test(lower))) {
+    if (year) return `English ${year}`;
+    if (lower.includes('dub')) return 'English Dubbed';
+    return 'English Movies';
+  }
+  // "Latest English" explicit label
   if (lower.includes('latest') && (lower.includes('english') || lower.includes('movie') || lower.includes('film')) || lower.includes('أحدث') && lower.includes('انجليزي') || lower.includes('أفلام اجنبية جديدة')) return 'Latest English';
   if (lower.includes('english') && lower.includes('dub')) return 'English Dubbed';
   if (lower.includes('english') && lower.includes('series')) return 'English Series';
-  if (lower.includes('english') && (lower.includes('mov') || lower.includes('film'))) return 'English Movies';
 
   // Cartoons
   if (lower.includes('cartoon') && lower.includes('dub')) return 'Cartoon Dubbed';
