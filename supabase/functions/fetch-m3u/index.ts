@@ -234,6 +234,8 @@ function getCategoryPriority(name: string): number {
   if ((name.includes('ar ') || name.includes('arabic') || name.includes('عرب')) && name.includes('2025')) return 2;
   // Any other Arabic
   if (name.includes('ar ') || name.includes('arabic') || name.includes('عرب')) return 3;
+  // English/Foreign year-based categories (ensure they load before generic content)
+  if ((name.includes('english') || name.includes('foreign') || name.includes('en ') || name.includes('اجنبي') || name.includes('أجنبي')) && /20\d{2}/.test(name)) return 3.5;
   // Year-based categories
   if (/20\d{2}/.test(name)) return 4;
   // Everything else
