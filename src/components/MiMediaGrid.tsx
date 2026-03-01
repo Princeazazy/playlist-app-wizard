@@ -228,7 +228,7 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   if (g.includes('kids') || g.includes('family') || g.includes('اطفال') || g.includes('عائلي') || g.includes('أطفال')) return serKidsFamilyLogo;
   
   // Netflix
-  if (g.includes('netflix') || g.includes('نتفلكس')) return serNetflixLogo;
+  if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return serNetflixLogo;
   
   // Disney
   if (g.includes('disney')) return serDisneyLogo;
@@ -311,7 +311,7 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   if (g.includes('samir') && g.includes('ghanem') || g.includes('سمير') || g.includes('غانم')) return samirGhanemLogo;
   
   // Marvel
-  if (g.includes('marvel') || g.includes('مارفل')) return marvelMoviesLogo;
+  if (g.includes('marvel') || g.includes('مارفيل') || g.includes('مارفل')) return marvelMoviesLogo;
 
   // WWE
   if (g.includes('wwe') || g.includes('wrestling') || g.includes('مصارعة')) return wweLogo;
@@ -344,7 +344,7 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   if (g.includes('formula') || g.includes('f1') || g.includes('فورمولا')) return formula1Logo;
   
   // Netflix
-  if (g.includes('netflix') || g.includes('نتفلكس')) return enNetflixLogo;
+  if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return enNetflixLogo;
   
   // Latest English movies
   if (g.includes('latest') && g.includes('english')) return englishMoviesLogo;
@@ -409,7 +409,7 @@ const getCategoryEmoji = (group: string): string => {
   const groupLower = group.toLowerCase();
   
   // Streaming platforms
-  if (groupLower.includes('netflix') || group.includes('نتفلكس')) return '🎬';
+  if (groupLower.includes('netflix') || group.includes('نتفليكس') || group.includes('نتفلكس')) return '🎬';
   if (groupLower.includes('amazon') || groupLower.includes('prime')) return '📦';
   if (groupLower.includes('hulu')) return '📺';
   if (groupLower.includes('disney')) return '🏰';
@@ -589,7 +589,7 @@ const shortenGroupName = (name: string): string => {
   if (lower.includes('deutsch') || lower.includes('german')) return 'German';
   
   // Platforms
-  if (lower.includes('netflix')) return 'Netflix';
+  if (lower.includes('netflix') || lower.includes('نتفليكس') || lower.includes('نتفلكس')) return 'Netflix';
   if (lower.includes('disney')) return 'Disney';
   if (lower.includes('hbo') || lower.includes('amazon') || lower.includes('prime')) return 'HBO & Amazon';
   
@@ -601,8 +601,8 @@ const shortenGroupName = (name: string): string => {
   
   // Star collections
   if (lower.includes('pacino')) return 'Al Pacino';
-  if (lower.includes('dicaprio') || lower.includes('di caprio')) return 'Leonardo Di Caprio';
-  if (lower.includes('marvel') || lower.includes('مارفل')) return 'Marvel';
+  if (lower.includes('dicaprio') || lower.includes('di caprio') || lower.includes('كابريو') || lower.includes('ليوناردو')) return 'Leonardo Di Caprio';
+  if (lower.includes('marvel') || lower.includes('مارفيل') || lower.includes('مارفل')) return 'Marvel';
   if (lower.includes('adel') && lower.includes('imam')) return 'Adel Imam';
   if (lower.includes('samir') && lower.includes('ghanem')) return 'Samir Ghanem';
   
