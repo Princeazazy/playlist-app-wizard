@@ -56,6 +56,8 @@ import enKidsFamilyLogo from '@/assets/category-logos/en-kids-family.png';
 import enStarWarsLogo from '@/assets/category-logos/en-star-wars.png';
 import formula1Logo from '@/assets/category-logos/formula1-movies.png';
 import enNetflixLogo from '@/assets/category-logos/en-netflix.png';
+import marvelMoviesLogo from '@/assets/category-logos/marvel-movies.png';
+import netflixMoviesLogo from '@/assets/category-logos/netflix-movies.png';
 import englishMoviesLogo from '@/assets/category-logos/english-movies.png';
 import albaniaMoviesLogo from '@/assets/category-logos/albania-movies.png';
 import frComedieMoviesLogo from '@/assets/category-logos/fr-comedie-movies.png';
@@ -308,6 +310,9 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   if (g.includes('adel') && g.includes('imam') || g.includes('عادل') || g.includes('امام')) return adelImamLogo;
   if (g.includes('samir') && g.includes('ghanem') || g.includes('سمير') || g.includes('غانم')) return samirGhanemLogo;
   
+  // Marvel
+  if (g.includes('marvel') || g.includes('مارفل')) return marvelMoviesLogo;
+
   // WWE
   if (g.includes('wwe') || g.includes('wrestling') || g.includes('مصارعة')) return wweLogo;
   
@@ -596,7 +601,8 @@ const shortenGroupName = (name: string): string => {
   
   // Star collections
   if (lower.includes('pacino')) return 'Al Pacino';
-  if (lower.includes('dicaprio') || lower.includes('di caprio')) return 'Leonardo DiCaprio';
+  if (lower.includes('dicaprio') || lower.includes('di caprio')) return 'Leonardo Di Caprio';
+  if (lower.includes('marvel') || lower.includes('مارفل')) return 'Marvel';
   if (lower.includes('adel') && lower.includes('imam')) return 'Adel Imam';
   if (lower.includes('samir') && lower.includes('ghanem')) return 'Samir Ghanem';
   
