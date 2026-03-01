@@ -307,6 +307,7 @@ const Index = () => {
           <MiSettingsPage
             onBack={() => nav.setCurrentScreen('home')}
             onPlaylistChange={handlePlaylistChange}
+            onSignOut={() => setAuthenticated(false)}
           />
         );
 

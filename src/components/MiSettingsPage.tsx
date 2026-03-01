@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, User, Shield, ListVideo, Trash2, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Check, X, Upload, FileVideo, Download, Loader2, Pencil, Users, Plus, ShieldOff, UserX, UserCheck } from 'lucide-react';
+import { ChevronLeft, User, Shield, ListVideo, Trash2, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Check, X, Upload, FileVideo, Download, Loader2, Pencil, Users, Plus, ShieldOff, UserX, UserCheck, LogOut } from 'lucide-react';
 import { getProfileName, setProfileName, getProfileInitial } from '@/lib/profileStorage';
-import { getAppSession } from '@/lib/appSession';
+import { getAppSession, clearAppSession } from '@/lib/appSession';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -40,9 +40,10 @@ const WeatherIcon = ({ icon }: { icon: string }) => {
 interface MiSettingsPageProps {
   onBack: () => void;
   onPlaylistChange?: () => void;
+  onSignOut?: () => void;
 }
 
-export const MiSettingsPage = ({ onBack, onPlaylistChange }: MiSettingsPageProps) => {
+export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut }: MiSettingsPageProps) => {
   const [time, setTime] = useState(new Date());
   const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
   const [showParentalDialog, setShowParentalDialog] = useState(false);
@@ -420,11 +421,24 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange }: MiSettingsPageProps
                 <span className="text-muted-foreground">Device Key :</span>
                 <span className="text-foreground font-mono">{accountData.deviceKey}</span>
               </div>
-              <div className="flex justify-between items-center py-3">
+              <div className="flex justify-between items-center py-3 border-b border-border/30">
                 <span className="text-muted-foreground">Expire Date :</span>
                 <span className="text-foreground">{accountData.expireDate}</span>
               </div>
             </div>
+
+            {/* Sign Out */}
+            <button
+              onClick={() => {
+                clearAppSession();
+                if (onSignOut) onSignOut();
+                else window.location.reload();
+              }}
+              className="mt-6 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors font-medium"
+            >
+              <LogOut className="w-5 h-5" />
+              Sign Out
+            </button>
           </div>
 
           {/* Right Panel - Action Buttons */}
