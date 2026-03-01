@@ -65,10 +65,29 @@ const cleanChannelName = (name: string): string => {
     .join('');
 };
 
+// Clean group names: preserve language/type prefixes (AR, EN, MOV, SER) that are needed for filtering
+const cleanGroupName = (group: string): string => {
+  let cleaned = group;
+  cleaned = cleaned
+    .replace(/[_-]/g, ' ')
+    .replace(/\s*\|\s*/g, ' | ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (cleaned.length === 0) return cleaned;
+  return cleaned
+    .split(/(\s+)/)
+    .map(word => {
+      if (word.trim().length === 0) return word;
+      if (word === '|') return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join('');
+};
+
 const normalizeChannel = (ch: Channel): Channel => ({
   ...ch,
   name: cleanChannelName(ch.name),
-  group: ch.group ? cleanChannelName(ch.group) : ch.group,
+  group: ch.group ? cleanGroupName(ch.group) : ch.group,
 });
 
 const normalizeChannels = (chs: Channel[]): Channel[] => chs.map(normalizeChannel);
@@ -183,7 +202,7 @@ const fetchSinglePlaylist = async (
         name: cleanChannelName(ch.name),
         url: ch.url || '',
         logo: ch.logo || undefined,
-        group: cleanChannelName(ch.group || 'Live TV'),
+        group: cleanGroupName(ch.group || 'Live TV'),
         type: ch.type || 'live',
         stream_id: ch.stream_id,
         series_id: ch.series_id,
@@ -488,7 +507,7 @@ const parseM3U = (content: string): Channel[] => {
       const nameMatch = line.split(',').pop();
 
       const name = cleanChannelName(nameMatch?.trim() || 'Unknown Channel');
-      const group = cleanChannelName(groupMatch ? groupMatch[1] : 'Uncategorized');
+      const group = cleanGroupName(groupMatch ? groupMatch[1] : 'Uncategorized');
 
       currentChannel = {
         id: `channel-${channels.length}`,

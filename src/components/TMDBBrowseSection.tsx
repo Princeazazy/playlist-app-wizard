@@ -328,8 +328,13 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     const arabicContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
       const group = ch.group || '';
-      if (group.includes('رمضان') || group.toLowerCase().includes('ramadan')) return false;
-      return targetGroups.some(tg => group === tg) && !isSportsContent(ch);
+      const groupLower = group.toLowerCase();
+      if (group.includes('رمضان') || groupLower.includes('ramadan')) return false;
+      // Match exact Arabic group names OR Xtream-style "AR SER 2025" etc.
+      const matchesTarget = targetGroups.some(tg => group === tg);
+      const matchesXtreamAr = /^ar\s+ser/i.test(group) && /202[456]/.test(group);
+      const matchesArabicSer = (/عربي/.test(group) || /arabic/i.test(group)) && /202[456]/.test(group) && ch.type === 'series';
+      return (matchesTarget || matchesXtreamAr || matchesArabicSer) && !isSportsContent(ch);
     });
     return arabicContent.sort((a, b) => {
       const groupA = a.group || '';
@@ -349,7 +354,8 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     const arabicContent = movieChannels.filter(ch => {
       const group = ch.group || '';
       const nameLower = ch.name.toLowerCase();
-      const isArabicGroup = /عربي/.test(group) || /arabic/i.test(group);
+      // Match: "AR MOV 2025", "Arabic Movies 2026", groups with عربي
+      const isArabicGroup = /عربي/.test(group) || /arabic/i.test(group) || /^ar\s+(mov|movies?)/i.test(group);
       const hasYear = /202[56]/.test(group);
       const isExcluded = nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere') || ch.name.includes('جرس إنذار');
       return isArabicGroup && hasYear && !isSportsContent(ch) && !isExcluded;
@@ -366,12 +372,15 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     const content = movieChannels.filter(ch => {
       const group = ch.group || '';
       const nameLower = ch.name.toLowerCase();
+      // Match: "EN MOV 2025", "English Movies 2026", "Foreign Subtitled 2025", groups with مترجمة/اجنبي
       const isEnglishForeignGroup = /english/i.test(group) || 
         /foreign/i.test(group) || 
+        /^en\s+(mov|movies?)/i.test(group) ||
+        /subtitled/i.test(group) ||
         /مترجمة/.test(group) ||
         /اجنبي/.test(group) || 
         /أجنبي/.test(group);
-      const isArabicGroup = /عربي/.test(group) || (/arabic/i.test(group) && !/en\s+arabic/i.test(group));
+      const isArabicGroup = /عربي/.test(group) || (/arabic/i.test(group) && !/en\s+arabic/i.test(group)) || /^ar\s+(mov|movies?)/i.test(group);
       const hasYear = /202[456]/.test(group);
       const isExcluded = nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere');
       return isEnglishForeignGroup && !isArabicGroup && hasYear && !isSportsContent(ch) && !isExcluded;
