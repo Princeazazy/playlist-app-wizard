@@ -823,6 +823,11 @@ export const MiMediaGrid = ({
   }, [items]);
 
   const groups = useMemo(() => {
+    // Debug: log all raw group names for movies
+    const allRawGroups = new Set<string>();
+    items.forEach(item => allRawGroups.add(item.group || 'Uncategorized'));
+    console.log(`[MiMediaGrid ${category}] All raw groups (${allRawGroups.size}):`, Array.from(allRawGroups).sort().slice(0, 50));
+    
     // Merge groups that share the same shortened display name
     const mergedCounts = new Map<string, { count: number; firstLogo?: string; rawNames: string[]; bestPriority: number }>();
     items.forEach((item) => {
@@ -850,12 +855,14 @@ export const MiMediaGrid = ({
       }
     });
     
-    return Array.from(mergedCounts.entries())
+    const result = Array.from(mergedCounts.entries())
       .sort((a, b) => {
         if (a[1].bestPriority !== b[1].bestPriority) return a[1].bestPriority - b[1].bestPriority;
         return a[0].localeCompare(b[0]);
       })
       .map(([name, data]) => ({ name, count: data.count, firstLogo: data.firstLogo, rawNames: data.rawNames }));
+    console.log(`[MiMediaGrid ${category}] Display groups:`, result.map(g => `${g.name} (${g.count})`));
+    return result;
   }, [items, groupDisplayNameMap]);
 
   // Set selectedGroup to the first group in the sorted list if not already set
