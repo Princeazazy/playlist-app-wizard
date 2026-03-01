@@ -248,7 +248,11 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
 
   // Generic English series (with crown badge for "english series" specific)
   if ((g.includes('english') || g.includes('انجليزي')) && (g.includes('series') || g.includes('مسلسل'))) return serEnglishSeriesLogo;
+  if (g.includes('latest') && g.includes('english')) return serEnglishLogo;
   if (g.includes('english') || g.includes('انجليزي')) return serEnglishLogo;
+  
+  // Multi-Sub
+  if (g.includes('multi') && (g.includes('sub') || g.includes('lang'))) return multiLangMoviesLogo;
 
   // Regions
   if (g.includes('asia') || g.includes('asian') || g.includes('آسيا')) return serAsiaLogo;
@@ -336,6 +340,9 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   
   // Netflix
   if (g.includes('netflix') || g.includes('نتفلكس')) return enNetflixLogo;
+  
+  // Latest English movies
+  if (g.includes('latest') && g.includes('english')) return englishMoviesLogo;
   
   // Generic English movies
   if (g.includes('english') && (g.includes('mov') || g.includes('film') || g.includes('انجليزي'))) return englishMoviesLogo;
@@ -534,6 +541,7 @@ const shortenGroupName = (name: string): string => {
   if (lower.includes('english') && lower.includes('dub')) return 'English Dubbed';
   if (lower.includes('english') && lower.includes('series')) return 'English Series';
   if (lower.includes('english') && (lower.includes('mov') || lower.includes('film'))) return 'English Movies';
+  if (lower.includes('latest') && lower.includes('english')) return 'Latest English';
 
   // Cartoons
   if (lower.includes('cartoon') && lower.includes('dub')) return 'Cartoon Dubbed';
@@ -602,7 +610,7 @@ const shortenGroupName = (name: string): string => {
   if (lower.includes('3d')) return '3D';
   if (lower.includes('star wars')) return 'Star Wars';
   if (lower.includes('dc ') || lower.includes('dc-')) return 'DC Comics';
-  if (lower.includes('multi') && lower.includes('lang')) return 'Multi-Language';
+  if (lower.includes('multi') && (lower.includes('lang') || lower.includes('sub'))) return 'Multi-Sub';
   if (lower.includes('kids') || lower.includes('family')) return 'Kids & Family';
 
   // General Cleanup
