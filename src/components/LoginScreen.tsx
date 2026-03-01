@@ -44,8 +44,8 @@ export const LoginScreen = ({ onLogin }: LoginScreenProps) => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
-        <div className="flex flex-col items-center gap-4">
-          <ChromaKeyVideo src={logoVideo} className="h-36" />
+        <div className="flex flex-col items-center justify-center text-center gap-2">
+          <ChromaKeyVideo src={logoVideo} className="h-36 mx-auto" />
           <p className="text-muted-foreground text-sm">Sign in to continue</p>
         </div>
 
