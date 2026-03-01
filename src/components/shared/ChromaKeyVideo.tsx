@@ -16,10 +16,13 @@ const FRAGMENT_SHADER = `
   uniform sampler2D u_image;
   void main() {
     vec4 color = texture2D(u_image, v_texCoord);
-    // Chroma key green removal
+    // Aggressive chroma key green removal
     float greenDiff = color.g - max(color.r, color.b);
-    float alpha = 1.0 - smoothstep(0.15, 0.4, greenDiff);
-    gl_FragColor = vec4(color.rgb * alpha, alpha);
+    float alpha = 1.0 - smoothstep(0.05, 0.25, greenDiff);
+    // Desaturate any remaining green spill on edge pixels
+    float spill = max(0.0, color.g - mix(color.r, color.b, 0.5));
+    vec3 despilled = vec3(color.r, color.g - spill * 0.7, color.b);
+    gl_FragColor = vec4(despilled * alpha, alpha);
   }
 `;
 
