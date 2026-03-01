@@ -250,11 +250,11 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
 
   // Generic English series (with crown badge for "english series" specific)
   if ((g.includes('english') || g.includes('انجليزي')) && (g.includes('series') || g.includes('مسلسل'))) return serEnglishSeriesLogo;
-  if (g.includes('latest') && g.includes('english')) return serEnglishLogo;
+  if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي'))) return serEnglishLogo;
   if (g.includes('english') || g.includes('انجليزي')) return serEnglishLogo;
   
   // Multi-Sub
-  if (g.includes('multi') && (g.includes('sub') || g.includes('lang'))) return multiLangMoviesLogo;
+  if (g.includes('multi') && (g.includes('sub') || g.includes('lang')) || g.includes('ملتي') || g.includes('متعدد')) return multiLangMoviesLogo;
 
   // Regions
   if (g.includes('asia') || g.includes('asian') || g.includes('آسيا')) return serAsiaLogo;
@@ -347,7 +347,7 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return enNetflixLogo;
   
   // Latest English movies
-  if (g.includes('latest') && g.includes('english')) return englishMoviesLogo;
+  if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي'))) return englishMoviesLogo;
   
   // Generic English movies
   if (g.includes('english') && (g.includes('mov') || g.includes('film') || g.includes('انجليزي'))) return englishMoviesLogo;
@@ -356,7 +356,7 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   if (g.includes('albania') || g.includes('ألبان')) return albaniaMoviesLogo;
 
   // Multi-Language Releases
-  if (g.includes('multi') && (g.includes('lang') || g.includes('sub') || g.includes('release'))) return multiLangMoviesLogo;
+  if (g.includes('multi') && (g.includes('lang') || g.includes('sub') || g.includes('release')) || g.includes('ملتي') || g.includes('متعدد')) return multiLangMoviesLogo;
   
   // Asia
   if (g.includes('asia') || g.includes('آسيا') || g.includes('asian')) return asiaMoviesLogo;
@@ -542,11 +542,11 @@ const shortenGroupName = (name: string): string => {
   }
   if (lower.includes('foreign') && lower.includes('sub')) return 'Foreign Subtitled';
   
-  // English
+  // English - "Latest English" must come BEFORE generic English checks
+  if (lower.includes('latest') && lower.includes('english') || lower.includes('أحدث') && lower.includes('انجليزي')) return 'Latest English';
   if (lower.includes('english') && lower.includes('dub')) return 'English Dubbed';
   if (lower.includes('english') && lower.includes('series')) return 'English Series';
   if (lower.includes('english') && (lower.includes('mov') || lower.includes('film'))) return 'English Movies';
-  if (lower.includes('latest') && lower.includes('english')) return 'Latest English';
 
   // Cartoons
   if (lower.includes('cartoon') && lower.includes('dub')) return 'Cartoon Dubbed';
@@ -616,7 +616,7 @@ const shortenGroupName = (name: string): string => {
   if (lower.includes('3d')) return '3D';
   if (lower.includes('star wars')) return 'Star Wars';
   if (lower.includes('dc ') || lower.includes('dc-')) return 'DC Comics';
-  if (lower.includes('multi') && (lower.includes('lang') || lower.includes('sub'))) return 'Multi-Sub';
+  if (lower.includes('multi') && (lower.includes('lang') || lower.includes('sub')) || lower.includes('ملتي') || lower.includes('متعدد')) return 'Multi-Sub';
   if (lower.includes('kids') || lower.includes('family')) return 'Kids & Family';
 
   // General Cleanup
