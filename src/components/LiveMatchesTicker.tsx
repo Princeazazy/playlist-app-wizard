@@ -65,17 +65,13 @@ export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatch
     if (!channelNames.length) return [];
     
     const matched: Channel[] = [];
+    const seen = new Set<string>();
     for (const chName of channelNames) {
-      const normalized = chName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
       for (const sportsCh of sportsChannels) {
-        const sportNorm = sportsCh.name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-        if (
-          sportNorm.includes(normalized) || 
-          normalized.includes(sportNorm) ||
-          // Match common patterns like "bein sports 1" ↔ "BEIN SPORTS 1 FHD"
-          channelFuzzyMatch(chName, sportsCh.name)
-        ) {
+        if (seen.has(sportsCh.id)) continue;
+        if (channelFuzzyMatch(chName, sportsCh.name)) {
           matched.push(sportsCh);
+          seen.add(sportsCh.id);
         }
       }
     }
@@ -83,32 +79,48 @@ export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatch
   }, [sportsChannels]);
 
   const channelFuzzyMatch = (broadcastName: string, channelName: string): boolean => {
-    const b = broadcastName.toLowerCase();
-    const c = channelName.toLowerCase();
+    const b = broadcastName.toLowerCase().trim();
+    const c = channelName.toLowerCase().trim();
     
-    // Extract key identifiers
+    // beIN Sports with specific number
     const beinMatch = b.match(/bein\s*sports?\s*(?:hd\s*)?(\d+)/i);
     const cBeinMatch = c.match(/bein\s*sports?\s*(\d+)/i);
     if (beinMatch && cBeinMatch && beinMatch[1] === cBeinMatch[1]) return true;
     
-    // MBC Action
-    if (b.includes('mbc action') && c.includes('mbc') && c.includes('action')) return true;
+    // beIN Sports without number (generic) - only match generic bein channels
+    if (/^bein\s*sports?\s*(?:hd)?$/i.test(b.trim()) && /bein\s*sport/i.test(c)) return true;
     
-    // On Sport
-    if (b.includes('أون سبورت') || b.includes('on sport')) {
-      const num = b.match(/(\d+)/);
-      if (num && c.includes('on') && c.includes('sport') && c.includes(num[1])) return true;
-      if (!num && c.includes('on') && c.includes('sport')) return true;
+    // On Sport / أون سبورت with number
+    const onSportNum = b.match(/(?:أون\s*سبورت|on\s*sport)\s*(\d+)/);
+    if (onSportNum) {
+      const cOnSport = c.match(/on\s*sport\s*(\d+)/i);
+      if (cOnSport && cOnSport[1] === onSportNum[1]) return true;
+      return false;
+    }
+    if ((b.includes('أون سبورت') || /^on\s*sport$/i.test(b)) && /on\s*sport/i.test(c)) return true;
+    
+    // SSC with number
+    const sscNum = b.match(/ssc\s*(\d+)/i);
+    if (sscNum) {
+      const cSsc = c.match(/ssc\s*(\d+)/i);
+      if (cSsc && cSsc[1] === sscNum[1]) return true;
+      return false;
     }
     
-    // SSC
-    if (b.includes('ssc') && c.includes('ssc')) return true;
-    
-    // Shahid
+    // Shahid VIP
     if ((b.includes('شاهد') || b.includes('shahid')) && (c.includes('shahid') || c.includes('شاهد'))) return true;
     
     // Starzplay
     if (b.includes('starzplay') && c.includes('starz')) return true;
+    
+    // MBC Action
+    if (b.includes('mbc action') && c.includes('mbc') && c.includes('action')) return true;
+    
+    // Abu Dhabi Sports
+    if ((b.includes('أبوظبي') || b.includes('abu dhabi')) && b.includes('sport') && c.includes('abu') && c.includes('dhabi')) return true;
+    
+    // Dubai Sport
+    if ((b.includes('دبي') || b.includes('dubai')) && b.includes('sport') && c.includes('dubai') && c.includes('sport')) return true;
     
     return false;
   };
@@ -217,11 +229,16 @@ const MatchCard = ({ match, isSelected, onSelect }: {
           : 'bg-card/80 border-border/30 hover:border-border/60 hover:bg-card'}
       `}
     >
-      {/* Live indicator */}
+      {/* Status indicator */}
       {isLive && (
         <div className="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/20">
           <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
           <span className="text-[10px] font-bold text-red-400">LIVE</span>
+        </div>
+      )}
+      {match.status === 'finished' && (
+        <div className="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-muted/60">
+          <span className="text-[10px] font-bold text-muted-foreground">FT</span>
         </div>
       )}
 
