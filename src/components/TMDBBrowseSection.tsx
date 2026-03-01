@@ -362,6 +362,22 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     }).slice(0, 24);
   }, [channels]);
 
+  const englishMovies = useMemo(() => {
+    const content = channels.filter(ch => {
+      if (ch.type !== 'movies') return false;
+      const group = ch.group || '';
+      const groupLower = group.toLowerCase();
+      const hasEnglishKeyword = groupLower.includes('english') || groupLower.includes('en ');
+      const hasYear = group.includes('2026') || group.includes('2025') || group.includes('2024');
+      return hasEnglishKeyword && hasYear && !isSportsContent(ch);
+    });
+    return content.sort((a, b) => {
+      const yearA = a.group?.includes('2026') ? 3 : a.group?.includes('2025') ? 2 : 1;
+      const yearB = b.group?.includes('2026') ? 3 : b.group?.includes('2025') ? 2 : 1;
+      return yearB - yearA;
+    }).slice(0, 24);
+  }, [channels]);
+
   useEffect(() => {
     const loadContent = async () => {
       const [trendingData, moviesData, tvData] = await Promise.all([
@@ -415,6 +431,10 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
         
         {arabicMovies.length > 0 && (
           <PlaylistRow title="Latest Arabic Movies" icon={Film} channels={arabicMovies} onChannelSelect={onChannelSelect} />
+        )}
+
+        {englishMovies.length > 0 && (
+          <PlaylistRow title="Latest English Movies" icon={Film} channels={englishMovies} onChannelSelect={onChannelSelect} />
         )}
         
         <CategoryRow title="Trending Now" icon={TrendingUp} items={trending} onSelectItem={onSelectItem} loading={loadingState.trending} />
