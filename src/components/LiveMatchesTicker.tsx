@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Tv, Radio, Trophy, Clock, Loader2 } from 'lucide-react';
+import { Tv, Radio, Trophy, Clock, Loader2, CalendarDays } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Channel } from '@/hooks/useIPTV';
 
@@ -15,6 +15,7 @@ interface Match {
   statusText: string;
   channels: string[];
   league: string;
+  date: string;
 }
 
 interface LiveMatchesTickerProps {
@@ -125,6 +126,34 @@ export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatch
     return false;
   };
 
+  const visibleMatches = matches.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
+
+  // Compute the date label for the current page's matches
+  const currentDateLabel = useMemo(() => {
+    if (visibleMatches.length === 0) return '';
+    const matchDate = visibleMatches[0].date;
+    if (!matchDate) return "Today's Matches";
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const [y, m, d] = matchDate.split('-').map(Number);
+    const mDate = new Date(y, m - 1, d);
+    mDate.setHours(0, 0, 0, 0);
+    
+    if (mDate.getTime() === today.getTime()) return "Today's Matches";
+    if (mDate.getTime() === tomorrow.getTime()) return "Tomorrow's Matches";
+    if (mDate.getTime() === yesterday.getTime()) return "Yesterday's Matches";
+    return `Matches — ${matchDate}`;
+  }, [visibleMatches]);
+
   if (loading) {
     return (
       <div className="p-4 flex items-center justify-center gap-2 text-muted-foreground">
@@ -136,11 +165,6 @@ export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatch
 
   if (matches.length === 0) return null;
 
-  const visibleMatches = matches.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
-  );
-
   return (
     <div className="space-y-3">
       {/* Header */}
@@ -148,7 +172,18 @@ export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatch
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
           <Trophy className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-bold text-foreground">Today's Matches</h3>
+          <AnimatePresence mode="wait">
+            <motion.h3 
+              key={currentDateLabel}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+              className="text-lg font-bold text-foreground"
+            >
+              {currentDateLabel}
+            </motion.h3>
+          </AnimatePresence>
           <span className="text-xs text-muted-foreground">({matches.length})</span>
         </div>
         {totalPages > 1 && (
