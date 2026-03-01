@@ -368,8 +368,14 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
       const nameLower = ch.name.toLowerCase();
-      // Match English or Foreign movie groups
-      const hasEnglishKeyword = groupLower.includes('english') || groupLower.includes('foreign') || groupLower.includes('en ') || groupLower.includes('اجنبي') || groupLower.includes('أجنبي');
+      // Match English or Foreign movie groups - broad matching
+      const hasEnglishKeyword = groupLower.includes('english') || 
+        groupLower.includes('foreign') || 
+        groupLower.includes('subtitled') ||
+        groupLower.includes('اجنبي') || 
+        groupLower.includes('أجنبي') ||
+        groupLower.includes('اجنبية') ||
+        groupLower.includes('أجنبية');
       // Exclude Arabic-specific groups
       const isArabic = groupLower.includes('arabic') || groupLower.includes('عربي');
       const hasYear = group.includes('2026') || group.includes('2025') || group.includes('2024');
