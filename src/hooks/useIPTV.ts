@@ -322,7 +322,11 @@ export const useIPTV = (m3uUrl?: string) => {
       }
       
       try {
-        setLoading(true);
+        // Only show loading spinner if we have NO cached data yet
+        const hasCachedData = channels.length > 0;
+        if (!hasCachedData) {
+          setLoading(true);
+        }
         
         // Fetch all playlists in parallel
         console.log(`Fetching ${playlistUrls.length} playlist(s) in parallel...`);
@@ -348,9 +352,17 @@ export const useIPTV = (m3uUrl?: string) => {
         
         if (channelArrays.length === 0) {
           if (errors.length > 0) {
+            // If we have cached data, don't overwrite with error
+            if (hasCachedData) {
+              console.warn('Background refresh failed, keeping cached data');
+              setLoading(false);
+              return;
+            }
             throw new Error(errors.join('; '));
           }
-          loadDemoChannels();
+          if (!hasCachedData) {
+            loadDemoChannels();
+          }
           return;
         }
         
@@ -383,6 +395,13 @@ export const useIPTV = (m3uUrl?: string) => {
       } catch (err: any) {
         console.error('Error fetching playlists:', err);
         const errorMessage = err?.message || 'Failed to load channels';
+        
+        // If we have cached data, keep it and don't show error
+        if (channels.length > 0) {
+          console.log('Background refresh failed, keeping cached data');
+          setLoading(false);
+          return;
+        }
         
         if (!Capacitor.isNativePlatform()) {
           console.log('Falling back to demo channels due to error');

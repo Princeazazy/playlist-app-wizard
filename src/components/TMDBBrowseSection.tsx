@@ -346,12 +346,6 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
 
   const arabicMovies = useMemo(() => {
     const movieChannels = channels.filter(ch => ch.type === 'movies');
-    console.log(`[TMDBBrowse] Total channels: ${channels.length}, Movies: ${movieChannels.length}`);
-    if (movieChannels.length > 0) {
-      const sampleGroups = [...new Set(movieChannels.slice(0, 200).map(c => c.group))].slice(0, 10);
-      console.log(`[TMDBBrowse] Sample movie groups:`, sampleGroups);
-    }
-    
     const arabicContent = movieChannels.filter(ch => {
       const group = ch.group || '';
       const nameLower = ch.name.toLowerCase();
@@ -360,7 +354,6 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const isExcluded = nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere') || ch.name.includes('جرس إنذار');
       return isArabicGroup && hasYear && !isSportsContent(ch) && !isExcluded;
     });
-    console.log(`[TMDBBrowse] Arabic movies found: ${arabicContent.length}`);
     return arabicContent.sort((a, b) => {
       const yearA = a.group?.includes('2026') ? 2026 : 2025;
       const yearB = b.group?.includes('2026') ? 2026 : 2025;
@@ -383,7 +376,6 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const isExcluded = nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere');
       return isEnglishForeignGroup && !isArabicGroup && hasYear && !isSportsContent(ch) && !isExcluded;
     });
-    console.log(`[TMDBBrowse] English/Foreign movies found: ${content.length}`);
     return content.sort((a, b) => {
       const yearA = a.group?.includes('2026') ? 3 : a.group?.includes('2025') ? 2 : 1;
       const yearB = b.group?.includes('2026') ? 3 : b.group?.includes('2025') ? 2 : 1;
@@ -441,11 +433,6 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
         {arabicSeries.length > 0 && (
           <PlaylistRow title="Top Rated Arabic Series" icon={Tv} channels={arabicSeries} onChannelSelect={onChannelSelect} />
         )}
-        
-        {/* Debug: always show these rows with count info */}
-        <div className="text-xs text-yellow-400 px-2">
-          [DEBUG] channels={channels.length} arabicMovies={arabicMovies.length} englishMovies={englishMovies.length}
-        </div>
         
         {arabicMovies.length > 0 && (
           <PlaylistRow title="Latest Arabic Movies" icon={Film} channels={arabicMovies} onChannelSelect={onChannelSelect} />
