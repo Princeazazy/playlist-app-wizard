@@ -58,6 +58,10 @@ export const useAppNavigation = (): UseAppNavigationReturn => {
 
   const setCurrentScreen = useCallback((screen: Screen) => {
     setCurrentScreenRaw(screen);
+    if (screen === 'home') {
+      setShowMiniPlayer(false);
+      setCurrentChannel(null);
+    }
   }, []);
 
   const handleNavigate = useCallback((section: 'live' | 'movies' | 'series' | 'sports' | 'settings' | 'home') => {
