@@ -346,8 +346,8 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   // Netflix
   if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return enNetflixLogo;
   
-  // Latest English movies
-  if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي'))) return englishMoviesLogo;
+  // Latest English/Movies
+  if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي') || g.includes('movie') || g.includes('film')) || g.includes('أفلام اجنبية جديدة')) return englishMoviesLogo;
   
   // Generic English movies
   if (g.includes('english') && (g.includes('mov') || g.includes('film') || g.includes('انجليزي'))) return englishMoviesLogo;
@@ -542,8 +542,8 @@ const shortenGroupName = (name: string): string => {
   }
   if (lower.includes('foreign') && lower.includes('sub')) return 'Foreign Subtitled';
   
-  // English - "Latest English" must come BEFORE generic English checks
-  if (lower.includes('latest') && lower.includes('english') || lower.includes('أحدث') && lower.includes('انجليزي')) return 'Latest English';
+  // English - "Latest" must come BEFORE generic English checks
+  if (lower.includes('latest') && (lower.includes('english') || lower.includes('movie') || lower.includes('film')) || lower.includes('أحدث') && lower.includes('انجليزي') || lower.includes('أفلام اجنبية جديدة')) return 'Latest English';
   if (lower.includes('english') && lower.includes('dub')) return 'English Dubbed';
   if (lower.includes('english') && lower.includes('series')) return 'English Series';
   if (lower.includes('english') && (lower.includes('mov') || lower.includes('film'))) return 'English Movies';
