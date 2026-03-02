@@ -149,10 +149,10 @@ function isXtreamGetM3UUrl(url: string): boolean {
 }
 type XtreamFetchResult = { items: any[]; total: number; tooLarge?: boolean };
 
-const XTREAM_MAX_JSON_BYTES = 25 * 1024 * 1024; // 25MB safety cap per API response
-const XTREAM_MAX_ITEMS_PER_RESPONSE = 50000; // Increased: load ALL channels
-const CATEGORY_FETCH_TIMEOUT = 8000; // 8s timeout per category fetch
-const MAX_CATEGORIES_PER_TYPE = 500; // Load ALL categories - no arbitrary limit
+const XTREAM_MAX_JSON_BYTES = 40 * 1024 * 1024; // 40MB safety cap per API response
+const XTREAM_MAX_ITEMS_PER_RESPONSE = 100000; // Load ALL channels - no truncation
+const CATEGORY_FETCH_TIMEOUT = 15000; // 15s timeout per category fetch
+const MAX_CATEGORIES_PER_TYPE = 1000; // Load ALL categories
 
 function responseTooLarge(res: Response, maxBytes: number): boolean {
   const len = res.headers.get('content-length');
@@ -256,8 +256,8 @@ async function fetchXtreamLiveByCategory(
   const categoryEntries = prioritizeCategories(Array.from(categoryMap.entries()));
   const categoryIds = categoryEntries.map(([id]) => id);
 
-  // Fetch categories in parallel batches of 5
-  const batchSize = 5;
+  // Fetch categories in parallel batches of 10
+  const batchSize = 10;
   for (let i = 0; i < categoryIds.length && items.length < limit; i += batchSize) {
     const batch = categoryIds.slice(i, i + batchSize);
     
@@ -371,8 +371,8 @@ async function fetchXtreamVodByCategory(
   let total = 0;
   const categoryEntries = prioritizeCategories(Array.from(categoryMap.entries()));
 
-  // Fetch in parallel batches of 5
-  const batchSize = 5;
+  // Fetch in parallel batches of 10
+  const batchSize = 10;
   for (let i = 0; i < categoryEntries.length && items.length < limit; i += batchSize) {
     const batch = categoryEntries.slice(i, i + batchSize);
     
@@ -480,8 +480,8 @@ async function fetchXtreamSeriesByCategory(
   let total = 0;
   const categoryEntries = prioritizeCategories(Array.from(categoryMap.entries()));
 
-  // Fetch in parallel batches of 5
-  const batchSize = 5;
+  // Fetch in parallel batches of 10
+  const batchSize = 10;
   for (let i = 0; i < categoryEntries.length && items.length < limit; i += batchSize) {
     const batch = categoryEntries.slice(i, i + batchSize);
     
@@ -628,15 +628,15 @@ serve(async (req) => {
 
     const rawMaxChannels = typeof maxChannels === 'number' ? maxChannels : Number(maxChannels);
     const safeMaxChannels = Number.isFinite(rawMaxChannels)
-      ? Math.min(Math.max(rawMaxChannels, 0), 100000)
-      : 50000;
+      ? Math.min(Math.max(rawMaxChannels, 0), 200000)
+      : 100000;
 
     const stopAfterChannels = Math.min(safeMaxChannels, safeMaxReturnPerType * 3);
 
     const rawMaxBytesMB = typeof maxBytesMB === 'number' ? maxBytesMB : Number(maxBytesMB);
     const safeMaxBytesMB = Number.isFinite(rawMaxBytesMB)
-      ? Math.min(Math.max(rawMaxBytesMB, 1), 50)
-      : 40;
+      ? Math.min(Math.max(rawMaxBytesMB, 1), 60)
+      : 50;
 
     console.log('Processing URL:', url);
 
