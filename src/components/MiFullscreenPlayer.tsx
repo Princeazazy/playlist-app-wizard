@@ -13,11 +13,14 @@ import {
   FastForward,
   Subtitles,
   X,
+  Calendar,
+  Radio,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Channel } from '@/hooks/useIPTV';
 import { useWeather } from '@/hooks/useWeather';
 import { useWatchProgress, saveLastPlayed } from '@/hooks/useWatchProgress';
+import { EPGGuide } from './EPGGuide';
 import { WeatherIcon } from './shared/WeatherIcon';
 
 interface MiFullscreenPlayerProps {
@@ -81,6 +84,11 @@ export const MiFullscreenPlayer = ({
   const [showPreview, setShowPreview] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Now Playing banner state
+  const [showNowPlaying, setShowNowPlaying] = useState(true);
+  const [showEPGOverlay, setShowEPGOverlay] = useState(false);
+  const nowPlayingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const isVOD = channel.group?.toLowerCase().includes('movie') ||
     channel.group?.toLowerCase().includes('series') ||
@@ -449,6 +457,30 @@ export const MiFullscreenPlayer = ({
     if (isVOD && hasSavedProgress && !hasResumed) setShowResumePrompt(true);
   }, [isVOD, hasSavedProgress, hasResumed]);
 
+  // Now Playing banner: show for 5 seconds on channel load, then fade out
+  useEffect(() => {
+    setShowNowPlaying(true);
+    if (nowPlayingTimerRef.current) clearTimeout(nowPlayingTimerRef.current);
+    nowPlayingTimerRef.current = setTimeout(() => setShowNowPlaying(false), 5000);
+    return () => { if (nowPlayingTimerRef.current) clearTimeout(nowPlayingTimerRef.current); };
+  }, [channel.id]);
+
+  // Generate a mock "currently playing" program name for the channel
+  const currentProgram = useMemo(() => {
+    const hour = new Date().getHours();
+    const programsByTime: Record<number, string> = {
+      0: 'Late Night Cinema', 1: 'Night Owl Show', 2: 'Midnight Classics',
+      3: 'Night Replay', 4: 'Early Bird News', 5: 'Morning Prayers',
+      6: 'Sunrise News', 7: 'Breakfast Show', 8: 'Morning Talk',
+      9: 'Daily Magazine', 10: 'Morning Movie', 11: 'Lifestyle Hour',
+      12: 'Midday News', 13: 'Afternoon Drama', 14: 'Documentary Hour',
+      15: 'Afternoon Show', 16: 'Kids Time', 17: 'Evening Magazine',
+      18: 'Evening News', 19: 'Prime Time Show', 20: 'Prime Time Movie',
+      21: 'Drama Series', 22: 'Late Show', 23: 'Night News',
+    };
+    return programsByTime[hour] || 'Live Broadcast';
+  }, [channel.id]);
+
   const handleResume = useCallback(() => {
     const video = videoRef.current;
     if (video && savedPosition > 0) video.currentTime = savedPosition;
@@ -661,6 +693,50 @@ export const MiFullscreenPlayer = ({
         </div>
       )}
 
+      {/* Now Playing Banner - auto-dismisses after 5 seconds */}
+      {!isVOD && showNowPlaying && !error && (
+        <div 
+          className="absolute top-20 left-1/2 -translate-x-1/2 z-20 animate-in fade-in slide-in-from-top-4 duration-500"
+          style={{ animation: showNowPlaying ? 'fadeSlideIn 0.5s ease-out' : 'fadeSlideOut 0.5s ease-in forwards' }}
+        >
+          <div className="bg-black/80 backdrop-blur-xl rounded-2xl border border-white/10 px-8 py-5 min-w-[320px] max-w-[500px] shadow-2xl">
+            <div className="flex items-center gap-4">
+              {/* Live pulse */}
+              <div className="relative flex-shrink-0">
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <div className="absolute inset-0 w-3 h-3 rounded-full bg-red-500 animate-ping" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white/50 text-xs font-medium uppercase tracking-wider mb-1">Now Playing</p>
+                <h3 className="text-white text-lg font-bold truncate">{channel.name}</h3>
+                <p className="text-primary text-sm font-medium mt-0.5">{currentProgram}</p>
+                <p className="text-white/40 text-xs mt-1">{channel.group || 'Live TV'}</p>
+              </div>
+              {channel.logo && (
+                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white/5">
+                  <img src={channel.logo} alt="" className="w-full h-full object-contain p-1" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EPG Guide Overlay */}
+      {showEPGOverlay && (
+        <div className="absolute inset-0 z-30 bg-background/95 backdrop-blur-sm overflow-auto" onClick={(e) => e.stopPropagation()}>
+          <EPGGuide
+            channels={allChannels.length > 0 ? allChannels : [channel]}
+            currentChannel={channel}
+            onChannelSelect={(ch) => {
+              setShowEPGOverlay(false);
+              onSelectChannel?.(ch);
+            }}
+            onClose={() => setShowEPGOverlay(false)}
+          />
+        </div>
+      )}
+
       {/* Controls Overlay - Mi Player Pro Style */}
       <div className={`absolute inset-0 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         {/* Top Left - Channel Logo */}
@@ -749,7 +825,13 @@ export const MiFullscreenPlayer = ({
           {/* Badges */}
           <div className="flex items-center gap-2 mb-2">
             <span className="px-3 py-1 bg-primary text-primary-foreground text-sm font-semibold rounded">Live</span>
-            <span className="px-3 py-1 bg-white/20 text-white text-sm font-medium rounded">EPG</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowEPGOverlay(true); }}
+              className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded flex items-center gap-1.5 transition-colors"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              TV Guide
+            </button>
           </div>
 
           {/* Title */}
