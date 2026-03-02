@@ -37,6 +37,11 @@ const Index = () => {
     setShowIntro(false);
   }, []);
 
+  const handleLogin = useCallback(() => {
+    nav.handleNavigate('home');
+    setAuthenticated(true);
+  }, [nav]);
+
   // Count channels by type AND build typed maps in a single pass
   const { liveCount, movieCount, seriesCount, sportsCount, channelsByType } = useMemo(() => {
     let live = 0, movies = 0, series = 0, sports = 0;
@@ -207,7 +212,7 @@ const Index = () => {
 
   // Then require login
   if (!authenticated) {
-    return <LoginScreen onLogin={() => setAuthenticated(true)} />;
+    return <LoginScreen onLogin={handleLogin} />;
   }
 
   // Error state
