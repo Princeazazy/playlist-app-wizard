@@ -150,9 +150,9 @@ function isXtreamGetM3UUrl(url: string): boolean {
 type XtreamFetchResult = { items: any[]; total: number; tooLarge?: boolean };
 
 const XTREAM_MAX_JSON_BYTES = 40 * 1024 * 1024; // 40MB safety cap per API response
-const XTREAM_MAX_ITEMS_PER_RESPONSE = 100000; // Load ALL channels - no truncation
-const CATEGORY_FETCH_TIMEOUT = 15000; // 15s timeout per category fetch
-const MAX_CATEGORIES_PER_TYPE = 1000; // Load ALL categories
+const XTREAM_MAX_ITEMS_PER_RESPONSE = 25000; // Safe limit to avoid CPU timeout
+const CATEGORY_FETCH_TIMEOUT = 10000; // 10s timeout per category fetch
+const MAX_CATEGORIES_PER_TYPE = 500; // Reasonable category cap
 
 function responseTooLarge(res: Response, maxBytes: number): boolean {
   const len = res.headers.get('content-length');
@@ -256,8 +256,8 @@ async function fetchXtreamLiveByCategory(
   const categoryEntries = prioritizeCategories(Array.from(categoryMap.entries()));
   const categoryIds = categoryEntries.map(([id]) => id);
 
-  // Fetch categories in parallel batches of 10
-  const batchSize = 10;
+  // Fetch categories in parallel batches of 5
+  const batchSize = 5;
   for (let i = 0; i < categoryIds.length && items.length < limit; i += batchSize) {
     const batch = categoryIds.slice(i, i + batchSize);
     
@@ -371,8 +371,8 @@ async function fetchXtreamVodByCategory(
   let total = 0;
   const categoryEntries = prioritizeCategories(Array.from(categoryMap.entries()));
 
-  // Fetch in parallel batches of 10
-  const batchSize = 10;
+  // Fetch in parallel batches of 5
+  const batchSize = 5;
   for (let i = 0; i < categoryEntries.length && items.length < limit; i += batchSize) {
     const batch = categoryEntries.slice(i, i + batchSize);
     
@@ -480,8 +480,8 @@ async function fetchXtreamSeriesByCategory(
   let total = 0;
   const categoryEntries = prioritizeCategories(Array.from(categoryMap.entries()));
 
-  // Fetch in parallel batches of 10
-  const batchSize = 10;
+  // Fetch in parallel batches of 5
+  const batchSize = 5;
   for (let i = 0; i < categoryEntries.length && items.length < limit; i += batchSize) {
     const batch = categoryEntries.slice(i, i + batchSize);
     
@@ -661,11 +661,10 @@ serve(async (req) => {
       const limit = safeMaxReturnPerType;
       console.log(`Using limit: ${limit} per content type (to prevent memory overflow)`);
 
-      const [liveResult, moviesResult, seriesResult] = await Promise.all([
-        fetchXtreamLive(baseUrl, username, password, limit),
-        fetchXtreamMovies(baseUrl, username, password, limit),
-        fetchXtreamSeries(baseUrl, username, password, limit),
-      ]);
+      // Fetch content types SEQUENTIALLY to avoid CPU spike
+      const liveResult = await fetchXtreamLive(baseUrl, username, password, limit);
+      const moviesResult = await fetchXtreamMovies(baseUrl, username, password, limit);
+      const seriesResult = await fetchXtreamSeries(baseUrl, username, password, limit);
 
       const returnedChannels = [
         ...liveResult.items,
@@ -721,11 +720,10 @@ serve(async (req) => {
       const { baseUrl, username, password } = xtreamCreds;
       const limit = safeMaxReturnPerType;
 
-      const [liveResult, moviesResult, seriesResult] = await Promise.all([
-        fetchXtreamLive(baseUrl, username, password, limit),
-        fetchXtreamMovies(baseUrl, username, password, limit),
-        fetchXtreamSeries(baseUrl, username, password, limit),
-      ]);
+      // Sequential to avoid CPU spike
+      const liveResult = await fetchXtreamLive(baseUrl, username, password, limit);
+      const moviesResult = await fetchXtreamMovies(baseUrl, username, password, limit);
+      const seriesResult = await fetchXtreamSeries(baseUrl, username, password, limit);
 
       const returnedChannels = [
         ...liveResult.items,
