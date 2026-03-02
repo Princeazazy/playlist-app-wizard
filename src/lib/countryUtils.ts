@@ -181,15 +181,15 @@ const ARABIC_COUNTRIES: Record<string, CountryInfo> = {
   'khaliji': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
   'gulf': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
   // Islamic/Religious channels - right after Arabic countries
-  'islamic': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
-  'islam': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
-  'إسلامي': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
-  'إسلامية': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
-  'اسلامي': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
-  'اسلامية': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
-  'quran': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
-  'قرآن': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
-  'religious': { name: 'Islamic', code: 'islamic', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 22 },
+  'islamic': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
+  'islam': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
+  'إسلامي': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
+  'إسلامية': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
+  'اسلامي': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
+  'اسلامية': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
+  'quran': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
+  'قرآن': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
+  'religious': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
 };
 
 // USA (priority 30 - after Arabic services)
