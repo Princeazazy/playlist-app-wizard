@@ -399,6 +399,7 @@ const Index = () => {
 
   return (
     <>
+      <BackgroundMusic src="/audio/cosmic-ambient.mp3" autoPlay={true} defaultVolume={0.25} />
       {renderScreen()}
 
 
