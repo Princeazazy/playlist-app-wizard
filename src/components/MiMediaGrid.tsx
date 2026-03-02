@@ -97,7 +97,7 @@ import historicalBiographyLogo from '@/assets/category-logos/historical-biograph
 import warMilitaryLogo from '@/assets/category-logos/war-military.png';
 import sportsSeriesLogo from '@/assets/category-logos/sports-series.png';
 import serTvShowsLogo from '@/assets/category-logos/ser-tv-shows.png';
-import serIslamicLogo from '@/assets/category-logos/ser-islamic.png';
+import serIslamicLogo from '@/assets/category-logos/islamic-logo.png';
 import serEnglish2022SubLogo from '@/assets/category-logos/ser-english-2022-sub.png';
 import serForeign2023Logo from '@/assets/category-logos/ser-foreign-2023.png';
 import serForeign2026Logo from '@/assets/category-logos/ser-foreign-2026.png';
