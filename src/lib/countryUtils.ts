@@ -191,11 +191,11 @@ const ARABIC_COUNTRIES: Record<string, CountryInfo> = {
   'قرآن': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
   'religious': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
   // News channels - right after Islamic
-  'news': { name: 'News', code: 'news', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/DW_News_Logo_2022.svg/120px-DW_News_Logo_2022.svg.png', priority: 23 },
-  'اخبار': { name: 'News', code: 'news', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/DW_News_Logo_2022.svg/120px-DW_News_Logo_2022.svg.png', priority: 23 },
-  'الاخبارية': { name: 'News', code: 'news', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/DW_News_Logo_2022.svg/120px-DW_News_Logo_2022.svg.png', priority: 23 },
-  'أخبار': { name: 'News', code: 'news', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/DW_News_Logo_2022.svg/120px-DW_News_Logo_2022.svg.png', priority: 23 },
-  'الأخبارية': { name: 'News', code: 'news', flagUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/DW_News_Logo_2022.svg/120px-DW_News_Logo_2022.svg.png', priority: 23 },
+  'news': { name: 'News', code: 'news', flagUrl: '/images/news-logo.png', priority: 23 },
+  'اخبار': { name: 'News', code: 'news', flagUrl: '/images/news-logo.png', priority: 23 },
+  'الاخبارية': { name: 'News', code: 'news', flagUrl: '/images/news-logo.png', priority: 23 },
+  'أخبار': { name: 'News', code: 'news', flagUrl: '/images/news-logo.png', priority: 23 },
+  'الأخبارية': { name: 'News', code: 'news', flagUrl: '/images/news-logo.png', priority: 23 },
 };
 
 // USA (priority 30 - after Arabic services)
