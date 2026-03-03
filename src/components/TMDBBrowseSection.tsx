@@ -72,6 +72,22 @@ const PlaylistCard = ({ channel, onClick, tmdbPoster }: { channel: Channel; onCl
   const yearMatch = channel.name.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? yearMatch[0] : null;
   const posterUrl = tmdbPoster || channel.logo;
+
+  // Detect language/type badge from group name
+  const getBadge = () => {
+    const group = (channel.group || '').toLowerCase();
+    if (/عربي|arabic|^ar\s|مصر|خليج|مغرب/i.test(channel.group || '')) return { label: 'Arabic', color: 'bg-emerald-500/80' };
+    if (/french|français|^fr\s/i.test(group)) return { label: 'French', color: 'bg-blue-500/80' };
+    if (/turkish|ترك/i.test(group)) return { label: 'Turkish', color: 'bg-red-500/80' };
+    if (/korean|كور/i.test(group)) return { label: 'Korean', color: 'bg-pink-500/80' };
+    if (/indian|hindi|bollywood|هند/i.test(group)) return { label: 'Indian', color: 'bg-orange-500/80' };
+    if (/german|deutsch/i.test(group)) return { label: 'German', color: 'bg-yellow-600/80' };
+    if (/asia/i.test(group)) return { label: 'Asian', color: 'bg-teal-500/80' };
+    if (/cartoon|kids|enfants|أطفال|disney|animation|children/i.test(group)) return { label: 'Family', color: 'bg-purple-500/80' };
+    if (/english|foreign|^en\s|مترجم|اجنبي|أجنبي|subtitled|vod/i.test(group)) return { label: 'English', color: 'bg-sky-500/80' };
+    return { label: 'VOD', color: 'bg-slate-500/80' };
+  };
+  const badge = getBadge();
   
   return (
     <button
@@ -105,8 +121,8 @@ const PlaylistCard = ({ channel, onClick, tmdbPoster }: { channel: Channel; onCl
           </div>
         </div>
         
-        <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-emerald-500/80 backdrop-blur-sm">
-          <span className="text-[10px] font-bold text-white uppercase">Arabic</span>
+        <div className={`absolute top-2 left-2 px-2 py-0.5 rounded ${badge.color} backdrop-blur-sm`}>
+          <span className="text-[10px] font-bold text-white uppercase">{badge.label}</span>
         </div>
       </div>
       
@@ -450,11 +466,18 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     const movieChannels = channels.filter(ch => ch.type === 'movies');
     const content = movieChannels.filter(ch => {
       const group = (ch.group || '').toLowerCase();
-      const name = (ch.name || '').toLowerCase();
-      const isFamily = /family|kids|enfants|cartoon|أطفال|عائل|disney|pixar|animation|children/i.test(group) ||
-                       /family|kids|enfants|cartoon|أطفال|عائل|disney|pixar|animation|children/i.test(name);
-      return isFamily && !isSportsContent(ch);
+      // Pull specifically from Cartoon groups in movies
+      const isCartoon = /cartoon|كرتون|رسوم/i.test(group);
+      return isCartoon && !isSportsContent(ch);
     });
+    // Fallback: if no cartoon group found, try broader family/kids/disney keywords
+    if (content.length === 0) {
+      const fallback = movieChannels.filter(ch => {
+        const group = (ch.group || '').toLowerCase();
+        return /family|kids|enfants|أطفال|disney|pixar|animation|children/i.test(group) && !isSportsContent(ch);
+      });
+      return fallback.slice(0, 30);
+    }
     return content.slice(0, 30);
   }, [channels]);
 
