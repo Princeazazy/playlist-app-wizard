@@ -87,6 +87,7 @@ import serForeignSubLogo from '@/assets/category-logos/ser-foreign-sub.png';
 import serDisneyLogo from '@/assets/category-logos/ser-disney.png';
 import serEnglishDubbedLogo from '@/assets/category-logos/ser-english-dubbed.png';
 import ramadanSeriesLogo from '@/assets/category-logos/ramadan-series.png';
+import serRamadanPre2026Logo from '@/assets/category-logos/ser-ramadan-pre2026.png';
 import koreanDramaLogo from '@/assets/category-logos/korean-drama.png';
 import animeSeriesLogo from '@/assets/category-logos/anime-series.png';
 import actionAdventureLogo from '@/assets/category-logos/action-adventure.png';
@@ -128,14 +129,18 @@ import serGermanVodLogo from '@/assets/category-logos/ser-german-vod.png';
 const getSeriesCategoryLogo = (groupName: string): string | null => {
   const g = (groupName + ' ' + translateGroupName(groupName)).toLowerCase();
   
-  // Ramadan - Specific Regions
-  if (g.includes('ramadan') && (g.includes('egypt') || g.includes('misr') || g.includes('مصر') || g.includes('مصري'))) return serRamadanEgyptian2026Logo;
-  if (g.includes('ramadan') && (g.includes('gulf') || g.includes('khaleej') || g.includes('خليج'))) return serRamadanGulf2026Logo;
-  if (g.includes('ramadan') && (g.includes('levant') || g.includes('cham') || g.includes('shami') || g.includes('shamy') || g.includes('شامي') || g.includes('شام') || g.includes('سوريا') || g.includes('syria') || g.includes('lebanon') || g.includes('لبنان'))) return serRamadanLevantine2026Logo;
-  if (g.includes('ramadan') && (g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب') || g.includes('tunisia') || g.includes('تونس') || g.includes('algeria') || g.includes('جزائر'))) return serRamadanMaghreb2026Logo;
+  // Ramadan - Specific Regions (2026 only)
+  const isRamadan = g.includes('ramadan') || g.includes('رمضان');
+  const is2026 = g.includes('2026');
   
-  // Generic Ramadan Fallback
-  if (g.includes('ramadan') || g.includes('رمضان')) return ramadanSeriesLogo;
+  if (isRamadan && is2026 && (g.includes('egypt') || g.includes('misr') || g.includes('مصر') || g.includes('مصري'))) return serRamadanEgyptian2026Logo;
+  if (isRamadan && is2026 && (g.includes('gulf') || g.includes('khaleej') || g.includes('خليج'))) return serRamadanGulf2026Logo;
+  if (isRamadan && is2026 && (g.includes('levant') || g.includes('cham') || g.includes('shami') || g.includes('shamy') || g.includes('شامي') || g.includes('شام') || g.includes('سوريا') || g.includes('syria') || g.includes('lebanon') || g.includes('لبنان'))) return serRamadanLevantine2026Logo;
+  if (isRamadan && is2026 && (g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب') || g.includes('tunisia') || g.includes('تونس') || g.includes('algeria') || g.includes('جزائر'))) return serRamadanMaghreb2026Logo;
+  if (isRamadan && is2026) return ramadanSeriesLogo;
+  
+  // Ramadan Pre-2026 Fallback
+  if (isRamadan) return serRamadanPre2026Logo;
   
   // Now Showing / Currently Airing
   if (g.includes('تعرض حاليا') || g.includes('now showing') || g.includes('currently') || g.includes('airing')) return serNowShowingLogo;
@@ -493,12 +498,18 @@ const shortenGroupName = (name: string): string => {
     console.log('[SHORTEN DEBUG] Songs candidate:', { name, clean, lower, nameLower });
   }
   
-  // Ramadan specific regions
-  if ((lower.includes('ramadan') || nameLower.includes('رمضان')) && (lower.includes('maghreb') || lower.includes('morocco') || nameLower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria'))) return 'Ramadan 2026 Morocco';
-  if ((lower.includes('ramadan') || nameLower.includes('رمضان')) && (lower.includes('egypt') || nameLower.includes('مصر') || nameLower.includes('مصري'))) return 'Ramadan 2026 Egyptian';
-  if ((lower.includes('ramadan') || nameLower.includes('رمضان')) && (lower.includes('gulf') || lower.includes('khaleej') || nameLower.includes('خليج'))) return 'Ramadan 2026 Gulf';
-  if ((lower.includes('ramadan') || nameLower.includes('رمضان')) && (lower.includes('levant') || lower.includes('sham') || nameLower.includes('شام') || nameLower.includes('سوري') || nameLower.includes('لبنان'))) return 'Ramadan 2026 Levantine';
-  if (lower.includes('ramadan') || nameLower.includes('رمضان')) return 'Ramadan 2026';
+  // Ramadan specific regions - check for 2026 explicitly
+  const isRamadanGroup = lower.includes('ramadan') || nameLower.includes('رمضان');
+  const is2026Group = lower.includes('2026') || nameLower.includes('2026');
+  
+  if (isRamadanGroup && is2026Group) {
+    if (lower.includes('maghreb') || lower.includes('morocco') || nameLower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria')) return 'Ramadan 2026 Morocco';
+    if (lower.includes('egypt') || nameLower.includes('مصر') || nameLower.includes('مصري')) return 'Ramadan 2026 Egyptian';
+    if (lower.includes('gulf') || lower.includes('khaleej') || nameLower.includes('خليج')) return 'Ramadan 2026 Gulf';
+    if (lower.includes('levant') || lower.includes('sham') || nameLower.includes('شام') || nameLower.includes('سوري') || nameLower.includes('لبنان')) return 'Ramadan 2026 Levantine';
+    return 'Ramadan 2026';
+  }
+  if (isRamadanGroup) return 'Ramadan Pre-2026';
   
   // Now Showing
   if (lower.includes('now showing') || lower.includes('currently') || nameLower.includes('تعرض حاليا')) return 'Now Showing';
@@ -707,9 +718,8 @@ export const MiMediaGrid = ({
     
     // === 1. RAMADAN 2026 at absolute top ===
     if ((g.includes('ramadan') || groupName.includes('رمضان')) && g.includes('2026')) return 1;
-    // Other Ramadan years
-    if ((g.includes('ramadan') || groupName.includes('رمضان')) && year) return 2 + (2040 - year);
-    if (g.includes('ramadan') || groupName.includes('رمضان')) return 5;
+    // Ramadan Pre-2026 right after
+    if (g.includes('ramadan pre-2026') || ((g.includes('ramadan') || groupName.includes('رمضان')) && !g.includes('2026'))) return 5;
     
     // === 2. "Now Showing" / current content ===
     if (g.includes('now showing') || g.includes('now_showing') || groupName.includes('يعرض الآن')) return 10;
