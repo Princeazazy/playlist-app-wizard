@@ -446,14 +446,16 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     }).slice(0, 30);
   }, [channels]);
 
-  const asianMovies = useMemo(() => {
+  const familyMovies = useMemo(() => {
     const movieChannels = channels.filter(ch => ch.type === 'movies');
     const content = movieChannels.filter(ch => {
-      const group = ch.group || '';
-      const isAsian = /asia/i.test(group) || /آسي/.test(group) || /asian/i.test(group);
-      return isAsian && !isSportsContent(ch);
+      const group = (ch.group || '').toLowerCase();
+      const name = (ch.name || '').toLowerCase();
+      const isFamily = /family|kids|enfants|cartoon|أطفال|عائل|disney|pixar|animation|children/i.test(group) ||
+                       /family|kids|enfants|cartoon|أطفال|عائل|disney|pixar|animation|children/i.test(name);
+      return isFamily && !isSportsContent(ch);
     });
-    return content.slice(0, 24);
+    return content.slice(0, 30);
   }, [channels]);
 
   useEffect(() => {
@@ -515,8 +517,8 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
           <PlaylistRow title="Latest English Movies" icon={Film} channels={englishMovies} onChannelSelect={onChannelSelect} />
         )}
 
-        {asianMovies.length > 0 && (
-          <PlaylistRow title="Asian Movies" icon={Film} channels={asianMovies} onChannelSelect={onChannelSelect} />
+        {familyMovies.length > 0 && (
+          <PlaylistRow title="Most Watched Family Movies" icon={Film} channels={familyMovies} onChannelSelect={onChannelSelect} />
         )}
         
         <CategoryRow title="Trending Now" icon={TrendingUp} items={trending} onSelectItem={onSelectItem} loading={loadingState.trending} />
