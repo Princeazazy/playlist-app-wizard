@@ -404,10 +404,13 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
         /\ben\b/i.test(groupLower) ||  // "EN MOV", "VOD EN", etc.
         /subtitled/i.test(group) ||
         /sub\b/i.test(groupLower) ||    // "Foreign Sub 2025"
-        /مترجم/i.test(group) ||         // Arabic for "translated/subtitled" (both مترجمة and مترجم)
+        /مترجم/i.test(group) ||         // Arabic for "translated/subtitled"
         /اجنبي/i.test(group) ||         // Arabic for "foreign"
         /أجنبي/i.test(group) ||
-        /vod/i.test(groupLower);         // "VOD 2025", "VOD EN"
+        /latest movies/i.test(groupLower) || // "VOD | EN LATEST MOVIES"
+        /without sub/i.test(groupLower) ||   // "Vod En ( Without Subtitles )"
+        /new releases/i.test(groupLower) ||  // "MULTI LANG NEW RELEASES"
+        /multi lang/i.test(groupLower);      // "MULTI LANG 2020 AND BEYOND"
       
       // Exclude Arabic-specific groups
       const isArabicGroup = /عربي/.test(group) || 
@@ -415,22 +418,34 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
         (/arabic/i.test(group) && !/en/i.test(groupLower)) ||
         /مصر/i.test(group) ||           // Egyptian
         /خليج/i.test(group) ||          // Gulf
-        /مغرب/i.test(group);            // Maghreb
+        /مغرب/i.test(group) ||          // Maghreb
+        /أمازيغ/i.test(group) ||        // Amazigh
+        /جزائر/i.test(group) ||         // Algerian
+        /مغربي/i.test(group) ||         // Moroccan
+        /عربية/i.test(group);           // Arabic movies
+      
+      // Also exclude VOD | AR groups (Arabic VOD from second playlist)
+      const isArabicVOD = /vod\s*\|\s*ar\b/i.test(groupLower) || /vod\s*\|\s*arabic/i.test(groupLower);
       
       // Exclude non-English regional groups  
       const isRegionalGroup = /turkish/i.test(group) || /korean/i.test(group) || 
         /indian/i.test(group) || /bollywood/i.test(group) || 
         /asia/i.test(group) || /french/i.test(group) || /german/i.test(group) ||
         /ترك/i.test(group) || /كور/i.test(group) || /هند/i.test(group) ||
-        /آسي/i.test(group);
+        /آسي/i.test(group) || /albania/i.test(group) || /shqiptar/i.test(group);
       
+      // Year is preferred but not required for clearly English groups
       const hasYear = /202[3456]/.test(group);
+      const isClearlyEnglish = /\ben\b/i.test(groupLower) && (/latest|new|without sub/i.test(groupLower));
+      
       const isExcluded = nameLower.includes('ramadan premiere') || 
         nameLower.includes('رمضان premiere') ||
         /anime/i.test(group) || /cartoon/i.test(group) || /kids/i.test(group) ||
-        /sport/i.test(group) || /wwe/i.test(group) || /ufc/i.test(group);
+        /sport/i.test(group) || /wwe/i.test(group) || /ufc/i.test(group) ||
+        /music/i.test(group) || /قرآن/i.test(group) || /مسرح/i.test(group) ||
+        /dc أفلام/i.test(group) || /مارفل/i.test(group) || /نتفليكس/i.test(group);
       
-      return isEnglishForeignGroup && !isArabicGroup && !isRegionalGroup && hasYear && !isSportsContent(ch) && !isExcluded;
+      return isEnglishForeignGroup && !isArabicGroup && !isArabicVOD && !isRegionalGroup && (hasYear || isClearlyEnglish) && !isSportsContent(ch) && !isExcluded;
     });
     
     if (content.length === 0 && movieChannels.length > 0) {
