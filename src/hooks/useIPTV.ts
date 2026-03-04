@@ -347,33 +347,59 @@ export const useIPTV = (m3uUrl?: string) => {
           setLoading(true);
         }
         
-        // Fetch all playlists in parallel
-        console.log(`Fetching ${playlistUrls.length} playlist(s) in parallel...`);
-        const results = await Promise.allSettled(
-          playlistUrls.map((url, idx) => fetchSinglePlaylist(url, idx))
+        // Progressive loading: update UI as each playlist completes
+        console.log(`Fetching ${playlistUrls.length} playlist(s) progressively...`);
+        const completedArrays: Channel[][] = [];
+        const errors: string[] = [];
+        let firstResultShown = false;
+        
+        // Start all fetches in parallel but handle each as it resolves
+        const promises = playlistUrls.map((url, idx) => 
+          fetchSinglePlaylist(url, idx)
+            .then(result => {
+              console.log(`Playlist ${idx + 1}: ${result.length} channels loaded`);
+              if (result.length > 0) {
+                completedArrays.push(result);
+                
+                // Immediately update UI with what we have so far
+                let merged: Channel[];
+                if (completedArrays.length === 1) {
+                  merged = completedArrays[0];
+                } else {
+                  merged = mergeAndDeduplicate([...completedArrays]);
+                }
+                merged = merged.map((ch, i) => ({ ...ch, id: `channel-${i}` }));
+                
+                console.log(`Progressive update (${completedArrays.length}/${playlistUrls.length}):`, {
+                  live: merged.filter(c => c.type === 'live').length,
+                  movies: merged.filter(c => c.type === 'movies').length,
+                  series: merged.filter(c => c.type === 'series').length,
+                  sports: merged.filter(c => c.type === 'sports').length,
+                });
+                
+                setChannels(merged);
+                setLoading(false);
+                firstResultShown = true;
+                
+                // Cache progressively too
+                setCachedChannels(merged).catch(err => console.warn('Failed to cache:', err));
+              }
+              return result;
+            })
+            .catch(err => {
+              console.error(`Playlist ${idx + 1} failed:`, err);
+              errors.push(`Playlist ${idx + 1}: ${err?.message || 'Unknown error'}`);
+              return [] as Channel[];
+            })
         );
         
-        const channelArrays: Channel[][] = [];
-        const errors: string[] = [];
+        // Wait for all to finish
+        await Promise.all(promises);
         
-        for (let i = 0; i < results.length; i++) {
-          const result = results[i];
-          if (result.status === 'fulfilled') {
-            console.log(`Playlist ${i + 1}: ${result.value.length} channels loaded`);
-            if (result.value.length > 0) {
-              channelArrays.push(result.value);
-            }
-          } else {
-            console.error(`Playlist ${i + 1} failed:`, result.reason);
-            errors.push(`Playlist ${i + 1}: ${result.reason?.message || 'Unknown error'}`);
-          }
-        }
-        
-        if (channelArrays.length === 0) {
+        if (completedArrays.length === 0) {
           if (errors.length > 0) {
-            // If we have cached data, don't overwrite with error
             if (hasCachedData) {
-              console.warn('Background refresh failed, keeping cached data');
+              console.warn('All playlists failed, keeping cached data');
               setLoading(false);
               return;
             }
@@ -385,37 +411,12 @@ export const useIPTV = (m3uUrl?: string) => {
           return;
         }
         
-        // Merge and deduplicate all playlists
-        let merged: Channel[];
-        if (channelArrays.length === 1) {
-          merged = channelArrays[0];
-        } else {
-          console.log(`Merging ${channelArrays.length} playlists...`);
-          const totalBefore = channelArrays.reduce((sum, arr) => sum + arr.length, 0);
-          merged = mergeAndDeduplicate(channelArrays);
-          const removed = totalBefore - merged.length;
-          console.log(`Merged: ${totalBefore} total → ${merged.length} unique (${removed} duplicates removed)`);
-        }
-        
-        // Re-assign stable IDs after merge
-        merged = merged.map((ch, idx) => ({ ...ch, id: `channel-${idx}` }));
-        
-        console.log(`Final channel counts:`, {
-          live: merged.filter(c => c.type === 'live').length,
-          movies: merged.filter(c => c.type === 'movies').length,
-          series: merged.filter(c => c.type === 'series').length,
-          sports: merged.filter(c => c.type === 'sports').length,
-        });
-        
-        setChannels(merged);
-        setCachedChannels(merged).catch(err => console.warn('Failed to cache:', err));
         setError(errors.length > 0 ? `Some playlists failed: ${errors.join('; ')}` : null);
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching playlists:', err);
         const errorMessage = err?.message || 'Failed to load channels';
         
-        // If we have cached data, keep it and don't show error
         if (channels.length > 0) {
           console.log('Background refresh failed, keeping cached data');
           setLoading(false);
