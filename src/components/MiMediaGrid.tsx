@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { ChevronLeft, Search, Star, Film, User, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Menu, X, Heart, Mic, MicOff } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
@@ -831,25 +831,46 @@ export const MiMediaGrid = ({
     return false;
   };
 
+  // For Ramadan groups without a year, split channels by their individual year
+  // This ensures 2026 shows go to "Ramadan 2026 Egyptian" even if the M3U group doesn't say "2026"
+  const getEffectiveGroup = useCallback((item: Channel): string => {
+    const group = item.group || 'Uncategorized';
+    const groupLower = group.toLowerCase();
+    const nameLower = (item.group || '').toLowerCase();
+    const isRamadan = groupLower.includes('ramadan') || nameLower.includes('رمضان') || group.includes('رمضان');
+    const hasYearInGroup = /20\d{2}/.test(group) || /٢٠\d{2}/.test(group);
+    
+    if (isRamadan && !hasYearInGroup) {
+      // Group has Ramadan but no year - split by channel's individual year
+      const channelYear = item.year ? parseInt(item.year) : 0;
+      if (channelYear === 2026) {
+        // Return a virtual group with 2026 appended so shortenGroupName can detect it
+        return group + ' 2026';
+      }
+      // For older or unknown years, keep as-is (will become Pre-2026)
+    }
+    return group;
+  }, []);
+
   // Build a mapping from raw group names to shortened display names
   const groupDisplayNameMap = useMemo(() => {
     const map = new Map<string, string>();
     items.forEach((item) => {
-      const group = item.group || 'Uncategorized';
+      const group = getEffectiveGroup(item);
       if (!map.has(group) && !isIrrelevantGroup(group)) {
         map.set(group, shortenGroupName(group));
       }
     });
     return map;
-  }, [items]);
+  }, [items, getEffectiveGroup]);
 
   const groups = useMemo(() => {
     // Merge groups that share the same shortened display name
     const mergedCounts = new Map<string, { count: number; firstLogo?: string; rawNames: string[]; bestPriority: number }>();
     items.forEach((item) => {
-      const group = item.group || 'Uncategorized';
+      const group = getEffectiveGroup(item);
       if (isIrrelevantGroup(group)) return;
-      const displayName = groupDisplayNameMap.get(group) || group;
+      const displayName = groupDisplayNameMap.get(group) || shortenGroupName(group);
       const existing = mergedCounts.get(displayName);
       if (!existing) {
         mergedCounts.set(displayName, { 
@@ -877,7 +898,7 @@ export const MiMediaGrid = ({
         return a[0].localeCompare(b[0]);
       })
       .map(([name, data]) => ({ name, count: data.count, firstLogo: data.firstLogo, rawNames: data.rawNames }));
-  }, [items, groupDisplayNameMap]);
+  }, [items, groupDisplayNameMap, getEffectiveGroup]);
 
   // Set selectedGroup to the first group in the sorted list if not already set
   useEffect(() => {
@@ -897,10 +918,11 @@ export const MiMediaGrid = ({
       const nameLower = item.name.toLowerCase();
       if (nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere')) return false;
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const effectiveGroup = selectedGroup || (groups.length > 0 ? groups[0].name : 'all');
-      // Match against all raw group names that map to this display name
-      const itemDisplayName = groupDisplayNameMap.get(item.group || '') || item.group;
-      const matchesGroup = searchQuery.trim() ? true : (effectiveGroup === 'all' || matchingRawNames.includes(item.group || '') || itemDisplayName === effectiveGroup);
+      const effectiveGroupName = selectedGroup || (groups.length > 0 ? groups[0].name : 'all');
+      // Match against all raw group names that map to this display name, using effective group for Ramadan splitting
+      const itemEffectiveGroup = getEffectiveGroup(item);
+      const itemDisplayName = groupDisplayNameMap.get(itemEffectiveGroup) || shortenGroupName(itemEffectiveGroup);
+      const matchesGroup = searchQuery.trim() ? true : (effectiveGroupName === 'all' || matchingRawNames.includes(itemEffectiveGroup) || itemDisplayName === effectiveGroupName);
       const matchesFavorites = !showFavoritesOnly || favorites.has(item.id);
       return matchesSearch && matchesGroup && matchesFavorites;
     });
