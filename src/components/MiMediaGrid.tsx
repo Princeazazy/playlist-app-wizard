@@ -501,15 +501,18 @@ const shortenGroupName = (name: string): string => {
   // Ramadan specific regions - check for 2026 explicitly (check both group name variants + Arabic numerals)
   const isRamadanGroup = lower.includes('ramadan') || nameLower.includes('رمضان') || nameLower.includes('ramadan');
   const is2026Group = lower.includes('2026') || nameLower.includes('2026') || nameLower.includes('٢٠٢٦') || name.includes('2026');
+  // Check if group has an explicit OLD year (pre-2026) - only these go to Pre-2026
+  const hasOldYear = /20(1[0-9]|2[0-5])/.test(lower) || /20(1[0-9]|2[0-5])/.test(nameLower) || /20(1[0-9]|2[0-5])/.test(name);
   
-  if (isRamadanGroup && is2026Group) {
+  if (isRamadanGroup && !hasOldYear) {
+    // No old year = current Ramadan (2026), OR explicitly has 2026
     if (lower.includes('maghreb') || lower.includes('morocco') || nameLower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria')) return 'Ramadan 2026 Morocco';
     if (lower.includes('egypt') || nameLower.includes('مصر') || nameLower.includes('مصري') || lower.includes('misr')) return 'Ramadan 2026 Egyptian';
     if (lower.includes('gulf') || lower.includes('khaleej') || nameLower.includes('خليج')) return 'Ramadan 2026 Gulf';
     if (lower.includes('levant') || lower.includes('sham') || nameLower.includes('شام') || nameLower.includes('سوري') || nameLower.includes('لبنان')) return 'Ramadan 2026 Levantine';
     return 'Ramadan 2026';
   }
-  if (isRamadanGroup && !is2026Group) return 'Ramadan Pre-2026';
+  if (isRamadanGroup && hasOldYear) return 'Ramadan Pre-2026';
   
   // Now Showing
   if (lower.includes('now showing') || lower.includes('currently') || nameLower.includes('تعرض حاليا')) return 'Now Showing';
@@ -716,10 +719,10 @@ export const MiMediaGrid = ({
     const yearMatch = g.match(/\b(19|20)\d{2}\b/);
     const year = yearMatch ? parseInt(yearMatch[0]) : 0;
     
-    // === 1. RAMADAN 2026 at absolute top ===
-    if ((g.includes('ramadan') || groupName.includes('رمضان')) && (g.includes('2026') || g.includes('٢٠٢٦'))) return 1;
+    // === 1. RAMADAN 2026 at absolute top (already categorized by shortenGroupName) ===
+    if (g.includes('ramadan 2026')) return 1;
     // Ramadan Pre-2026 right after
-    if (g.includes('ramadan pre-2026') || ((g.includes('ramadan') || groupName.includes('رمضان')) && !g.includes('2026') && !g.includes('٢٠٢٦'))) return 5;
+    if (g.includes('ramadan pre-2026')) return 5;
     
     // === 2. "Now Showing" / current content ===
     if (g.includes('now showing') || g.includes('now_showing') || groupName.includes('يعرض الآن')) return 10;
