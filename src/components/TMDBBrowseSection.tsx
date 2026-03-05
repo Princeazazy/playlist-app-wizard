@@ -319,19 +319,44 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
            groupLower.includes('wwe');
   };
 
-  // Ramadan 2026 Egyptian Series
+  // Ramadan 2026 Egyptian Series — broad matching
   const ramadanShows = useMemo(() => {
     const ramadanContent = channels.filter(ch => {
       const group = ch.group || '';
+      const groupLower = group.toLowerCase();
       const nameLower = ch.name.toLowerCase();
-      const isRamadan2026Egypt = group.includes('رمضان 2026 مسلسلات مصرية') ||
-                                 (group.includes('مسلسلات مصرية') && group.includes('2026'));
+      const yearStr = ch.year || '';
+
+      // Check if it's a Ramadan group
+      const isRamadanGroup = group.includes('رمضان') || groupLower.includes('ramadan');
+      if (!isRamadanGroup) return false;
+
+      // Check if it's 2026 content (from group name OR individual item year)
+      const is2026 = group.includes('2026') || groupLower.includes('2026') || yearStr === '2026';
+      if (!is2026) return false;
+
+      // Check if it's Egyptian content — broad matching
+      const isEgyptian = group.includes('مصر') || group.includes('مصري') || group.includes('مصرية') ||
+                         groupLower.includes('egypt') || groupLower.includes('misr') ||
+                         // If the group is generic Ramadan 2026 without a region, include it (most are Egyptian)
+                         (!groupLower.includes('gulf') && !groupLower.includes('khaleej') && !group.includes('خليج') &&
+                          !groupLower.includes('levant') && !groupLower.includes('sham') && !group.includes('شام') && !group.includes('سوري') && !group.includes('لبنان') &&
+                          !groupLower.includes('maghreb') && !groupLower.includes('morocco') && !group.includes('مغرب') && !groupLower.includes('tunisia') && !groupLower.includes('algeria'));
+
       const isExcluded = nameLower.includes('ramadan premiere') || 
                          nameLower.includes('رمضان premiere') ||
                          ch.name.includes('جرس إنذار');
-      return isRamadan2026Egypt && !isSportsContent(ch) && !isExcluded;
+      return isEgyptian && !isSportsContent(ch) && !isExcluded;
     });
-    return ramadanContent.slice(0, 24);
+    // Deduplicate by name (keep first occurrence)
+    const seen = new Set<string>();
+    const deduped = ramadanContent.filter(ch => {
+      const key = ch.name.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return deduped.slice(0, 40);
   }, [channels]);
 
   const arabicSeries = useMemo(() => {
