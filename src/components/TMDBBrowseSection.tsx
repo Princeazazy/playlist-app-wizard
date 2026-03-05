@@ -349,18 +349,21 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
 
       if (!isRamadanGroup && !is2026) return false;
 
-      // Clean name for matching: strip prefixes like "AR SER |", brackets, etc.
+      // Clean name for matching: strip IPTV prefixes like "AR SER |", "EG |", etc.
       const cleanedName = ch.name
-        .replace(/^[A-Z]{2,}\s*(SER|MOV|ser|mov)?\s*\|?\s*/i, '')
+        .replace(/^[A-Z]{2,4}\s+(SER|MOV|SERIES|MOVIES?)\s*\|\s*/i, '')
+        .replace(/^[A-Z]{2,3}\s*\|\s*/i, '')
         .replace(/\s*\|.*$/, '')
         .replace(/[_\-]/g, ' ')
         .trim();
+
+      // Skip if cleaned name is too short (likely a parsing artifact)
+      if (cleanedName.length < 3) return false;
 
       // Check if this show matches any known Egyptian title
       const isEgyptian = EGYPTIAN_RAMADAN_2026_TITLES.some(title => {
         const titleLower = title.toLowerCase();
         const cleanLower = cleanedName.toLowerCase();
-        // Exact match or contains
         return cleanLower === titleLower || 
                cleanLower.includes(titleLower) || 
                titleLower.includes(cleanLower);
