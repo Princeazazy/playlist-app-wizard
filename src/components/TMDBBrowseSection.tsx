@@ -349,9 +349,10 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
 
       if (!isRamadanGroup && !is2026) return false;
 
-      // Clean name for matching: strip prefixes like "AR SER |", brackets, etc.
+      // Clean name for matching: strip IPTV prefixes like "AR SER |", "EG |", etc.
       const cleanedName = ch.name
-        .replace(/^[A-Z]{2,}\s*(SER|MOV|ser|mov)?\s*\|?\s*/i, '')
+        .replace(/^[A-Z]{2,4}\s+(SER|MOV|SERIES|MOVIES?)\s*\|\s*/i, '')
+        .replace(/^[A-Z]{2,3}\s*\|\s*/i, '')
         .replace(/\s*\|.*$/, '')
         .replace(/[_\-]/g, ' ')
         .trim();
