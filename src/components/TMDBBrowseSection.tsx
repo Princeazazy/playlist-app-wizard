@@ -357,11 +357,13 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
         .replace(/[_\-]/g, ' ')
         .trim();
 
+      // Skip if cleaned name is too short (likely a parsing artifact)
+      if (cleanedName.length < 3) return false;
+
       // Check if this show matches any known Egyptian title
       const isEgyptian = EGYPTIAN_RAMADAN_2026_TITLES.some(title => {
         const titleLower = title.toLowerCase();
         const cleanLower = cleanedName.toLowerCase();
-        // Exact match or contains
         return cleanLower === titleLower || 
                cleanLower.includes(titleLower) || 
                titleLower.includes(cleanLower);
