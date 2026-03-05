@@ -1,6 +1,5 @@
 import { useRef, useEffect, useMemo, useState, useCallback, memo } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { isNativeOrWebView } from '@/lib/platformDetect';
 import Hls from 'hls.js';
 import {
   Play,
@@ -148,7 +147,7 @@ export const MiFullscreenPlayer = ({
   }, []);
 
   const getPlayableUrl = (rawUrl: string) => {
-    const isNative = isNativeOrWebView();
+    const isNative = Capacitor.isNativePlatform();
     if (isNative) return rawUrl;
 
     if (channel.isLocal) {
@@ -178,7 +177,7 @@ export const MiFullscreenPlayer = ({
     }
 
     const originalUrl = channel.url;
-    const isNative = isNativeOrWebView();
+    const isNative = Capacitor.isNativePlatform();
     const derivedHlsUrl = !isNative && /\/live\/.+\.ts(\?.*)?$/i.test(originalUrl)
       ? originalUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
       : null;
@@ -195,8 +194,10 @@ export const MiFullscreenPlayer = ({
       const playableUrl = getPlayableUrl(sourceUrl);
       const isHls = sourceUrl.includes('.m3u8');
 
-      // Always unmuted at full volume
-      video.muted = false;
+      console.log('[Player] Attempting playback:', { sourceUrl: sourceUrl.substring(0, 80), playableUrl: playableUrl.substring(0, 80), isHls });
+
+      // Start muted to ensure autoplay works, then unmute
+      video.muted = true;
       video.volume = 1;
       video.removeAttribute('src');
       video.load();
@@ -224,10 +225,14 @@ export const MiFullscreenPlayer = ({
             setActiveSubtitleTrack(hls.subtitleTrack);
           }
           
-          video.play().catch((e) => {
-            setIsPlaying(false);
+          video.play().then(() => {
+            setIsPlaying(true);
+            // Unmute after successful play start
+            video.muted = false;
+          }).catch((e) => {
             if (e?.name === 'NotAllowedError') {
-              setError('Autoplay was blocked — tap Play to start.');
+              setIsPlaying(false);
+              setError('Tap Play to start.');
             } else {
               onFail?.();
             }
@@ -272,10 +277,13 @@ export const MiFullscreenPlayer = ({
 
       if (isHls && video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = playableUrl;
-        video.play().catch((e) => {
+        video.play().then(() => {
+          setIsPlaying(true);
+          video.muted = false;
+        }).catch((e) => {
           setIsPlaying(false);
           if (e?.name === 'NotAllowedError') {
-            setError('Autoplay was blocked — tap Play to start.');
+            setError('Tap Play to start.');
           } else {
             onFail?.();
             if (!onFail) setError('Stream failed to load.');
@@ -285,10 +293,13 @@ export const MiFullscreenPlayer = ({
       }
 
       video.src = playableUrl;
-      video.play().catch((e) => {
+      video.play().then(() => {
+        setIsPlaying(true);
+        video.muted = false;
+      }).catch((e) => {
         setIsPlaying(false);
         if (e?.name === 'NotAllowedError') {
-          setError('Autoplay was blocked — tap Play to start.');
+          setError('Tap Play to start.');
         } else {
           onFail?.();
           if (!onFail) setError('Stream failed to load.');
