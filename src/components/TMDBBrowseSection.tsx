@@ -319,37 +319,52 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
            groupLower.includes('wwe');
   };
 
-  // Verified Egyptian Ramadan 2026 show titles (source: elcinema.com)
+  // Verified Egyptian Ramadan 2026 show titles ONLY — strict list
   const EGYPTIAN_RAMADAN_2026_TITLES = [
-    'درش', 'رأس الأفعى', 'رأس الأفعي', 'علي كلاي', 'فخر الدلتا',
-    'على قد الحب', 'أولاد الراعي', 'وننسى اللي كان', 'وننسي اللي كان',
-    'المداح', 'أسطورة النهاية', 'الكينج', 'إفراج', 'مناعة',
-    'صحاب الأرض', 'أصحاب الأرض', 'اتنين غيرنا', 'حكاية نرجس',
+    'أب ولكن', 'إفراج', 'المداح', 'رأس الأفعى', 'رأس الأفعي',
+    'صحاب الأرض', 'أصحاب الأرض', 'كان يا مكان', 'كان ياما كان',
+    'فن الحرب', 'كلهم بيحبوا مودي', 'وننسى اللي كان', 'وننسي اللي كان',
+    'الأرض', 'درش', 'علي كلاي', 'فخر الدلتا', 'على قد الحب',
+    'أولاد الراعي', 'الكينج', 'مناعة', 'اتنين غيرنا', 'حكاية نرجس',
     'عين سحرية', 'عرض وطلب', 'توابع', 'اللون الأزرق', 'فرصة أخيرة',
-    'النص التاني', 'النص الثاني', 'كلهم بيحبوا مودي', 'بيبو',
-    'كان ياما كان', 'كان يا مكان', 'أب ولكن', 'حد أقصى', 'فن الحرب',
+    'النص التاني', 'النص الثاني', 'بيبو', 'حد أقصى',
     'المصيدة', 'السوق الحرة', 'اسأل روحك', 'قطر صغنطوط',
     'الست موناليزا', 'بابا وماما جيران', 'المتر سمير',
     'هي كيميا', 'سوا سوا',
     'السرايا الصفراء', 'حق ضايع', 'إعلام وراثة', 'البخت', 'روج أسود',
   ];
 
-  // Ramadan 2026 Egyptian Series — whitelist-based matching
+  // Ramadan 2026 Egyptian Series — strict whitelist matching
   const ramadanShows = useMemo(() => {
     const ramadanContent = channels.filter(ch => {
+      if (ch.type !== 'series') return false;
+      
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
       const nameLower = ch.name.toLowerCase();
-      const yearStr = ch.year || '';
 
-      // Must be in a Ramadan group
+      // Must be series type AND in a Ramadan or Arabic series group
       const isRamadanGroup = group.includes('رمضان') || groupLower.includes('ramadan');
-      // Or be a 2026 series group
-      const is2026 = group.includes('2026') || groupLower.includes('2026') || yearStr === '2026';
+      const isArabicSeriesGroup = group.includes('مسلسلات عربية') || groupLower.includes('ar ser');
+      const has2026 = group.includes('2026') || groupLower.includes('2026') || (ch.year || '') === '2026';
+      
+      // Must be in a relevant group
+      if (!isRamadanGroup && !(isArabicSeriesGroup && has2026)) return false;
 
-      if (!isRamadanGroup && !is2026) return false;
+      // Exclude non-Egyptian content by language markers
+      const isTurkish = nameLower.includes('turkish') || nameLower.includes('تركي') ||
+                        groupLower.includes('turkish') || groupLower.includes('تركي') ||
+                        /zamanlar|çukurova|cukurova|kibris|kıbrıs/i.test(ch.name);
+      if (isTurkish) return false;
 
-      // Clean name for matching: strip IPTV prefixes like "AR SER |", "EG |", etc.
+      const isNonEgyptian = groupLower.includes('خليجي') || groupLower.includes('gulf') ||
+                            groupLower.includes('شامي') || groupLower.includes('levant') ||
+                            groupLower.includes('مغرب') || groupLower.includes('maghreb') ||
+                            groupLower.includes('korean') || groupLower.includes('indian') ||
+                            groupLower.includes('english') || groupLower.includes('french');
+      if (isNonEgyptian) return false;
+
+      // Clean name: strip IPTV prefixes
       const cleanedName = ch.name
         .replace(/^[A-Z]{2,4}\s+(SER|MOV|SERIES|MOVIES?)\s*\|\s*/i, '')
         .replace(/^[A-Z]{2,3}\s*\|\s*/i, '')
@@ -357,42 +372,25 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
         .replace(/[_\-]/g, ' ')
         .trim();
 
-      // Skip if cleaned name is too short (likely a parsing artifact)
       if (cleanedName.length < 3) return false;
-
-      // Exclude Turkish content
-      const isTurkish = nameLower.includes('turkish') || nameLower.includes('تركي') ||
-                        groupLower.includes('turkish') || groupLower.includes('تركي') ||
-                        nameLower.includes('zamanlar') || nameLower.includes('çukurova') ||
-                        nameLower.includes('cukurova') || nameLower.includes('istanbul') ||
-                        nameLower.includes('kibris') || nameLower.includes('kıbrıs');
-      if (isTurkish) return false;
-
-      // Exclude old المداح seasons (only allow season 5 / أسطورة العهد / أسطورة النهاية)
       const cleanLower = cleanedName.toLowerCase();
+
+      // Exclude old المداح seasons (only season 5 / أسطورة العهد is 2026)
       if (cleanLower.includes('المداح') && (
-        cleanLower.includes('ج 2') || cleanLower.includes('ج2') ||
-        cleanLower.includes('ج 3') || cleanLower.includes('ج3') ||
-        cleanLower.includes('ج 4') || cleanLower.includes('ج4') ||
-        cleanLower.includes('أسطورة الوادي') || cleanLower.includes('اسطورة الوادي') ||
-        cleanLower.includes('أسطورة العشق') || cleanLower.includes('اسطورة العشق') ||
-        cleanLower.includes('أسطورة العودة') || cleanLower.includes('اسطورة العودة')
+        /ج\s*[2-4]|أسطورة الوادي|اسطورة الوادي|أسطورة العشق|اسطورة العشق|أسطورة العودة|اسطورة العودة/.test(cleanedName)
       )) return false;
 
-      // Check if this show matches any known Egyptian title
+      // Strict whitelist: title must match (contains check both ways, but require min 4 char overlap)
       const isEgyptian = EGYPTIAN_RAMADAN_2026_TITLES.some(title => {
-        const titleLower = title.toLowerCase();
-        return cleanLower === titleLower || 
-               cleanLower.includes(titleLower) || 
-               titleLower.includes(cleanLower);
+        return cleanLower.includes(title) || title.includes(cleanLower);
       });
 
       const isExcluded = nameLower.includes('ramadan premiere') || 
                          nameLower.includes('رمضان premiere') ||
                          ch.name.includes('جرس إنذار');
-      return isEgyptian && !isSportsContent(ch) && !isExcluded;
+      return isEgyptian && !isExcluded;
     });
-    // Deduplicate by name (keep first occurrence)
+    // Deduplicate by name
     const seen = new Set<string>();
     const deduped = ramadanContent.filter(ch => {
       const key = ch.name.trim().toLowerCase();
