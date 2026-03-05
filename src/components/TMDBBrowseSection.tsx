@@ -319,7 +319,22 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
            groupLower.includes('wwe');
   };
 
-  // Ramadan 2026 Egyptian Series — broad matching
+  // Verified Egyptian Ramadan 2026 show titles (source: elcinema.com)
+  const EGYPTIAN_RAMADAN_2026_TITLES = [
+    'درش', 'رأس الأفعى', 'رأس الأفعي', 'علي كلاي', 'فخر الدلتا',
+    'على قد الحب', 'أولاد الراعي', 'وننسى اللي كان', 'وننسي اللي كان',
+    'المداح', 'أسطورة النهاية', 'الكينج', 'إفراج', 'مناعة',
+    'صحاب الأرض', 'أصحاب الأرض', 'اتنين غيرنا', 'حكاية نرجس',
+    'عين سحرية', 'عرض وطلب', 'توابع', 'اللون الأزرق', 'فرصة أخيرة',
+    'النص التاني', 'النص الثاني', 'كلهم بيحبوا مودي', 'بيبو',
+    'كان ياما كان', 'كان يا مكان', 'أب ولكن', 'حد أقصى', 'فن الحرب',
+    'المصيدة', 'السوق الحرة', 'اسأل روحك', 'قطر صغنطوط',
+    'الست موناليزا', 'بابا وماما جيران', 'المتر سمير',
+    'نون النسوة', 'ن النسوة', 'هي كيميا', 'سوا سوا',
+    'السرايا الصفراء', 'حق ضايع', 'إعلام وراثة', 'البخت', 'روج أسود',
+  ];
+
+  // Ramadan 2026 Egyptian Series — whitelist-based matching
   const ramadanShows = useMemo(() => {
     const ramadanContent = channels.filter(ch => {
       const group = ch.group || '';
@@ -327,21 +342,29 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const nameLower = ch.name.toLowerCase();
       const yearStr = ch.year || '';
 
-      // Check if it's a Ramadan group
+      // Must be in a Ramadan group
       const isRamadanGroup = group.includes('رمضان') || groupLower.includes('ramadan');
-      if (!isRamadanGroup) return false;
-
-      // Check if it's 2026 content (from group name OR individual item year)
+      // Or be a 2026 series group
       const is2026 = group.includes('2026') || groupLower.includes('2026') || yearStr === '2026';
-      if (!is2026) return false;
 
-      // Check if it's Egyptian content — broad matching
-      const isEgyptian = group.includes('مصر') || group.includes('مصري') || group.includes('مصرية') ||
-                         groupLower.includes('egypt') || groupLower.includes('misr') ||
-                         // If the group is generic Ramadan 2026 without a region, include it (most are Egyptian)
-                         (!groupLower.includes('gulf') && !groupLower.includes('khaleej') && !group.includes('خليج') &&
-                          !groupLower.includes('levant') && !groupLower.includes('sham') && !group.includes('شام') && !group.includes('سوري') && !group.includes('لبنان') &&
-                          !groupLower.includes('maghreb') && !groupLower.includes('morocco') && !group.includes('مغرب') && !groupLower.includes('tunisia') && !groupLower.includes('algeria'));
+      if (!isRamadanGroup && !is2026) return false;
+
+      // Clean name for matching: strip prefixes like "AR SER |", brackets, etc.
+      const cleanedName = ch.name
+        .replace(/^[A-Z]{2,}\s*(SER|MOV|ser|mov)?\s*\|?\s*/i, '')
+        .replace(/\s*\|.*$/, '')
+        .replace(/[_\-]/g, ' ')
+        .trim();
+
+      // Check if this show matches any known Egyptian title
+      const isEgyptian = EGYPTIAN_RAMADAN_2026_TITLES.some(title => {
+        const titleLower = title.toLowerCase();
+        const cleanLower = cleanedName.toLowerCase();
+        // Exact match or contains
+        return cleanLower === titleLower || 
+               cleanLower.includes(titleLower) || 
+               titleLower.includes(cleanLower);
+      });
 
       const isExcluded = nameLower.includes('ramadan premiere') || 
                          nameLower.includes('رمضان premiere') ||
@@ -356,7 +379,7 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       seen.add(key);
       return true;
     });
-    return deduped.slice(0, 40);
+    return deduped.slice(0, 50);
   }, [channels]);
 
   const arabicSeries = useMemo(() => {
