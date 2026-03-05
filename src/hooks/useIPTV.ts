@@ -162,19 +162,24 @@ const fetchSinglePlaylist = async (
   url: string,
   sourceIndex: number
 ): Promise<Channel[]> => {
-  const isNative = isNativeOrWebView();
+  const isCapacitorNative = Capacitor.isNativePlatform();
   
-  if (isNative) {
-    const { Http } = await import('@capacitor/http');
-    const response = await Http.request({
-      method: 'GET',
-      url,
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-    });
-    if (response.status !== 200) {
-      throw new Error(`Failed to fetch playlist. Status: ${response.status}`);
+  if (isCapacitorNative) {
+    try {
+      const { Http } = await import('@capacitor/http');
+      const response = await Http.request({
+        method: 'GET',
+        url,
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      });
+      if (response.status !== 200) {
+        throw new Error(`Failed to fetch playlist. Status: ${response.status}`);
+      }
+      return parseM3U(response.data);
+    } catch (e) {
+      console.warn('Capacitor HTTP failed, falling back to edge function:', e);
+      // Fall through to edge function below
     }
-    return parseM3U(response.data);
   }
   
   // Web: use edge function - force Xtream API for proper content parsing
