@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { isNativeOrWebView } from '@/lib/platformDetect';
 import { supabase } from '@/integrations/supabase/client';
 import { getStoredPlaylistUrl } from '@/lib/playlistStorage';
 import { getLocalChannels, hasLocalChannels, LocalChannel } from '@/lib/localPlaylistStorage';
@@ -161,7 +162,7 @@ const fetchSinglePlaylist = async (
   url: string,
   sourceIndex: number
 ): Promise<Channel[]> => {
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativeOrWebView();
   
   if (isNative) {
     const { Http } = await import('@capacitor/http');
@@ -423,7 +424,7 @@ export const useIPTV = (m3uUrl?: string) => {
           return;
         }
         
-        if (!Capacitor.isNativePlatform()) {
+        if (!isNativeOrWebView()) {
           console.log('Falling back to demo channels due to error');
           loadDemoChannels();
         } else {

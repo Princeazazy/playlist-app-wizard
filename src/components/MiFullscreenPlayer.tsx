@@ -1,5 +1,6 @@
 import { useRef, useEffect, useMemo, useState, useCallback, memo } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { isNativeOrWebView } from '@/lib/platformDetect';
 import Hls from 'hls.js';
 import {
   Play,
@@ -147,7 +148,7 @@ export const MiFullscreenPlayer = ({
   }, []);
 
   const getPlayableUrl = (rawUrl: string) => {
-    const isNative = Capacitor.isNativePlatform();
+    const isNative = isNativeOrWebView();
     if (isNative) return rawUrl;
 
     if (channel.isLocal) {
@@ -177,7 +178,7 @@ export const MiFullscreenPlayer = ({
     }
 
     const originalUrl = channel.url;
-    const isNative = Capacitor.isNativePlatform();
+    const isNative = isNativeOrWebView();
     const derivedHlsUrl = !isNative && /\/live\/.+\.ts(\?.*)?$/i.test(originalUrl)
       ? originalUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
       : null;
