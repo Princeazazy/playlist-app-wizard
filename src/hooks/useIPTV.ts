@@ -417,7 +417,11 @@ export const useIPTV = (m3uUrl?: string) => {
           return;
         }
         
-        setError(errors.length > 0 ? `Some playlists failed: ${errors.join('; ')}` : null);
+        // Only log partial failures as warnings, don't show error UI if we have channels
+        if (errors.length > 0) {
+          console.warn('Some playlists failed (non-blocking):', errors.join('; '));
+        }
+        setError(null);
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching playlists:', err);
