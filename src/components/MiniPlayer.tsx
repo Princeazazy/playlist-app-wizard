@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { X, Maximize2 } from 'lucide-react';
 import Hls from 'hls.js';
 import { Capacitor } from '@capacitor/core';
-import { isNativeOrWebView } from '@/lib/platformDetect';
 import { supabase } from '@/integrations/supabase/client';
 import { Channel } from '@/hooks/useIPTV';
 
@@ -18,8 +17,8 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
   const hlsRef = useRef<Hls | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Always start unmuted on native, muted on web for autoplay
-  const isNative = isNativeOrWebView();
-  const isMuted = !isNative;
+  const isMuted = !Capacitor.isNativePlatform();
+  const isNative = Capacitor.isNativePlatform();
 
   const streamProxyUrl = (() => {
     const supabaseUrl = (supabase as any).supabaseUrl as string | undefined;
