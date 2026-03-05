@@ -360,10 +360,28 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       // Skip if cleaned name is too short (likely a parsing artifact)
       if (cleanedName.length < 3) return false;
 
+      // Exclude Turkish content
+      const isTurkish = nameLower.includes('turkish') || nameLower.includes('تركي') ||
+                        groupLower.includes('turkish') || groupLower.includes('تركي') ||
+                        nameLower.includes('zamanlar') || nameLower.includes('çukurova') ||
+                        nameLower.includes('cukurova') || nameLower.includes('istanbul') ||
+                        nameLower.includes('kibris') || nameLower.includes('kıbrıs');
+      if (isTurkish) return false;
+
+      // Exclude old المداح seasons (only allow season 5 / أسطورة العهد / أسطورة النهاية)
+      const cleanLower = cleanedName.toLowerCase();
+      if (cleanLower.includes('المداح') && (
+        cleanLower.includes('ج 2') || cleanLower.includes('ج2') ||
+        cleanLower.includes('ج 3') || cleanLower.includes('ج3') ||
+        cleanLower.includes('ج 4') || cleanLower.includes('ج4') ||
+        cleanLower.includes('أسطورة الوادي') || cleanLower.includes('اسطورة الوادي') ||
+        cleanLower.includes('أسطورة العشق') || cleanLower.includes('اسطورة العشق') ||
+        cleanLower.includes('أسطورة العودة') || cleanLower.includes('اسطورة العودة')
+      )) return false;
+
       // Check if this show matches any known Egyptian title
       const isEgyptian = EGYPTIAN_RAMADAN_2026_TITLES.some(title => {
         const titleLower = title.toLowerCase();
-        const cleanLower = cleanedName.toLowerCase();
         return cleanLower === titleLower || 
                cleanLower.includes(titleLower) || 
                titleLower.includes(cleanLower);
