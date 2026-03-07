@@ -831,6 +831,10 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        const contentLength = response.headers.get('content-length');
+        const contentType = response.headers.get('content-type');
+        console.log(`Response content-length: ${contentLength}, content-type: ${contentType}`);
+
         const reader = response.body?.getReader();
         if (!reader) {
           throw new Error('No response body');
@@ -841,6 +845,7 @@ Deno.serve(async (req) => {
         let partialLine = '';
         let bytesRead = 0;
         const maxBytes = safeMaxBytesMB * 1024 * 1024;
+        let firstChunkLogged = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -849,6 +854,12 @@ Deno.serve(async (req) => {
 
           bytesRead += value.length;
           const chunk = decoder.decode(value, { stream: true });
+
+          // Log first chunk for debugging
+          if (!firstChunkLogged) {
+            console.log(`First chunk (${chunk.length} chars): ${chunk.substring(0, 500)}`);
+            firstChunkLogged = true;
+          }
 
           const result = parseM3UContent(chunk, channels, partialLine);
           partialLine = result.remainingPartial;
@@ -860,7 +871,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        console.log(`Parsed ${channels.length} channels from M3U stream`);
+        console.log(`Parsed ${channels.length} channels from M3U stream (${bytesRead} bytes total)`);
         
         if (channels.length === 0) {
           console.error('No channels parsed');
