@@ -160,7 +160,8 @@ const convertLocalChannels = (localChannels: LocalChannel[]): Channel[] => {
 // Fetch a single playlist URL via edge function and return parsed channels
 const fetchSinglePlaylist = async (
   url: string,
-  sourceIndex: number
+  sourceIndex: number,
+  retryCount: number = 0
 ): Promise<Channel[]> => {
   const isCapacitorNative = Capacitor.isNativePlatform();
   
@@ -178,7 +179,6 @@ const fetchSinglePlaylist = async (
       return parseM3U(response.data);
     } catch (e) {
       console.warn('Capacitor HTTP failed, falling back to edge function:', e);
-      // Fall through to edge function below
     }
   }
   
@@ -200,6 +200,14 @@ const fetchSinglePlaylist = async (
   
   if (data?.channels && Array.isArray(data.channels)) {
     console.log(`[Playlist ${sourceIndex + 1}] Received ${data.channels.length} channels`, data.counts);
+    
+    // If we got 0 channels, retry up to 2 times with delay (provider rate-limiting)
+    if (data.channels.length === 0 && retryCount < 2) {
+      const delay = (retryCount + 1) * 5000;
+      console.log(`[Playlist ${sourceIndex + 1}] Got 0 channels, retrying in ${delay / 1000}s (attempt ${retryCount + 2}/3)...`);
+      await new Promise(r => setTimeout(r, delay));
+      return fetchSinglePlaylist(url, sourceIndex, retryCount + 1);
+    }
     
     return data.channels
       .filter((ch: any) => ch.name && (ch.url || ch.type === 'series'))
