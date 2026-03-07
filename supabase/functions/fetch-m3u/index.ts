@@ -661,16 +661,39 @@ Deno.serve(async (req) => {
       const limit = safeMaxReturnPerType;
       console.log(`Using limit: ${limit} per content type (to prevent memory overflow)`);
 
-      // Fetch content types SEQUENTIALLY to avoid CPU spike
-      const liveResult = await fetchXtreamLive(baseUrl, username, password, limit);
-      const moviesResult = await fetchXtreamMovies(baseUrl, username, password, limit);
-      const seriesResult = await fetchXtreamSeries(baseUrl, username, password, limit);
+      // Retry logic: if first attempt returns 0 for all types, wait and retry once
+      // This handles provider rate-limiting from prior burst requests
+      const fetchAllXtream = async () => {
+        const liveResult = await fetchXtreamLive(baseUrl, username, password, limit);
+        const moviesResult = await fetchXtreamMovies(baseUrl, username, password, limit);
+        const seriesResult = await fetchXtreamSeries(baseUrl, username, password, limit);
+        return { liveResult, moviesResult, seriesResult };
+      };
+
+      let { liveResult, moviesResult, seriesResult } = await fetchAllXtream();
+
+      // If everything came back empty, the provider likely rate-limited us — retry after delay
+      const totalItems = liveResult.items.length + moviesResult.items.length + seriesResult.items.length;
+      if (totalItems === 0) {
+        console.log('All content types returned 0 items — provider may be rate-limiting. Retrying in 3s...');
+        await new Promise(r => setTimeout(r, 3000));
+        ({ liveResult, moviesResult, seriesResult } = await fetchAllXtream());
+        
+        const retryTotal = liveResult.items.length + moviesResult.items.length + seriesResult.items.length;
+        if (retryTotal === 0) {
+          console.log('Retry also returned 0 — trying one more time after 5s...');
+          await new Promise(r => setTimeout(r, 5000));
+          ({ liveResult, moviesResult, seriesResult } = await fetchAllXtream());
+        }
+      }
 
       const returnedChannels = [
         ...liveResult.items,
         ...moviesResult.items,
         ...seriesResult.items,
       ];
+
+      console.log(`Xtream API final result: ${returnedChannels.length} total (live: ${liveResult.items.length}, movies: ${moviesResult.items.length}, series: ${seriesResult.items.length})`);
 
       return new Response(
         JSON.stringify({
