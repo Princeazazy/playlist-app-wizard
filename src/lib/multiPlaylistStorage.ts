@@ -112,7 +112,7 @@ export const hasPlaylistSources = (): boolean => {
 
 // Default playlist URLs
 const DEFAULT_PLAYLISTS: { url: string; name: string }[] = [
-  { url: 'http://pudqwkzh.arabiatv.org/get.php?username=4WJQTVA&password=L72JSP7&type=m3u_plus&output=mpegts', name: 'Arabia TV' },
+  { url: 'http://ccirskjs.arabiatv.org/get.php?username=PRINCEAZAZY&password=ELAZAZY&type=m3u_plus&output=mpegts', name: 'Arabia TV' },
   { url: 'http://mnhbkmrs.teck-tv.com/get.php?username=3625A2C&password=95BF235&type=webtvlist&output=mpegts', name: 'Teck TV' },
 ];
 
