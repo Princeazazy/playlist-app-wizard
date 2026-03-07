@@ -110,29 +110,45 @@ export const hasPlaylistSources = (): boolean => {
   return getPlaylistSources().length > 0;
 };
 
-// Default playlist URLs
+// Default playlist URLs - ONLY these should be active
 const DEFAULT_PLAYLISTS: { url: string; name: string }[] = [
   { url: 'http://ccirskjs.arabiatv.org/get.php?username=PRINCEAZAZY&password=ELAZAZY&type=m3u_plus&output=mpegts', name: 'Arabia TV' },
 ];
 
-// Migrate from old single-playlist storage and ensure default playlists exist
+// Version key to track when defaults change - bump this to force cleanup
+const PLAYLIST_CONFIG_VERSION_KEY = 'mi-player-playlist-config-version';
+const CURRENT_CONFIG_VERSION = 3; // Bump to force re-sync
+
+// Migrate from old single-playlist storage and enforce ONLY default playlists
 export const migrateFromLegacyStorage = (): void => {
-  const sources = getPlaylistSources();
+  const storedVersion = parseInt(localStorage.getItem(PLAYLIST_CONFIG_VERSION_KEY) || '0', 10);
   
-  // If no sources at all, check legacy first
-  if (sources.length === 0) {
-    const legacyUrl = localStorage.getItem('mi-player-playlist-url');
-    if (legacyUrl) {
-      addPlaylistSource(legacyUrl, 'Primary Playlist', 'url');
-      console.log('Migrated legacy playlist URL to multi-playlist system');
-    }
+  if (storedVersion < CURRENT_CONFIG_VERSION) {
+    // Clear ALL old playlists and set only the defaults
+    console.log(`Playlist config version ${storedVersion} -> ${CURRENT_CONFIG_VERSION}: resetting to defaults only`);
+    
+    const freshSources: PlaylistSource[] = DEFAULT_PLAYLISTS.map((def, idx) => ({
+      id: `default-${idx}-${Date.now()}`,
+      name: def.name,
+      url: def.url,
+      enabled: true,
+      type: 'url' as const,
+      addedAt: Date.now(),
+    }));
+    
+    savePlaylistSources(freshSources);
+    localStorage.setItem(PLAYLIST_CONFIG_VERSION_KEY, String(CURRENT_CONFIG_VERSION));
+    
+    // Clean up legacy keys
+    localStorage.removeItem('mi-player-playlist-url');
+    console.log(`Set ${freshSources.length} default playlist(s): ${freshSources.map(s => s.name).join(', ')}`);
+    return;
   }
   
-  // Ensure all default playlists are present
+  // Normal startup: ensure defaults exist
   const currentSources = getPlaylistSources();
-  for (const def of DEFAULT_PLAYLISTS) {
-    const alreadyExists = currentSources.some(s => s.url === def.url);
-    if (!alreadyExists) {
+  if (currentSources.length === 0) {
+    for (const def of DEFAULT_PLAYLISTS) {
       addPlaylistSource(def.url, def.name, 'url');
       console.log(`Added default playlist: ${def.name}`);
     }

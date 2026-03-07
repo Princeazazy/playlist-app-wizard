@@ -150,7 +150,7 @@ function isXtreamGetM3UUrl(url: string): boolean {
 type XtreamFetchResult = { items: any[]; total: number; tooLarge?: boolean };
 
 const XTREAM_MAX_JSON_BYTES = 40 * 1024 * 1024; // 40MB safety cap per API response
-const XTREAM_MAX_ITEMS_PER_RESPONSE = 25000; // Safe limit to avoid CPU timeout
+const XTREAM_MAX_ITEMS_PER_RESPONSE = 50000; // Raised to capture full Arabia TV catalog
 const CATEGORY_FETCH_TIMEOUT = 10000; // 10s timeout per category fetch
 const MAX_CATEGORIES_PER_TYPE = 500; // Reasonable category cap
 

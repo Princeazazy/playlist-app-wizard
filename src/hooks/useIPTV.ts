@@ -186,11 +186,11 @@ const fetchSinglePlaylist = async (
   const { data, error } = await supabase.functions.invoke('fetch-m3u', {
     body: { 
       url, 
-      maxChannels: 75000,
-      maxBytesMB: 30, 
-      maxReturnPerType: 25000,
+      maxChannels: 150000,
+      maxBytesMB: 50, 
+      maxReturnPerType: 50000,
       preferXtreamApi: true,
-      forceXtreamApi: true, // Force Xtream API even for get.php URLs to get all movies/series
+      forceXtreamApi: true,
     }
   });
   
