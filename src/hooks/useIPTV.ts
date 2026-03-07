@@ -189,8 +189,8 @@ const fetchSinglePlaylist = async (
       maxChannels: 150000,
       maxBytesMB: 80, 
       maxReturnPerType: 50000,
-      preferXtreamApi: false,
-      forceXtreamApi: false,
+      preferXtreamApi: true,
+      forceXtreamApi: true,
     }
   });
   
