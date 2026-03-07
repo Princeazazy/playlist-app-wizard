@@ -184,19 +184,32 @@ async function fetchXtreamLive(
   limit: number = 0
 ): Promise<XtreamFetchResult> {
   try {
-    console.log('Fetching Xtream live categories...');
+    const catUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_live_categories`;
+    console.log('Fetching Xtream live categories from:', catUrl);
     const categoriesRes = await fetchWithTimeout(
-      `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_live_categories`,
+      catUrl,
       { headers: getStbHeaders(0) },
-      6000
+      10000
     );
     
+    console.log(`Live categories response: status=${categoriesRes.status}, content-type=${categoriesRes.headers.get('content-type')}, content-length=${categoriesRes.headers.get('content-length')}`);
+    
     if (!categoriesRes.ok) {
-      console.error('Failed to fetch live categories:', categoriesRes.status);
+      const errorBody = await categoriesRes.text();
+      console.error('Failed to fetch live categories:', categoriesRes.status, errorBody.substring(0, 500));
       return { items: [], total: 0 };
     }
     
-    const categories = await categoriesRes.json();
+    const rawText = await categoriesRes.text();
+    console.log(`Live categories raw response (${rawText.length} chars): ${rawText.substring(0, 300)}`);
+    
+    let categories: any;
+    try {
+      categories = JSON.parse(rawText);
+    } catch {
+      console.error('Failed to parse live categories JSON');
+      return { items: [], total: 0 };
+    }
     const limitedCategories = Array.isArray(categories) ? categories.slice(0, MAX_CATEGORIES_PER_TYPE) : [];
     console.log(`Found ${categories?.length || 0} live categories, using ${limitedCategories.length}`);
 
