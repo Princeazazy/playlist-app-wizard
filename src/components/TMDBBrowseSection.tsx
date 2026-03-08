@@ -405,17 +405,20 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
   }, [channels]);
 
   const arabicSeries = useMemo(() => {
+    // Build a set of Ramadan show names to exclude from this row
+    const ramadanNames = new Set(ramadanShows.map(ch => ch.name.trim().toLowerCase()));
+    
     const arabicContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
+      // Skip if already in Ramadan row
+      if (ramadanNames.has(ch.name.trim().toLowerCase())) return false;
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
-      // Skip Ramadan content (shown in its own row)
+      // Skip Ramadan groups
       if (group.includes('رمضان') || groupLower.includes('ramadan')) return false;
-      // Broad Arabic detection: Arabic text, "arabic", "ar " prefix, common Arabic keywords
+      // Broad Arabic detection
       const isArabic = /عرب|مسلسلات|مصر|خليج|سعود|لبنان|سوري|arabic|^ar[\s|:\-]/i.test(group);
-      // Also match "Ser Arabic", "Arabic Series", etc.
-      const isArabicSeries = isArabic && !isSportsContent(ch);
-      return isArabicSeries;
+      return isArabic && !isSportsContent(ch);
     });
     return arabicContent.sort((a, b) => {
       const groupA = a.group || '';
