@@ -176,10 +176,10 @@ const ARABIC_COUNTRIES: Record<string, CountryInfo> = {
   'somalia': { name: 'Somalia', code: 'so', flagUrl: 'https://flagcdn.com/w80/so.png', priority: 20 },
   'الصومال': { name: 'Somalia', code: 'so', flagUrl: 'https://flagcdn.com/w80/so.png', priority: 20 },
   // Gulf region generic
-  'خليجي': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
-  'خليجية': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
-  'khaliji': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
-  'gulf': { name: 'Gulf', code: 'sa', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
+  'خليجي': { name: 'Gulf', code: 'gulf', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
+  'خليجية': { name: 'Gulf', code: 'gulf', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
+  'khaliji': { name: 'Gulf', code: 'gulf', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
+  'gulf': { name: 'Gulf', code: 'gulf', flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 21 },
   // Islamic/Religious channels - right after Arabic countries
   'islamic': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
   'islam': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
