@@ -638,10 +638,11 @@ export const getDisplayName = (group: string): string => {
   // Strip country/region prefixes like "EU | UK |", "AR |", "AM |", "SA |" etc.
   // This extracts just the category name (e.g., "Documentary", "Movies", "General")
   let cleaned = group.trim();
-  // Remove leading 2-3 letter codes separated by pipes/spaces (e.g., "Eu | Uk | Documentary" → "Documentary")
-  cleaned = cleaned.replace(/^(?:[A-Za-z]{2,3}\s*\|\s*)+/gi, '').trim();
-  // Also handle "AR Sports", "UK General" style (2-letter code + space + name)
-  cleaned = cleaned.replace(/^[A-Za-z]{2}\s+(?=[A-Z])/i, '').trim();
+  // Aggressively remove ALL leading 2-3 letter country/region codes separated by pipes
+  // e.g., "EU | UK | Documentary" → "Documentary", "AM | General" → "General"
+  cleaned = cleaned.replace(/^(?:[A-Za-z]{2,3}\s*[\|:\-]\s*)+/gi, '').trim();
+  // Also handle "AR Sports", "UK General", "AM Music" style (2-3 letter code + space + word)
+  cleaned = cleaned.replace(/^[A-Za-z]{2,3}\s+(?=\w)/i, '').trim();
   
   // If after cleaning we have a meaningful name and a country was detected,
   // show just the cleaned category name (the country is already shown via the flag/tab)
