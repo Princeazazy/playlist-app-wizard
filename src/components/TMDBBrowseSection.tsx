@@ -395,29 +395,24 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
   }, [channels]);
 
   const arabicSeries = useMemo(() => {
-    const targetGroups = [
-      'مسلسلات عربية 2026',
-      'مسلسلات عربية 2025',
-      'مسلسلات عربية تعرض حاليا',
-      'مسلسلات عربية 2024',
-    ];
     const arabicContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
+      // Skip Ramadan content (shown in its own row)
       if (group.includes('رمضان') || groupLower.includes('ramadan')) return false;
-      // Match exact Arabic group names OR Xtream-style "AR SER 2025" etc.
-      const matchesTarget = targetGroups.some(tg => group === tg);
-      const matchesXtreamAr = /^ar\s+ser/i.test(group) && /202[456]/.test(group);
-      const matchesArabicSer = (/عربي/.test(group) || /arabic/i.test(group)) && /202[456]/.test(group) && ch.type === 'series';
-      return (matchesTarget || matchesXtreamAr || matchesArabicSer) && !isSportsContent(ch);
+      // Broad Arabic detection: Arabic text, "arabic", "ar " prefix, common Arabic keywords
+      const isArabic = /عرب|مسلسلات|مصر|خليج|سعود|لبنان|سوري|arabic|^ar[\s|:\-]/i.test(group);
+      // Also match "Ser Arabic", "Arabic Series", etc.
+      const isArabicSeries = isArabic && !isSportsContent(ch);
+      return isArabicSeries;
     });
     return arabicContent.sort((a, b) => {
       const groupA = a.group || '';
       const groupB = b.group || '';
       const scoreMap = (g: string) => {
         if (g.includes('2026')) return 3;
-        if (g.includes('تعرض حاليا')) return 2;
+        if (g.includes('تعرض حاليا') || g.toLowerCase().includes('now showing')) return 2;
         if (g.includes('2025')) return 1;
         return 0;
       };
@@ -430,15 +425,14 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     const arabicContent = movieChannels.filter(ch => {
       const group = ch.group || '';
       const nameLower = ch.name.toLowerCase();
-      // Match: "AR MOV 2025", "Arabic Movies 2026", groups with عربي
-      const isArabicGroup = /عربي/.test(group) || /arabic/i.test(group) || /^ar\s+(mov|movies?)/i.test(group);
-      const hasYear = /202[56]/.test(group);
+      // Broad Arabic detection
+      const isArabicGroup = /عرب|أفلام|مصر|خليج|arabic|^ar[\s|:\-]/i.test(group);
       const isExcluded = nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere') || ch.name.includes('جرس إنذار');
-      return isArabicGroup && hasYear && !isSportsContent(ch) && !isExcluded;
+      return isArabicGroup && !isSportsContent(ch) && !isExcluded;
     });
     return arabicContent.sort((a, b) => {
-      const yearA = a.group?.includes('2026') ? 2026 : 2025;
-      const yearB = b.group?.includes('2026') ? 2026 : 2025;
+      const yearA = a.group?.includes('2026') ? 2026 : a.group?.includes('2025') ? 2025 : 2024;
+      const yearB = b.group?.includes('2026') ? 2026 : b.group?.includes('2025') ? 2025 : 2024;
       return yearB - yearA;
     }).slice(0, 24);
   }, [channels]);
