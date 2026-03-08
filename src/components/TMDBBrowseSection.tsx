@@ -452,48 +452,6 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     }).slice(0, 24);
   }, [channels]);
 
-  const arabicMovies = useMemo(() => {
-    const movieChannels = channels.filter(ch => ch.type === 'movies');
-    
-    const content = movieChannels.filter(ch => {
-      const group = ch.group || '';
-      const groupLower = group.toLowerCase();
-      const nameLower = ch.name.toLowerCase();
-      
-      // Match Arabic movie groups
-      const isArabicGroup = 
-        /عربي/.test(group) || 
-        /عربية/.test(group) ||
-        /^ar\s/i.test(groupLower) ||
-        /vod\s*\|\s*ar\b/i.test(groupLower) ||
-        /vod\s*\|\s*arabic/i.test(groupLower) ||
-        (/arabic/i.test(group) && !/en/i.test(groupLower)) ||
-        /مصر/i.test(group) ||
-        /مغرب/i.test(group) ||
-        /جزائر/i.test(group);
-      
-      // Prefer newer content
-      const hasRecentYear = /202[3456]/.test(group) || /جديدة/.test(group) || /حديثة/.test(group);
-      
-      // Exclude non-movie content
-      const isExcluded = nameLower.includes('ramadan premiere') || 
-        nameLower.includes('رمضان premiere') ||
-        /anime/i.test(group) || /cartoon/i.test(group) || /kids/i.test(group) ||
-        /sport/i.test(group) || /wwe/i.test(group) || /ufc/i.test(group) ||
-        /music/i.test(group) || /قرآن/i.test(group) || /مسرح/i.test(group) ||
-        /كرتون/i.test(group) || /أنيمي/i.test(group) || /كلاسيك/i.test(group) ||
-        /classic/i.test(group) || /197|198|199|200[0-9]/.test(group);
-      
-      return isArabicGroup && !isExcluded && !isSportsContent(ch);
-    });
-    
-    // Sort newest first
-    return content.sort((a, b) => {
-      const yearA = a.group?.includes('2026') ? 4 : a.group?.includes('2025') ? 3 : a.group?.includes('2024') ? 2 : 1;
-      const yearB = b.group?.includes('2026') ? 4 : b.group?.includes('2025') ? 3 : b.group?.includes('2024') ? 2 : 1;
-      return yearB - yearA;
-    }).slice(0, 30);
-  }, [channels]);
 
   const familyMovies = useMemo(() => {
     const movieChannels = channels.filter(ch => ch.type === 'movies');
