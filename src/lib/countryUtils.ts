@@ -635,26 +635,24 @@ const capitalizeWords = (str: string): string => {
 export const getDisplayName = (group: string): string => {
   const countryInfo = getCountryInfo(group);
   
-  // Strip country/region prefixes like "EU | UK |", "AR |", "AM |", "SA |" etc.
-  // This extracts just the category name (e.g., "Documentary", "Movies", "General")
+  // ALWAYS strip ALL leading 2-3 letter country/region codes separated by pipes, colons, dashes
+  // e.g., "Am | Ca | Pluto Tv" → "Pluto Tv", "Eu | Exyu | Bosna" → "Bosna"
   let cleaned = group.trim();
-  // Aggressively remove ALL leading 2-3 letter country/region codes separated by pipes
-  // e.g., "EU | UK | Documentary" → "Documentary", "AM | General" → "General"
-  cleaned = cleaned.replace(/^(?:[A-Za-z]{2,3}\s*[\|:\-]\s*)+/gi, '').trim();
+  cleaned = cleaned.replace(/^(?:[A-Za-z]{2,4}\s*[\|:\-]\s*)+/gi, '').trim();
   // Also handle "AR Sports", "UK General", "AM Music" style (2-3 letter code + space + word)
   cleaned = cleaned.replace(/^[A-Za-z]{2,3}\s+(?=\w)/i, '').trim();
   
-  // If after cleaning we have a meaningful name and a country was detected,
-  // show just the cleaned category name (the country is already shown via the flag/tab)
-  if (countryInfo && cleaned.length > 1 && cleaned !== group.trim()) {
-    // Capitalize first letter of each word
-    return cleaned.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  // If we got a meaningful cleaned name, use it
+  if (cleaned.length > 1) {
+    return cleaned.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
   }
   
+  // Fallback to country name if detected
   if (countryInfo) {
     return countryInfo.name;
   }
-  // Capitalize first letter of each word for non-country groups
+  
+  // Last fallback: title-case the original
   return group.trim()
     .split(/(\s*\|\s*|\s+)/)
     .map(part => {
