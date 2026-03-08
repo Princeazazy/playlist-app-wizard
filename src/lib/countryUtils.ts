@@ -63,7 +63,7 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'shahid': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png?v=2', priority: 25, isStreamingService: true },
   'shahid vip': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png?v=2', priority: 25, isStreamingService: true },
   'شاهد': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png?v=2', priority: 25, isStreamingService: true },
-  'bundesliga': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png?v=2', priority: 25, isStreamingService: true },
+  'bundesliga': { name: 'Bundesliga', code: 'bundesliga', flagUrl: '', priority: 1024, isStreamingService: true },
   'bein': { name: 'beIN', code: 'bein', flagUrl: '/images/bein-logo.png', priority: 26, isStreamingService: true },
   'bein sport': { name: 'beIN Sports', code: 'bein', flagUrl: '/images/bein-logo.png', priority: 26, isStreamingService: true },
   'bein sports': { name: 'beIN Sports', code: 'bein', flagUrl: '/images/bein-logo.png', priority: 26, isStreamingService: true },
