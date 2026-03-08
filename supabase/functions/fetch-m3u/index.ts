@@ -266,10 +266,11 @@ async function fetchXtreamLiveByCategory(
   const items: any[] = [];
   const seenStreamIds = new Set<string>();
   let total = 0;
-  const categoryEntries = prioritizeCategories(Array.from(categoryMap.entries()));
+  // Keep original provider order - no priority sorting
+  const categoryEntries = Array.from(categoryMap.entries());
   const categoryIds = categoryEntries.map(([id]) => id);
 
-  // Fetch categories in parallel batches of 5
+  // Fetch categories in sequential batches of 5 to preserve order
   const batchSize = 5;
   for (let i = 0; i < categoryIds.length && items.length < limit; i += batchSize) {
     const batch = categoryIds.slice(i, i + batchSize);
