@@ -452,96 +452,45 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     }).slice(0, 24);
   }, [channels]);
 
-  const englishMovies = useMemo(() => {
+  const arabicMovies = useMemo(() => {
     const movieChannels = channels.filter(ch => ch.type === 'movies');
-    
-    // Log all unique movie groups once for debugging
-    if (movieChannels.length > 0) {
-      const uniqueGroups = new Set(movieChannels.map(ch => ch.group || 'none'));
-      console.log('[EnglishMovies] All movie groups:', Array.from(uniqueGroups).sort());
-    }
     
     const content = movieChannels.filter(ch => {
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
       const nameLower = ch.name.toLowerCase();
       
-      // Broad matching for English/Foreign movie groups
-      const isEnglishForeignGroup = 
-        /english/i.test(group) || 
-        /foreign/i.test(group) || 
-        /\ben\b/i.test(groupLower) ||  // "EN MOV", "VOD EN", etc.
-        /subtitled/i.test(group) ||
-        /sub\b/i.test(groupLower) ||    // "Foreign Sub 2025"
-        /مترجم/i.test(group) ||         // Arabic for "translated/subtitled"
-        /اجنبي/i.test(group) ||         // Arabic for "foreign"
-        /أجنبي/i.test(group) ||
-        /latest movies/i.test(groupLower) || // "VOD | EN LATEST MOVIES"
-        /without sub/i.test(groupLower) ||   // "Vod En ( Without Subtitles )"
-        /new releases/i.test(groupLower) ||  // "MULTI LANG NEW RELEASES"
-        /multi lang/i.test(groupLower);      // "MULTI LANG 2020 AND BEYOND"
-      
-      // Exclude Arabic-specific groups
-      const isArabicGroup = /عربي/.test(group) || 
-        /^ar\s/i.test(groupLower) ||     // starts with "AR "
+      // Match Arabic movie groups
+      const isArabicGroup = 
+        /عربي/.test(group) || 
+        /عربية/.test(group) ||
+        /^ar\s/i.test(groupLower) ||
+        /vod\s*\|\s*ar\b/i.test(groupLower) ||
+        /vod\s*\|\s*arabic/i.test(groupLower) ||
         (/arabic/i.test(group) && !/en/i.test(groupLower)) ||
-        /مصر/i.test(group) ||           // Egyptian
-        /خليج/i.test(group) ||          // Gulf
-        /مغرب/i.test(group) ||          // Maghreb
-        /أمازيغ/i.test(group) ||        // Amazigh
-        /جزائر/i.test(group) ||         // Algerian
-        /مغربي/i.test(group) ||         // Moroccan
-        /عربية/i.test(group);           // Arabic movies
+        /مصر/i.test(group) ||
+        /مغرب/i.test(group) ||
+        /جزائر/i.test(group);
       
-      // Also exclude VOD | AR groups (Arabic VOD from second playlist)
-      const isArabicVOD = /vod\s*\|\s*ar\b/i.test(groupLower) || /vod\s*\|\s*arabic/i.test(groupLower);
+      // Prefer newer content
+      const hasRecentYear = /202[3456]/.test(group) || /جديدة/.test(group) || /حديثة/.test(group);
       
-      // Exclude non-English regional groups  
-      const isRegionalGroup = /turkish/i.test(group) || /korean/i.test(group) || 
-        /indian/i.test(group) || /bollywood/i.test(group) || 
-        /asia/i.test(group) || /french/i.test(group) || /german/i.test(group) ||
-        /ترك/i.test(group) || /كور/i.test(group) || /هند/i.test(group) ||
-        /آسي/i.test(group) || /albania/i.test(group) || /shqiptar/i.test(group);
-      
-      // Year is preferred but not required for clearly English groups
-      const hasYear = /202[3456]/.test(group);
-      const isClearlyEnglish = /\ben\b/i.test(groupLower) && (/latest|new|without sub/i.test(groupLower));
-      
+      // Exclude non-movie content
       const isExcluded = nameLower.includes('ramadan premiere') || 
         nameLower.includes('رمضان premiere') ||
         /anime/i.test(group) || /cartoon/i.test(group) || /kids/i.test(group) ||
         /sport/i.test(group) || /wwe/i.test(group) || /ufc/i.test(group) ||
         /music/i.test(group) || /قرآن/i.test(group) || /مسرح/i.test(group) ||
-        /dc أفلام/i.test(group) || /مارفل/i.test(group) || /نتفليكس/i.test(group);
+        /كرتون/i.test(group) || /أنيمي/i.test(group) || /كلاسيك/i.test(group) ||
+        /classic/i.test(group) || /197|198|199|200[0-9]/.test(group);
       
-      return isEnglishForeignGroup && !isArabicGroup && !isArabicVOD && !isRegionalGroup && (hasYear || isClearlyEnglish) && !isSportsContent(ch) && !isExcluded;
+      return isArabicGroup && !isExcluded && !isSportsContent(ch);
     });
     
-    if (content.length === 0 && movieChannels.length > 0) {
-      // Fallback: try ANY non-Arabic movie with a year 2024-2026 in group
-      const fallback = movieChannels.filter(ch => {
-        const group = ch.group || '';
-        const groupLower = group.toLowerCase();
-        const hasYear = /202[456]/.test(group);
-        const isArabic = /عربي/.test(group) || /^ar\s/i.test(groupLower) || /arabic/i.test(group);
-        const isRegional = /turkish/i.test(group) || /korean/i.test(group) || /indian/i.test(group) || 
-          /asia/i.test(group) || /french/i.test(group) || /german/i.test(group) || /anime/i.test(group);
-        const isRamadan = /ramadan/i.test(group) || /رمضان/.test(group);
-        return hasYear && !isArabic && !isRegional && !isRamadan && !isSportsContent(ch);
-      });
-      console.log('[EnglishMovies] Primary filter: 0, fallback found:', fallback.length, 
-        'sample groups:', [...new Set(fallback.slice(0, 10).map(c => c.group))]);
-      return fallback.sort((a, b) => {
-        const yearA = a.group?.includes('2026') ? 3 : a.group?.includes('2025') ? 2 : 1;
-        const yearB = b.group?.includes('2026') ? 3 : b.group?.includes('2025') ? 2 : 1;
-        return yearB - yearA;
-      }).slice(0, 30);
-    }
-    
-    console.log('[EnglishMovies] Found:', content.length, 'sample groups:', [...new Set(content.slice(0, 5).map(c => c.group))]);
+    // Sort newest first
     return content.sort((a, b) => {
-      const yearA = a.group?.includes('2026') ? 3 : a.group?.includes('2025') ? 2 : 1;
-      const yearB = b.group?.includes('2026') ? 3 : b.group?.includes('2025') ? 2 : 1;
+      const yearA = a.group?.includes('2026') ? 4 : a.group?.includes('2025') ? 3 : a.group?.includes('2024') ? 2 : 1;
+      const yearB = b.group?.includes('2026') ? 4 : b.group?.includes('2025') ? 3 : b.group?.includes('2024') ? 2 : 1;
       return yearB - yearA;
     }).slice(0, 30);
   }, [channels]);
