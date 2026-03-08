@@ -333,7 +333,23 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     console.log('[TMDBBrowse] Movie groups:', [...movieGroups].sort());
   }, [channels]);
 
-  // Ramadan 2026 Egyptian Series — broad matching for various provider naming
+  // Known Ramadan 2026 Egyptian series titles for name-based matching
+  const RAMADAN_2026_KEYWORDS = [
+    'قفطان خديجة', 'حالات نادرة', 'الضارية', 'ورد وشوكولاتة', 'كارثة طبيعية',
+    'أب ولكن', 'إفراج', 'رأس الأفعى', 'رأس الأفعي',
+    'صحاب الأرض', 'أصحاب الأرض', 'كان يا مكان', 'كان ياما كان',
+    'فن الحرب', 'كلهم بيحبوا مودي', 'وننسى اللي كان', 'وننسي اللي كان',
+    'درش', 'علي كلاي', 'فخر الدلتا', 'على قد الحب',
+    'أولاد الراعي', 'الكينج', 'مناعة', 'اتنين غيرنا', 'حكاية نرجس',
+    'عين سحرية', 'عرض وطلب', 'توابع', 'اللون الأزرق', 'فرصة أخيرة',
+    'النص التاني', 'النص الثاني', 'بيبو', 'حد أقصى',
+    'المصيدة', 'السوق الحرة', 'اسأل روحك', 'قطر صغنطوط',
+    'الست موناليزا', 'بابا وماما جيران', 'المتر سمير',
+    'هي كيميا', 'سوا سوا', 'السرايا الصفراء', 'حق ضايع', 
+    'إعلام وراثة', 'روج أسود', 'the voice أحلى صوت',
+  ];
+
+  // Ramadan 2026 Egyptian Series — match by group OR by known title names
   const ramadanShows = useMemo(() => {
     const ramadanContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
@@ -341,45 +357,41 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
       const nameLower = ch.name.toLowerCase();
-
-      // Match any group containing "ramadan" or "رمضان" with 2026
-      // Also match Egyptian-specific: "مصري", "egyptian", "مصر"
-      const isRamadanGroup = group.includes('رمضان') || groupLower.includes('ramadan');
-      const has2026 = group.includes('2026');
-      
-      // Also try: groups with "egyptian" + "2026" even without explicit "ramadan"
-      const isEgyptian2026 = (group.includes('مصري') || groupLower.includes('egypt') || group.includes('مصر')) && has2026;
-      
-      const isValidGroup = (isRamadanGroup && has2026) || isEgyptian2026;
-      if (!isValidGroup) return false;
-
-      // Exclude non-Egyptian regional groups explicitly
-      const isNonEgyptian = groupLower.includes('خليجي') || groupLower.includes('gulf') ||
-                            groupLower.includes('شامي') || groupLower.includes('levant') ||
-                            groupLower.includes('مغرب') || groupLower.includes('maghreb') ||
-                            groupLower.includes('turkish') || groupLower.includes('تركي') ||
-                            groupLower.includes('korean') || groupLower.includes('indian') ||
-                            groupLower.includes('english') || groupLower.includes('french');
-      if (isNonEgyptian) return false;
+      const nameClean = ch.name.trim();
 
       // Explicit exclusions
       const isExcluded = nameLower.includes('ramadan premiere') || 
                          nameLower.includes('رمضان premiere') ||
-                         ch.name.includes('جرس إنذار');
+                         nameClean.includes('جرس إنذار');
       if (isExcluded) return false;
 
-      return true;
+      // Method 1: Group-based matching (ramadan/egyptian + 2026)
+      const isRamadanGroup = group.includes('رمضان') || groupLower.includes('ramadan');
+      const isEgyptian = group.includes('مصري') || groupLower.includes('egypt') || group.includes('مصر');
+      const has2026 = group.includes('2026');
+      
+      const groupMatch = (isRamadanGroup && has2026) || (isEgyptian && has2026);
+      
+      if (groupMatch) {
+        // Exclude non-Egyptian regional groups
+        const isNonEgyptian = groupLower.includes('خليجي') || groupLower.includes('gulf') ||
+                              groupLower.includes('شامي') || groupLower.includes('levant') ||
+                              groupLower.includes('مغرب') || groupLower.includes('maghreb') ||
+                              groupLower.includes('turkish') || groupLower.includes('تركي');
+        if (isNonEgyptian) return false;
+        return true;
+      }
+
+      // Method 2: Name-based matching — known Ramadan 2026 Egyptian show titles
+      const isKnownTitle = RAMADAN_2026_KEYWORDS.some(title => 
+        nameClean.includes(title) || nameLower.includes(title.toLowerCase())
+      );
+      if (isKnownTitle) return true;
+
+      return false;
     });
     
-    // Also log what we found for debugging
-    if (ramadanContent.length > 0) {
-      console.log(`[TMDBBrowse] Found ${ramadanContent.length} Ramadan/Egyptian 2026 series`);
-    } else {
-      // Log series groups that contain 2026 to help debug
-      const groups2026 = new Set<string>();
-      channels.filter(ch => ch.type === 'series' && ch.group?.includes('2026')).forEach(ch => groups2026.add(ch.group || ''));
-      console.log('[TMDBBrowse] No Ramadan matches. Series groups with 2026:', [...groups2026]);
-    }
+    console.log(`[TMDBBrowse] Ramadan 2026 matches: ${ramadanContent.length}`);
     
     // Deduplicate by name
     const seen = new Set<string>();
@@ -393,17 +405,20 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
   }, [channels]);
 
   const arabicSeries = useMemo(() => {
+    // Build a set of Ramadan show names to exclude from this row
+    const ramadanNames = new Set(ramadanShows.map(ch => ch.name.trim().toLowerCase()));
+    
     const arabicContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
+      // Skip if already in Ramadan row
+      if (ramadanNames.has(ch.name.trim().toLowerCase())) return false;
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
-      // Skip Ramadan content (shown in its own row)
+      // Skip Ramadan groups
       if (group.includes('رمضان') || groupLower.includes('ramadan')) return false;
-      // Broad Arabic detection: Arabic text, "arabic", "ar " prefix, common Arabic keywords
+      // Broad Arabic detection
       const isArabic = /عرب|مسلسلات|مصر|خليج|سعود|لبنان|سوري|arabic|^ar[\s|:\-]/i.test(group);
-      // Also match "Ser Arabic", "Arabic Series", etc.
-      const isArabicSeries = isArabic && !isSportsContent(ch);
-      return isArabicSeries;
+      return isArabic && !isSportsContent(ch);
     });
     return arabicContent.sort((a, b) => {
       const groupA = a.group || '';
