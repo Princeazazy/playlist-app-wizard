@@ -321,7 +321,7 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
 
   // Verified Egyptian Ramadan 2026 show titles ONLY — strict list
   const EGYPTIAN_RAMADAN_2026_TITLES = [
-    'أب ولكن', 'إفراج', 'المداح', 'رأس الأفعى', 'رأس الأفعي',
+    'أب ولكن', 'إفراج', 'رأس الأفعى', 'رأس الأفعي',
     'صحاب الأرض', 'أصحاب الأرض', 'كان يا مكان', 'كان ياما كان',
     'فن الحرب', 'كلهم بيحبوا مودي', 'وننسى اللي كان', 'وننسي اللي كان',
     'الأرض', 'درش', 'علي كلاي', 'فخر الدلتا', 'على قد الحب',
@@ -331,7 +331,7 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     'المصيدة', 'السوق الحرة', 'اسأل روحك', 'قطر صغنطوط',
     'الست موناليزا', 'بابا وماما جيران', 'المتر سمير',
     'هي كيميا', 'سوا سوا',
-    'السرايا الصفراء', 'حق ضايع', 'إعلام وراثة', 'البخت', 'روج أسود',
+    'السرايا الصفراء', 'حق ضايع', 'إعلام وراثة', 'روج أسود',
   ];
 
   // Ramadan 2026 Egyptian Series — strict whitelist matching
