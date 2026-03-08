@@ -343,19 +343,20 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const nameLower = ch.name.toLowerCase();
 
       // Match any group containing "ramadan" or "رمضان" with 2026
+      // Also match Egyptian-specific: "مصري", "egyptian", "مصر"
       const isRamadanGroup = group.includes('رمضان') || groupLower.includes('ramadan');
       const has2026 = group.includes('2026');
       
-      // Also match groups like "Ser Ramadan Egyptian 2026", "مسلسلات رمضان مصرية 2026", etc.
-      // Be broad: any ramadan 2026 group that isn't explicitly non-Egyptian
-      const isValidGroup = isRamadanGroup && has2026;
+      // Also try: groups with "egyptian" + "2026" even without explicit "ramadan"
+      const isEgyptian2026 = (group.includes('مصري') || groupLower.includes('egypt') || group.includes('مصر')) && has2026;
+      
+      const isValidGroup = (isRamadanGroup && has2026) || isEgyptian2026;
       if (!isValidGroup) return false;
 
       // Exclude non-Egyptian regional groups explicitly
       const isNonEgyptian = groupLower.includes('خليجي') || groupLower.includes('gulf') ||
                             groupLower.includes('شامي') || groupLower.includes('levant') ||
                             groupLower.includes('مغرب') || groupLower.includes('maghreb') ||
-                            groupLower.includes('سعود') || groupLower.includes('saudi') ||
                             groupLower.includes('turkish') || groupLower.includes('تركي') ||
                             groupLower.includes('korean') || groupLower.includes('indian') ||
                             groupLower.includes('english') || groupLower.includes('french');
@@ -369,6 +370,17 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
 
       return true;
     });
+    
+    // Also log what we found for debugging
+    if (ramadanContent.length > 0) {
+      console.log(`[TMDBBrowse] Found ${ramadanContent.length} Ramadan/Egyptian 2026 series`);
+    } else {
+      // Log series groups that contain 2026 to help debug
+      const groups2026 = new Set<string>();
+      channels.filter(ch => ch.type === 'series' && ch.group?.includes('2026')).forEach(ch => groups2026.add(ch.group || ''));
+      console.log('[TMDBBrowse] No Ramadan matches. Series groups with 2026:', [...groups2026]);
+    }
+    
     // Deduplicate by name
     const seen = new Set<string>();
     const deduped = ramadanContent.filter(ch => {
