@@ -289,8 +289,16 @@ export const useIPTV = (m3uUrl?: string) => {
   }, [hasLocal, channels.length]);
 
   // Function to trigger a refresh without reloading the app
-  const refresh = useCallback(() => {
-    console.log('Refreshing channels...');
+  const refresh = useCallback(async () => {
+    console.log('Refreshing channels - clearing cache first...');
+    // Clear IndexedDB cache so we get fresh data
+    try {
+      const { clearChannelCache } = await import('@/lib/channelCache');
+      await clearChannelCache();
+      console.log('Cache cleared, triggering fresh fetch...');
+    } catch (e) {
+      console.warn('Failed to clear cache:', e);
+    }
     // Re-check for local channels
     const freshLocal = getLocalChannels();
     if (freshLocal && freshLocal.length > 0) {
@@ -300,6 +308,8 @@ export const useIPTV = (m3uUrl?: string) => {
       setLoading(false);
       return;
     }
+    setChannels([]);
+    setLoading(true);
     setRefreshKey(prev => prev + 1);
   }, []);
 
