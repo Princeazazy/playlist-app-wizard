@@ -634,11 +634,26 @@ const capitalizeWords = (str: string): string => {
 // Get display name for a group (properly capitalized)
 export const getDisplayName = (group: string): string => {
   const countryInfo = getCountryInfo(group);
+  
+  // Strip country/region prefixes like "EU | UK |", "AR |", "AM |", "SA |" etc.
+  // This extracts just the category name (e.g., "Documentary", "Movies", "General")
+  let cleaned = group.trim();
+  // Remove leading 2-3 letter codes separated by pipes/spaces (e.g., "Eu | Uk | Documentary" → "Documentary")
+  cleaned = cleaned.replace(/^(?:[A-Za-z]{2,3}\s*\|\s*)+/gi, '').trim();
+  // Also handle "AR Sports", "UK General" style (2-letter code + space + name)
+  cleaned = cleaned.replace(/^[A-Za-z]{2}\s+(?=[A-Z])/i, '').trim();
+  
+  // If after cleaning we have a meaningful name and a country was detected,
+  // show just the cleaned category name (the country is already shown via the flag/tab)
+  if (countryInfo && cleaned.length > 1 && cleaned !== group.trim()) {
+    // Capitalize first letter of each word
+    return cleaned.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+  
   if (countryInfo) {
     return countryInfo.name;
   }
   // Capitalize first letter of each word for non-country groups
-  // Handle pipe-separated names like "alb | gjeneral" -> "Alb | Gjeneral"
   return group.trim()
     .split(/(\s*\|\s*|\s+)/)
     .map(part => {
