@@ -324,7 +324,7 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     'أب ولكن', 'إفراج', 'رأس الأفعى', 'رأس الأفعي',
     'صحاب الأرض', 'أصحاب الأرض', 'كان يا مكان', 'كان ياما كان',
     'فن الحرب', 'كلهم بيحبوا مودي', 'وننسى اللي كان', 'وننسي اللي كان',
-    'الأرض', 'درش', 'علي كلاي', 'فخر الدلتا', 'على قد الحب',
+    'درش', 'علي كلاي', 'فخر الدلتا', 'على قد الحب',
     'أولاد الراعي', 'الكينج', 'مناعة', 'اتنين غيرنا', 'حكاية نرجس',
     'عين سحرية', 'عرض وطلب', 'توابع', 'اللون الأزرق', 'فرصة أخيرة',
     'النص التاني', 'النص الثاني', 'بيبو', 'حد أقصى',
@@ -343,23 +343,21 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const groupLower = group.toLowerCase();
       const nameLower = ch.name.toLowerCase();
 
-      // Must be series type AND in a Ramadan or Arabic series group
+      // STRICT: Must be in a Ramadan 2026 Egyptian group specifically
       const isRamadanGroup = group.includes('رمضان') || groupLower.includes('ramadan');
-      const isArabicSeriesGroup = group.includes('مسلسلات عربية') || groupLower.includes('ar ser');
-      const has2026 = group.includes('2026') || groupLower.includes('2026') || (ch.year || '') === '2026';
+      const isEgyptianGroup = group.includes('مصري') || groupLower.includes('egypt') || groupLower.includes('مصر');
+      const has2026 = group.includes('2026') || groupLower.includes('2026');
       
-      // Must be in a relevant group
-      if (!isRamadanGroup && !(isArabicSeriesGroup && has2026)) return false;
+      // Accept: Ramadan Egyptian 2026 groups, OR generic Ramadan 2026 groups (we'll whitelist-filter below)
+      const isValidGroup = isRamadanGroup && has2026;
+      if (!isValidGroup) return false;
 
-      // Exclude non-Egyptian content by language markers
-      const isTurkish = nameLower.includes('turkish') || nameLower.includes('تركي') ||
-                        groupLower.includes('turkish') || groupLower.includes('تركي') ||
-                        /zamanlar|çukurova|cukurova|kibris|kıbrıs/i.test(ch.name);
-      if (isTurkish) return false;
-
+      // Exclude non-Egyptian regional groups explicitly
       const isNonEgyptian = groupLower.includes('خليجي') || groupLower.includes('gulf') ||
                             groupLower.includes('شامي') || groupLower.includes('levant') ||
                             groupLower.includes('مغرب') || groupLower.includes('maghreb') ||
+                            groupLower.includes('سعود') || groupLower.includes('saudi') ||
+                            groupLower.includes('turkish') || groupLower.includes('تركي') ||
                             groupLower.includes('korean') || groupLower.includes('indian') ||
                             groupLower.includes('english') || groupLower.includes('french');
       if (isNonEgyptian) return false;
@@ -373,24 +371,27 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
         .trim();
 
       if (cleanedName.length < 3) return false;
-      const cleanLower = cleanedName.toLowerCase();
 
-      // Exclude old المداح seasons (only season 5 / أسطورة العهد is 2026)
-      if (cleanLower.includes('المداح') && (
-        /ج\s*[2-4]|أسطورة الوادي|اسطورة الوادي|أسطورة العشق|اسطورة العشق|أسطورة العودة|اسطورة العودة/.test(cleanedName)
-      )) return false;
-
-      // Strict whitelist: title must match (contains check both ways, but require min 4 char overlap)
-      const isEgyptian = EGYPTIAN_RAMADAN_2026_TITLES.some(title => {
-        return cleanLower.includes(title) || title.includes(cleanLower);
-      });
-
+      // Explicit exclusions
       const isExcluded = nameLower.includes('ramadan premiere') || 
                          nameLower.includes('رمضان premiere') ||
                          ch.name.includes('جرس إنذار') ||
                          ch.name.includes('سواها البخت') ||
-                         ch.name.includes('المداح');
-      return isEgyptian && !isExcluded;
+                         ch.name.includes('المداح') ||
+                         ch.name.includes('إعمار الأرض') ||
+                         ch.name.includes('اعمار الارض') ||
+                         ch.name.includes('حرب');
+      if (isExcluded) return false;
+
+      // Strict whitelist: cleaned name must CONTAIN a whitelisted title (not the other way around)
+      const isWhitelisted = EGYPTIAN_RAMADAN_2026_TITLES.some(title => {
+        return cleanedName.includes(title);
+      });
+
+      // If it's specifically in an Egyptian Ramadan group, also allow even without whitelist
+      if (isEgyptianGroup) return true;
+
+      return isWhitelisted;
     });
     // Deduplicate by name
     const seen = new Set<string>();
