@@ -387,7 +387,9 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
 
       const isExcluded = nameLower.includes('ramadan premiere') || 
                          nameLower.includes('رمضان premiere') ||
-                         ch.name.includes('جرس إنذار');
+                         ch.name.includes('جرس إنذار') ||
+                         ch.name.includes('سواها البخت') ||
+                         ch.name.includes('المداح');
       return isEgyptian && !isExcluded;
     });
     // Deduplicate by name
