@@ -416,10 +416,18 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const isExcluded = nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere') || ch.name.includes('جرس إنذار');
       return isArabicGroup && !isSportsContent(ch) && !isExcluded;
     });
+    // Sort by actual year (from metadata), then by group year, newest first
     return arabicContent.sort((a, b) => {
-      const yearA = a.group?.includes('2026') ? 2026 : a.group?.includes('2025') ? 2025 : 2024;
-      const yearB = b.group?.includes('2026') ? 2026 : b.group?.includes('2025') ? 2025 : 2024;
-      return yearB - yearA;
+      const getYear = (ch: Channel) => {
+        if (ch.year) {
+          const y = parseInt(ch.year);
+          if (!isNaN(y)) return y;
+        }
+        // Fallback: extract from group name
+        const match = ch.group?.match(/20\d{2}/);
+        return match ? parseInt(match[0]) : 2000;
+      };
+      return getYear(b) - getYear(a);
     }).slice(0, 24);
   }, [channels]);
 
