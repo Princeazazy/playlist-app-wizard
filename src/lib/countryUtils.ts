@@ -519,17 +519,15 @@ const _getCountryInfoUncached = (group: string): CountryInfo | null => {
     return streamingService;
   }
 
-  // Direct match for countries
+  // Direct exact match for countries
   if (ALL_COUNTRIES[groupLower]) {
     const info = ALL_COUNTRIES[groupLower];
     if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
     return info;
   }
 
-  // Use pre-sorted keys (computed once at module level)
-  
-  
-  // Check for full country name matches FIRST (before partial matching)
+  // Check for full country name matches FIRST (before prefix matching)
+  // This ensures "AR | Egypt" maps to Egypt, not generic Arabic
   for (const [key, info] of Object.entries(ALL_COUNTRIES)) {
     if (groupLower === info.name.toLowerCase()) {
       if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
@@ -537,7 +535,49 @@ const _getCountryInfoUncached = (group: string): CountryInfo | null => {
     }
   }
 
-  // Check if group starts with country code (e.g., "US | News", "AR: Sports")
+  // PRIORITY: Check if a SPECIFIC country name appears in the group string
+  // This must happen BEFORE the 2-letter prefix check so "AR | Egypt" → Egypt, not Arabic
+  // Check longer keys first to prefer specific matches over generic ones
+  let specificMatch: CountryInfo | null = null;
+  let specificMatchLength = 0;
+  
+  for (const key of SORTED_COUNTRY_KEYS) {
+    const info = ALL_COUNTRIES[key];
+    // Skip generic "Arabic"/"ar" entries — we want specific countries to win
+    if (info.code === 'arabic' || info.code === 'gulf') continue;
+    
+    const isArabic = /[\u0600-\u06FF]/.test(key);
+    let matched = false;
+    
+    if (isArabic) {
+      if (groupLower.includes(key) || group.includes(key)) {
+        matched = true;
+      }
+    } else {
+      const countryName = info.name.toLowerCase();
+      const nameRegex = new RegExp(`\\b${countryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      if (nameRegex.test(groupLower)) {
+        matched = true;
+      } else if (key.length >= 3) {
+        const keyRegex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (keyRegex.test(groupLower)) {
+          matched = true;
+        }
+      }
+    }
+    
+    if (matched && key.length > specificMatchLength) {
+      if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
+      specificMatch = info;
+      specificMatchLength = key.length;
+    }
+  }
+  
+  if (specificMatch) {
+    return specificMatch;
+  }
+
+  // NOW check 2-letter prefix codes (e.g., "AR | ..." with no specific country found → Arabic)
   const codeMatch = groupLower.match(/^([a-z]{2})[\s|:\-]/);
   if (codeMatch && ALL_COUNTRIES[codeMatch[1]]) {
     const codeInfo = ALL_COUNTRIES[codeMatch[1]];
@@ -545,29 +585,20 @@ const _getCountryInfoUncached = (group: string): CountryInfo | null => {
     return codeInfo;
   }
 
-  // Check if country name/key appears in group name
+  // Fallback: check generic Arabic/Gulf keys last
   for (const key of SORTED_COUNTRY_KEYS) {
     const info = ALL_COUNTRIES[key];
-    const isArabic = /[\u0600-\u06FF]/.test(key);
+    if (info.code !== 'arabic' && info.code !== 'gulf') continue;
     
+    const isArabic = /[\u0600-\u06FF]/.test(key);
     if (isArabic) {
       if (groupLower.includes(key) || group.includes(key)) {
-        if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
         return info;
       }
-    } else {
-      const countryName = info.name.toLowerCase();
-      const nameRegex = new RegExp(`\\b${countryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      if (nameRegex.test(groupLower)) {
-        if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
+    } else if (key.length >= 3) {
+      const keyRegex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      if (keyRegex.test(groupLower)) {
         return info;
-      }
-      if (key.length >= 3) {
-        const keyRegex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-        if (keyRegex.test(groupLower)) {
-          if (EXCLUDED_COUNTRY_CODES.has(info.code)) return null;
-          return info;
-        }
       }
     }
   }
