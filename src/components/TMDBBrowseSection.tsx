@@ -333,9 +333,8 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     console.log('[TMDBBrowse] Movie groups:', [...movieGroups].sort());
   }, [channels]);
 
-  // Known Ramadan 2026 Egyptian series titles for name-based matching
-  const RAMADAN_2026_KEYWORDS = [
-    'قفطان خديجة', 'حالات نادرة', 'الضارية', 'ورد وشوكولاتة', 'كارثة طبيعية',
+  // ONLY verified Ramadan 2026 Egyptian drama titles — no variety shows, no non-Ramadan content
+  const RAMADAN_2026_TITLES = [
     'أب ولكن', 'إفراج', 'رأس الأفعى', 'رأس الأفعي',
     'صحاب الأرض', 'أصحاب الأرض', 'كان يا مكان', 'كان ياما كان',
     'فن الحرب', 'كلهم بيحبوا مودي', 'وننسى اللي كان', 'وننسي اللي كان',
@@ -345,11 +344,11 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     'النص التاني', 'النص الثاني', 'بيبو', 'حد أقصى',
     'المصيدة', 'السوق الحرة', 'اسأل روحك', 'قطر صغنطوط',
     'الست موناليزا', 'بابا وماما جيران', 'المتر سمير',
-    'هي كيميا', 'سوا سوا', 'السرايا الصفراء', 'حق ضايع', 
-    'إعلام وراثة', 'روج أسود', 'the voice أحلى صوت',
+    'هي كيميا', 'سوا سوا', 'السرايا الصفراء', 'حق ضايع',
+    'إعلام وراثة', 'روج أسود',
   ];
 
-  // Ramadan 2026 Egyptian Series — match by group OR by known title names
+  // Ramadan 2026 Egyptian Series — STRICT: only group with رمضان/ramadan + 2026, or verified title names
   const ramadanShows = useMemo(() => {
     const ramadanContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
@@ -365,14 +364,12 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
                          nameClean.includes('جرس إنذار');
       if (isExcluded) return false;
 
-      // Method 1: Group-based matching (ramadan/egyptian + 2026)
+      // Method 1: Group MUST explicitly contain "رمضان" or "ramadan" AND "2026"
+      // Do NOT match generic "Egyptian 2026" groups — those aren't necessarily Ramadan
       const isRamadanGroup = group.includes('رمضان') || groupLower.includes('ramadan');
-      const isEgyptian = group.includes('مصري') || groupLower.includes('egypt') || group.includes('مصر');
       const has2026 = group.includes('2026');
       
-      const groupMatch = (isRamadanGroup && has2026) || (isEgyptian && has2026);
-      
-      if (groupMatch) {
+      if (isRamadanGroup && has2026) {
         // Exclude non-Egyptian regional groups
         const isNonEgyptian = groupLower.includes('خليجي') || groupLower.includes('gulf') ||
                               groupLower.includes('شامي') || groupLower.includes('levant') ||
@@ -382,9 +379,9 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
         return true;
       }
 
-      // Method 2: Name-based matching — known Ramadan 2026 Egyptian show titles
-      const isKnownTitle = RAMADAN_2026_KEYWORDS.some(title => 
-        nameClean.includes(title) || nameLower.includes(title.toLowerCase())
+      // Method 2: Verified title whitelist ONLY
+      const isKnownTitle = RAMADAN_2026_TITLES.some(title => 
+        nameClean.includes(title)
       );
       if (isKnownTitle) return true;
 
