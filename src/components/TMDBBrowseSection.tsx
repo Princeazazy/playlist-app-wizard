@@ -527,9 +527,6 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
           <PlaylistRow title="Latest Arabic Movies" icon={Film} channels={arabicMovies} onChannelSelect={onChannelSelect} />
         )}
 
-        {englishMovies.length > 0 && (
-          <PlaylistRow title="Latest English Movies" icon={Film} channels={englishMovies} onChannelSelect={onChannelSelect} />
-        )}
 
         {familyMovies.length > 0 && (
           <PlaylistRow title="Most Watched Family Movies" icon={Film} channels={familyMovies} onChannelSelect={onChannelSelect} />
