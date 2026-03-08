@@ -333,22 +333,7 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     console.log('[TMDBBrowse] Movie groups:', [...movieGroups].sort());
   }, [channels]);
 
-  // ONLY verified Ramadan 2026 Egyptian drama titles — no variety shows, no non-Ramadan content
-  const RAMADAN_2026_TITLES = [
-    'أب ولكن', 'إفراج', 'رأس الأفعى', 'رأس الأفعي',
-    'صحاب الأرض', 'أصحاب الأرض', 'كان يا مكان', 'كان ياما كان',
-    'فن الحرب', 'كلهم بيحبوا مودي', 'وننسى اللي كان', 'وننسي اللي كان',
-    'درش', 'علي كلاي', 'فخر الدلتا', 'على قد الحب',
-    'أولاد الراعي', 'الكينج', 'مناعة', 'اتنين غيرنا', 'حكاية نرجس',
-    'عين سحرية', 'عرض وطلب', 'توابع', 'اللون الأزرق', 'فرصة أخيرة',
-    'النص التاني', 'النص الثاني', 'بيبو', 'حد أقصى',
-    'المصيدة', 'السوق الحرة', 'اسأل روحك', 'قطر صغنطوط',
-    'الست موناليزا', 'بابا وماما جيران', 'المتر سمير',
-    'هي كيميا', 'سوا سوا', 'السرايا الصفراء', 'حق ضايع',
-    'إعلام وراثة', 'روج أسود',
-  ];
-
-  // Ramadan 2026 Egyptian Series — STRICT: only group with رمضان/ramadan + 2026, or verified title names
+  // Ramadan 2026 Egyptian Series — ONLY from groups explicitly containing رمضان/ramadan + 2026 + مصري/egyptian
   const ramadanShows = useMemo(() => {
     const ramadanContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
@@ -356,39 +341,41 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
       const nameLower = ch.name.toLowerCase();
-      const nameClean = ch.name.trim();
 
       // Explicit exclusions
       const isExcluded = nameLower.includes('ramadan premiere') || 
                          nameLower.includes('رمضان premiere') ||
-                         nameClean.includes('جرس إنذار');
+                         ch.name.includes('جرس إنذار');
       if (isExcluded) return false;
 
-      // Method 1: Group MUST explicitly contain "رمضان" or "ramadan" AND "2026"
-      // Do NOT match generic "Egyptian 2026" groups — those aren't necessarily Ramadan
-      const isRamadanGroup = group.includes('رمضان') || groupLower.includes('ramadan');
+      // STRICT: Group MUST contain (رمضان or ramadan) AND 2026 AND (مصري or egypt or مصر)
+      const isRamadan = group.includes('رمضان') || groupLower.includes('ramadan');
       const has2026 = group.includes('2026');
+      const isEgyptian = group.includes('مصري') || group.includes('مصر') || groupLower.includes('egypt');
       
-      if (isRamadanGroup && has2026) {
-        // Exclude non-Egyptian regional groups
-        const isNonEgyptian = groupLower.includes('خليجي') || groupLower.includes('gulf') ||
-                              groupLower.includes('شامي') || groupLower.includes('levant') ||
-                              groupLower.includes('مغرب') || groupLower.includes('maghreb') ||
-                              groupLower.includes('turkish') || groupLower.includes('تركي');
-        if (isNonEgyptian) return false;
-        return true;
-      }
+      // Must match all three: Ramadan + 2026 + Egyptian
+      if (!(isRamadan && has2026 && isEgyptian)) return false;
 
-      // Method 2: Verified title whitelist ONLY
-      const isKnownTitle = RAMADAN_2026_TITLES.some(title => 
-        nameClean.includes(title)
-      );
-      if (isKnownTitle) return true;
+      // Double-check: exclude non-Egyptian content that slipped through
+      const isNonEgyptian = groupLower.includes('خليجي') || groupLower.includes('gulf') ||
+                            groupLower.includes('شامي') || groupLower.includes('levant') ||
+                            groupLower.includes('مغرب') || groupLower.includes('maghreb') ||
+                            groupLower.includes('turkish') || groupLower.includes('تركي');
+      if (isNonEgyptian) return false;
 
-      return false;
+      return true;
     });
     
-    console.log(`[TMDBBrowse] Ramadan 2026 matches: ${ramadanContent.length}`);
+    console.log(`[TMDBBrowse] Ramadan 2026 Egyptian matches: ${ramadanContent.length}`);
+    if (ramadanContent.length === 0) {
+      // Debug: show groups that have رمضان or ramadan to help identify naming
+      const ramadanGroups = new Set<string>();
+      channels.filter(ch => ch.type === 'series').forEach(ch => {
+        const g = ch.group || '';
+        if (g.includes('رمضان') || g.toLowerCase().includes('ramadan')) ramadanGroups.add(g);
+      });
+      console.log('[TMDBBrowse] All Ramadan series groups:', [...ramadanGroups]);
+    }
     
     // Deduplicate by name
     const seen = new Set<string>();
