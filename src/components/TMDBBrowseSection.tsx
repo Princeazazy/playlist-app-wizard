@@ -334,7 +334,20 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     'السرايا الصفراء', 'حق ضايع', 'إعلام وراثة', 'روج أسود',
   ];
 
-  // Ramadan 2026 Egyptian Series — strict whitelist matching
+  // Debug: log unique series/movie group names to understand provider naming
+  useEffect(() => {
+    if (channels.length === 0) return;
+    const seriesGroups = new Set<string>();
+    const movieGroups = new Set<string>();
+    channels.forEach(ch => {
+      if (ch.type === 'series') seriesGroups.add(ch.group || '(none)');
+      if (ch.type === 'movies') movieGroups.add(ch.group || '(none)');
+    });
+    console.log('[TMDBBrowse] Series groups:', [...seriesGroups].sort());
+    console.log('[TMDBBrowse] Movie groups:', [...movieGroups].sort());
+  }, [channels]);
+
+  // Ramadan 2026 Egyptian Series — broad matching for various provider naming
   const ramadanShows = useMemo(() => {
     const ramadanContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
@@ -343,12 +356,12 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const groupLower = group.toLowerCase();
       const nameLower = ch.name.toLowerCase();
 
-      // STRICT: Must be in a Ramadan 2026 Egyptian group specifically
+      // Match any group containing "ramadan" or "رمضان" with 2026
       const isRamadanGroup = group.includes('رمضان') || groupLower.includes('ramadan');
-      const isEgyptianGroup = group.includes('مصري') || groupLower.includes('egypt') || groupLower.includes('مصر');
-      const has2026 = group.includes('2026') || groupLower.includes('2026');
+      const has2026 = group.includes('2026');
       
-      // Accept: Ramadan Egyptian 2026 groups, OR generic Ramadan 2026 groups (we'll whitelist-filter below)
+      // Also match groups like "Ser Ramadan Egyptian 2026", "مسلسلات رمضان مصرية 2026", etc.
+      // Be broad: any ramadan 2026 group that isn't explicitly non-Egyptian
       const isValidGroup = isRamadanGroup && has2026;
       if (!isValidGroup) return false;
 
@@ -362,36 +375,13 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
                             groupLower.includes('english') || groupLower.includes('french');
       if (isNonEgyptian) return false;
 
-      // Clean name: strip IPTV prefixes
-      const cleanedName = ch.name
-        .replace(/^[A-Z]{2,4}\s+(SER|MOV|SERIES|MOVIES?)\s*\|\s*/i, '')
-        .replace(/^[A-Z]{2,3}\s*\|\s*/i, '')
-        .replace(/\s*\|.*$/, '')
-        .replace(/[_\-]/g, ' ')
-        .trim();
-
-      if (cleanedName.length < 3) return false;
-
       // Explicit exclusions
       const isExcluded = nameLower.includes('ramadan premiere') || 
                          nameLower.includes('رمضان premiere') ||
-                         ch.name.includes('جرس إنذار') ||
-                         ch.name.includes('سواها البخت') ||
-                         ch.name.includes('المداح') ||
-                         ch.name.includes('إعمار الأرض') ||
-                         ch.name.includes('اعمار الارض') ||
-                         ch.name.includes('حرب');
+                         ch.name.includes('جرس إنذار');
       if (isExcluded) return false;
 
-      // Strict whitelist: cleaned name must CONTAIN a whitelisted title (not the other way around)
-      const isWhitelisted = EGYPTIAN_RAMADAN_2026_TITLES.some(title => {
-        return cleanedName.includes(title);
-      });
-
-      // If it's specifically in an Egyptian Ramadan group, also allow even without whitelist
-      if (isEgyptianGroup) return true;
-
-      return isWhitelisted;
+      return true;
     });
     // Deduplicate by name
     const seen = new Set<string>();
