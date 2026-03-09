@@ -118,11 +118,15 @@ serve(async (req) => {
       );
     }
 
-    if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
-      console.error('Provider returned empty data for series', seriesId);
+    if (!data || Array.isArray(data) || (typeof data === 'object' && Object.keys(data).length === 0)) {
+      console.log('Provider returned empty/array data for series', seriesId, '- returning empty series info');
+      // Return empty but valid structure instead of 404
       return new Response(
-        JSON.stringify({ error: 'No data returned from provider' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          info: { name: '', cover: '', plot: '', cast: '', director: '', genre: '', releaseDate: '', rating: '', backdrop_path: [] },
+          seasons: [],
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
