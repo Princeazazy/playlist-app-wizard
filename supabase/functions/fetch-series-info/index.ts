@@ -2,10 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// STB headers to mimic legitimate devices
 const stbHeaders = {
   'User-Agent': 'IPTV Smarters Pro/3.0.0 (Linux; STB)',
   'Accept': '*/*',
@@ -13,18 +12,15 @@ const stbHeaders = {
   'Connection': 'keep-alive',
 };
 
-// Parse Xtream Codes credentials from M3U URL
 function parseXtreamCredentials(url: string): { baseUrl: string; username: string; password: string } | null {
   try {
     const urlObj = new URL(url);
     const username = urlObj.searchParams.get('username');
     const password = urlObj.searchParams.get('password');
-
     if (username && password) {
       const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
       return { baseUrl, username, password };
     }
-
     return null;
   } catch {
     return null;
@@ -69,7 +65,7 @@ interface SeriesInfo {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -92,43 +88,58 @@ serve(async (req) => {
     }
 
     const { baseUrl, username, password } = creds;
-    
-    // Fetch series info from Xtream API
     const apiUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_series_info&series_id=${seriesId}`;
     
-    console.log(`Fetching series info for series_id: ${seriesId}`);
+    console.log(`Fetching series info for series_id: ${seriesId} from ${baseUrl}`);
     
     const response = await fetch(apiUrl, { headers: stbHeaders });
     
     if (!response.ok) {
-      console.error('Failed to fetch series info:', response.status);
+      console.error('Provider returned status:', response.status, response.statusText);
+      const text = await response.text().catch(() => '');
+      console.error('Provider response body:', text.substring(0, 500));
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch series info from provider' }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: `Provider returned ${response.status}` }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const data = await response.json();
+    const rawText = await response.text();
+    console.log(`Raw response length: ${rawText.length}, preview: ${rawText.substring(0, 200)}`);
     
-    if (!data || !data.info) {
+    let data: any;
+    try {
+      data = JSON.parse(rawText);
+    } catch (e) {
+      console.error('Failed to parse JSON:', e);
       return new Response(
-        JSON.stringify({ error: 'Invalid series data from provider' }),
+        JSON.stringify({ error: 'Provider returned invalid JSON' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+      console.error('Provider returned empty data for series', seriesId);
+      return new Response(
+        JSON.stringify({ error: 'No data returned from provider' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Transform the data into our expected format
+    // Be tolerant - info may be missing, episodes may still exist
+    const info = data.info || {};
+    
     const seriesInfo: SeriesInfo = {
       info: {
-        name: data.info.name || '',
-        cover: data.info.cover || '',
-        plot: data.info.plot || '',
-        cast: data.info.cast || '',
-        director: data.info.director || '',
-        genre: data.info.genre || '',
-        releaseDate: data.info.releaseDate || '',
-        rating: data.info.rating || '',
-        backdrop_path: data.info.backdrop_path || [],
+        name: info.name || '',
+        cover: info.cover || '',
+        plot: info.plot || '',
+        cast: info.cast || '',
+        director: info.director || '',
+        genre: info.genre || '',
+        releaseDate: info.releaseDate || info.releasedate || '',
+        rating: info.rating || '',
+        backdrop_path: info.backdrop_path || [],
       },
       seasons: [],
     };
@@ -137,7 +148,6 @@ serve(async (req) => {
     if (data.episodes) {
       const episodesBySeason: Record<string, Episode[]> = {};
       
-      // Xtream API returns episodes grouped by season number
       for (const [seasonNum, episodes] of Object.entries(data.episodes)) {
         if (!Array.isArray(episodes)) continue;
         
@@ -160,7 +170,6 @@ serve(async (req) => {
         });
       }
       
-      // Convert to sorted seasons array
       const sortedSeasonNums = Object.keys(episodesBySeason)
         .map(Number)
         .filter(n => !isNaN(n))
@@ -168,15 +177,15 @@ serve(async (req) => {
       
       for (const seasonNum of sortedSeasonNums) {
         const episodes = episodesBySeason[String(seasonNum)] || [];
-        // Sort episodes by episode number
         episodes.sort((a, b) => a.episode_num - b.episode_num);
-        
         seriesInfo.seasons.push({
           season_number: seasonNum,
           name: `Season ${seasonNum}`,
           episodes,
         });
       }
+    } else {
+      console.log('No episodes field in provider response. Keys:', Object.keys(data));
     }
 
     console.log(`Found ${seriesInfo.seasons.length} seasons for series ${seriesId}`);
