@@ -340,42 +340,22 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
-      const nameLower = ch.name.toLowerCase();
 
-      // Explicit exclusions
-      const isExcluded = nameLower.includes('ramadan premiere') || 
-                         nameLower.includes('رمضان premiere') ||
-                         ch.name.includes('جرس إنذار');
-      if (isExcluded) return false;
-
-      // STRICT: Group MUST contain (رمضان or ramadan) AND 2026 AND (مصري or egypt or مصر)
-      const isRamadan = group.includes('رمضان') || groupLower.includes('ramadan');
-      const has2026 = group.includes('2026');
-      const isEgyptian = group.includes('مصري') || group.includes('مصر') || groupLower.includes('egypt');
+      // STRICT: Match "SRS | RAMADAN EGYPT 26" pattern
+      // Group must contain "ramadan" AND "egypt" AND ("26" or "2026")
+      const isRamadan = groupLower.includes('ramadan') || group.includes('رمضان');
+      const isEgyptian = groupLower.includes('egypt') || group.includes('مصر') || group.includes('مصري');
+      const is2026 = /\b26\b/.test(group) || group.includes('2026');
       
-      // Must match all three: Ramadan + 2026 + Egyptian
-      if (!(isRamadan && has2026 && isEgyptian)) return false;
+      if (!(isRamadan && isEgyptian && is2026)) return false;
 
-      // Double-check: exclude non-Egyptian content that slipped through
-      const isNonEgyptian = groupLower.includes('خليجي') || groupLower.includes('gulf') ||
-                            groupLower.includes('شامي') || groupLower.includes('levant') ||
-                            groupLower.includes('مغرب') || groupLower.includes('maghreb') ||
-                            groupLower.includes('turkish') || groupLower.includes('تركي');
-      if (isNonEgyptian) return false;
+      // Exclude non-Egyptian groups
+      if (/khaliji|خليجي|sham|شامي|maghreb|مغرب|turkish|تركي/i.test(group)) return false;
 
       return true;
     });
     
     console.log(`[TMDBBrowse] Ramadan 2026 Egyptian matches: ${ramadanContent.length}`);
-    if (ramadanContent.length === 0) {
-      // Debug: show groups that have رمضان or ramadan to help identify naming
-      const ramadanGroups = new Set<string>();
-      channels.filter(ch => ch.type === 'series').forEach(ch => {
-        const g = ch.group || '';
-        if (g.includes('رمضان') || g.toLowerCase().includes('ramadan')) ramadanGroups.add(g);
-      });
-      console.log('[TMDBBrowse] All Ramadan series groups:', [...ramadanGroups]);
-    }
     
     // Deduplicate by name
     const seen = new Set<string>();
