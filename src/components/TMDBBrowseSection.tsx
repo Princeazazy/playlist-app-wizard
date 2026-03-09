@@ -352,6 +352,10 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       // Exclude non-Egyptian groups
       if (/khaliji|خليجي|sham|شامي|maghreb|مغرب|turkish|تركي/i.test(group)) return false;
 
+      // Exclude animated/kids/cartoon content
+      const nameLower = ch.name.toLowerCase();
+      if (/cartoon|كرتون|رسوم|animat|أطفال|kids|children|طيور الجنة|سبيس تون|spacetoon|disney/i.test(nameLower + ' ' + groupLower)) return false;
+
       return true;
     });
     
