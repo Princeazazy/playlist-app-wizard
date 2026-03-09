@@ -361,7 +361,9 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const titleBlacklist = [
         'هكذا اسماء الله الحسنى', 'hakatha asmaa', 'كابتن شديد', 'captain shedeed',
         'أنس ai', 'انس ai', 'الضحايا', 'عائلة مصرية جدا', 'إثبات نسب', 'اثبات نسب',
-        'آدم ج2', 'ادم ج2', 'adam ج2', 'وادي ميسان', 'wadi maysan'
+        'آدم ج2', 'ادم ج2', 'adam ج2', 'وادي ميسان', 'wadi maysan',
+        'انا وهو وهم', 'أنا وهو وهم', 'me him & them', 'me him and them',
+        'إعلام وراثة', 'اعلام وراثة', 'المصيدة'
       ];
       if (titleBlacklist.some(t => nameLower.includes(t.toLowerCase()))) return false;
 
