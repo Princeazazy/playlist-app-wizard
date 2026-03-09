@@ -354,7 +354,8 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
 
       // Exclude animated/kids/cartoon content
       const nameLower = ch.name.toLowerCase();
-      if (/cartoon|كرتون|رسوم|animat|أطفال|kids|children|طيور الجنة|سبيس تون|spacetoon|disney/i.test(nameLower + ' ' + groupLower)) return false;
+      const combinedText = nameLower + ' ' + groupLower;
+      if (/cartoon|كرتون|رسوم|animat|أطفال|kids|children|طيور الجنة|سبيس تون|spacetoon|disney|سعود وسارة|روضة القرآن|قصص الأنبياء|قصص القران|حكايات|مغامرات.*للأطفال|براعم|جنى|كراميش|toyor|baby|junior|nick|cn |boomerang|قناة ماجد|majid|مرح|قصص اطفال|نون|noon kids|baraem|jeem|jeemtv/i.test(combinedText)) return false;
 
       return true;
     });
