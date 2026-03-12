@@ -170,8 +170,8 @@ export const MiFullscreenPlayer = ({
       return [rawUrl, proxyUrl];
     }
 
-    // Challenged hosts: still try direct first, but keep proxy as fallback.
-    if (isHttps && isProxyChallengedHost) return [rawUrl, proxyUrl];
+    // This host consistently blocks cloud proxy with 458; avoid proxy loops.
+    if (isHttps && isProxyChallengedHost) return [rawUrl];
 
     // Default web strategy: direct HTTPS first, then proxy fallback.
     if (isHttps) return [rawUrl, proxyUrl];
@@ -198,23 +198,41 @@ export const MiFullscreenPlayer = ({
     const buildSourceVariants = (baseUrl: string): string[] => {
       if (isNative) return [baseUrl];
 
-      const variants = [baseUrl];
+      const variants: string[] = [];
+      const addVariant = (candidate: string | undefined) => {
+        if (!candidate) return;
+        if (!variants.includes(candidate)) variants.push(candidate);
+      };
 
-      // Try extension swap for live URLs
-      if (/\/live\/.+\.ts(\?.*)?$/i.test(baseUrl)) {
-        variants.push(baseUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1'));
-      } else if (/\/live\/.+\.m3u8(\?.*)?$/i.test(baseUrl)) {
-        variants.push(baseUrl.replace(/\.m3u8(\?.*)?$/i, '.ts$1'));
+      const hostname = (() => {
+        try { return new URL(baseUrl).hostname.toLowerCase(); } catch { return ''; }
+      })();
+      const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
+
+      addVariant(baseUrl);
+
+      const liveTsSwap = /\/live\/.+\.ts(\?.*)?$/i.test(baseUrl)
+        ? baseUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
+        : /\/live\/.+\.m3u8(\?.*)?$/i.test(baseUrl)
+          ? baseUrl.replace(/\.m3u8(\?.*)?$/i, '.ts$1')
+          : undefined;
+
+      if (liveTsSwap) {
+        if (isProxyChallengedHost && /\.m3u8(\?.*)?$/i.test(baseUrl)) {
+          addVariant(liveTsSwap);
+          addVariant(baseUrl);
+        } else {
+          addVariant(liveTsSwap);
+        }
       }
 
-      // Try output parameter swap for get.php style URLs
       if (/output=ts/i.test(baseUrl)) {
-        variants.push(baseUrl.replace(/output=ts/i, 'output=m3u8'));
+        addVariant(baseUrl.replace(/output=ts/i, 'output=m3u8'));
       } else if (/output=(m3u8|hls)/i.test(baseUrl)) {
-        variants.push(baseUrl.replace(/output=(m3u8|hls)/i, 'output=ts'));
+        addVariant(baseUrl.replace(/output=(m3u8|hls)/i, 'output=ts'));
       }
 
-      return Array.from(new Set(variants));
+      return variants;
     };
 
     const sourceVariants = buildSourceVariants(originalUrl);
@@ -241,7 +259,13 @@ export const MiFullscreenPlayer = ({
         }
 
         const playableUrl = playableCandidates[candidateIndex];
-        const isHlsStream = sourceUrl.includes('.m3u8');
+        const decodedSourceUrl = (() => {
+          try { return decodeURIComponent(sourceUrl); } catch { return sourceUrl; }
+        })();
+        const isHlsStream =
+          sourceUrl.includes('.m3u8') ||
+          decodedSourceUrl.includes('.m3u8') ||
+          /(?:^|[?&])output=(m3u8|hls)\b/i.test(sourceUrl);
         let movedNext = false;
         let networkRecoveries = 0;
 
