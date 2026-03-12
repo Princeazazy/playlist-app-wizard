@@ -170,8 +170,11 @@ export const MiFullscreenPlayer = ({
       return [rawUrl, proxyUrl];
     }
 
-    // This host consistently blocks cloud proxy with 458; avoid proxy loops.
-    if (isHttps && isProxyChallengedHost) return [rawUrl];
+    // This host often blocks cloud proxy on TS; keep proxy as last-resort only for HLS-like URLs.
+    if (isHttps && isProxyChallengedHost) {
+      const isLikelyHls = /\.m3u8(\?.*)?$/i.test(rawUrl) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(rawUrl);
+      return isLikelyHls ? [rawUrl, proxyUrl] : [rawUrl];
+    }
 
     // Default web strategy: direct HTTPS first, then proxy fallback.
     if (isHttps) return [rawUrl, proxyUrl];
