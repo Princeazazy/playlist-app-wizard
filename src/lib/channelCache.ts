@@ -78,7 +78,7 @@ export async function getCachedChannels(sourceKey?: string): Promise<Channel[] |
   }
 }
 
-export async function setCachedChannels(channels: Channel[]): Promise<void> {
+export async function setCachedChannels(channels: Channel[], sourceKey: string = 'default'): Promise<void> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -89,6 +89,7 @@ export async function setCachedChannels(channels: Channel[]): Promise<void> {
         key: CACHE_KEY,
         channels,
         timestamp: Date.now(),
+        sourceKey,
       };
       
       const request = store.put(entry);

@@ -264,18 +264,30 @@ export const useIPTV = (m3uUrl?: string) => {
   
   // Track if we've loaded from cache yet
   const cacheLoaded = useRef(false);
+  const previousPlaylistKeyRef = useRef(playlistUrlsKey.current);
   
   // If we have local channels, don't show loading state
   const [loading, setLoading] = useState(() => !hasLocal);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Load from IndexedDB cache on mount
+  // When playlist source changes, clear current list so stale provider channels never render
+  useEffect(() => {
+    if (previousPlaylistKeyRef.current !== playlistUrlsKey.current) {
+      previousPlaylistKeyRef.current = playlistUrlsKey.current;
+      cacheLoaded.current = false;
+      setChannels([]);
+      setError(null);
+      setLoading(true);
+    }
+  }, [playlistUrlsKey.current]);
+
+  // Load from IndexedDB cache on mount (scoped to current playlist source)
   useEffect(() => {
     if (hasLocal || cacheLoaded.current) return;
     
     const loadCache = async () => {
-      const cached = await getCachedChannels();
+      const cached = await getCachedChannels(playlistUrlsKey.current);
       if (cached && cached.length > 0 && channels.length === 0) {
         const normalized = normalizeChannels(cached);
         console.log(`Loaded ${cached.length} channels from IndexedDB cache`);
@@ -286,7 +298,7 @@ export const useIPTV = (m3uUrl?: string) => {
     };
     
     loadCache();
-  }, [hasLocal, channels.length]);
+  }, [hasLocal, channels.length, playlistUrlsKey.current]);
 
   // Function to trigger a refresh without reloading the app
   const refresh = useCallback(async () => {
