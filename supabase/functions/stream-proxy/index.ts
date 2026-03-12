@@ -7,7 +7,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_REQUESTS = 100;
+const RATE_LIMIT_REQUESTS = 600;
 const RATE_LIMIT_WINDOW_MS = 60000;
 
 function checkRateLimit(clientId: string): boolean {
