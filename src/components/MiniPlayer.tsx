@@ -38,47 +38,81 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
 
     setError(null);
 
-    // Build source URL
-    let sourceUrl = channel.url;
-    if (!isNative && !channel.isLocal && streamProxyUrl) {
-      sourceUrl = `${streamProxyUrl}?url=${encodeURIComponent(channel.url)}`;
-    }
+    const proxyUrl = streamProxyUrl
+      ? `${streamProxyUrl}?url=${encodeURIComponent(channel.url)}`
+      : channel.url;
 
-    const isHls = sourceUrl.includes('.m3u8') || channel.url.includes('.m3u8');
+    const sourceCandidates: string[] = (() => {
+      if (isNative) return [channel.url];
+      if (!streamProxyUrl) return [channel.url];
+      if (channel.url.startsWith('http://')) return [proxyUrl];
+      if (channel.url.startsWith('https://')) return [channel.url, proxyUrl];
+      return [channel.url];
+    })();
 
-    if (isHls && Hls.isSupported()) {
-      const hls = new Hls({
-        maxBufferLength: 30,
-        maxMaxBufferLength: 60,
-        enableWorker: true,
-        lowLatencyMode: false,
-      });
+    const trySource = (candidateIndex: number) => {
+      const sourceUrl = sourceCandidates[candidateIndex];
+      if (!sourceUrl) {
+        setError('Playback error');
+        return;
+      }
 
-      hlsRef.current = hls;
-      hls.loadSource(sourceUrl);
-      hls.attachMedia(video);
+      const isHls = sourceUrl.includes('.m3u8') || channel.url.includes('.m3u8');
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      if (isHls && Hls.isSupported()) {
+        const hls = new Hls({
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
+          enableWorker: true,
+          lowLatencyMode: false,
+        });
+
+        hlsRef.current = hls;
+        hls.loadSource(sourceUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.muted = isMuted;
+          video.play().catch(() => {});
+        });
+
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          if (data.fatal) {
+            if (candidateIndex + 1 < sourceCandidates.length) {
+              trySource(candidateIndex + 1);
+              return;
+            }
+            setError('Playback error');
+          }
+        });
+        return;
+      }
+
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = sourceUrl;
         video.muted = isMuted;
-        video.play().catch(() => {});
-      });
-
-      hls.on(Hls.Events.ERROR, (_, data) => {
-        if (data.fatal) {
+        video.play().catch(() => {
+          if (candidateIndex + 1 < sourceCandidates.length) {
+            trySource(candidateIndex + 1);
+            return;
+          }
           setError('Playback error');
+        });
+        return;
+      }
+
+      video.src = sourceUrl;
+      video.muted = isMuted;
+      video.play().catch(() => {
+        if (candidateIndex + 1 < sourceCandidates.length) {
+          trySource(candidateIndex + 1);
+          return;
         }
+        setError('Playback error');
       });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS (Safari)
-      video.src = sourceUrl;
-      video.muted = isMuted;
-      video.play().catch(() => {});
-    } else {
-      // Direct playback
-      video.src = sourceUrl;
-      video.muted = isMuted;
-      video.play().catch(() => {});
-    }
+    };
+
+    trySource(0);
 
     return () => {
       if (hlsRef.current) {
@@ -86,7 +120,7 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
         hlsRef.current = null;
       }
     };
-  }, [channel.url, channel.isLocal, streamProxyUrl, isMuted]);
+  }, [channel.url, streamProxyUrl, isMuted, isNative]);
 
 
   return (
