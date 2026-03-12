@@ -78,7 +78,12 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
         return;
       }
 
-      const isHls = sourceUrl.includes('.m3u8') || channel.url.includes('.m3u8');
+      const isHls =
+        sourceUrl.includes('.m3u8') ||
+        decodeURIComponent(sourceUrl).includes('.m3u8') ||
+        sourceUrl.includes('output=m3u8') ||
+        sourceUrl.includes('output=hls') ||
+        channel.url.includes('.m3u8');
 
       if (isHls && Hls.isSupported()) {
         let networkRecoveries = 0;
