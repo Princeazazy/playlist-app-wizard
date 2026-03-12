@@ -786,10 +786,12 @@ Deno.serve(async (req) => {
       const { baseUrl, username, password } = xtreamCreds;
       const limit = safeMaxReturnPerType;
 
-      // Sequential to avoid CPU spike
-      const liveResult = await fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension);
-      const moviesResult = await fetchXtreamMovies(baseUrl, username, password, limit);
-      const seriesResult = await fetchXtreamSeries(baseUrl, username, password, limit);
+      // Parallelize type fetches to cut total wall time on blocked-M3U fallbacks
+      const [liveResult, moviesResult, seriesResult] = await Promise.all([
+        fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension),
+        fetchXtreamMovies(baseUrl, username, password, limit),
+        fetchXtreamSeries(baseUrl, username, password, limit),
+      ]);
 
       const returnedChannels = [
         ...liveResult.items,
