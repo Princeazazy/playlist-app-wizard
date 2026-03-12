@@ -329,7 +329,7 @@ async function fetchXtreamLiveByCategory(
         if (seenStreamIds.has(streamId)) continue;
         seenStreamIds.add(streamId);
 
-        const streamUrl = `${baseUrl}/live/${username}/${password}/${stream.stream_id}.m3u8`;
+        const streamUrl = `${baseUrl}/live/${username}/${password}/${stream.stream_id}.${liveExtension}`;
         const categoryLower = categoryName.toLowerCase();
         // Only classify as sports based on CATEGORY name, not channel name
         // This prevents regular channels like "beIN Drama" from being misclassified
