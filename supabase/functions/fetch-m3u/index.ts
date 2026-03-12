@@ -173,7 +173,7 @@ type XtreamFetchResult = { items: any[]; total: number; tooLarge?: boolean };
 
 const XTREAM_MAX_JSON_BYTES = 40 * 1024 * 1024; // 40MB safety cap per API response
 const XTREAM_MAX_ITEMS_PER_RESPONSE = 50000; // Raised to capture full Arabia TV catalog
-const CATEGORY_FETCH_TIMEOUT = 10000; // 10s timeout per category fetch
+const CATEGORY_FETCH_TIMEOUT = 6000; // 6s timeout per category fetch to avoid long stalls
 const MAX_CATEGORIES_PER_TYPE = 500; // Reasonable category cap
 
 function responseTooLarge(res: Response, maxBytes: number): boolean {
@@ -705,9 +705,11 @@ Deno.serve(async (req) => {
       // Retry logic: if first attempt returns 0 for all types, wait and retry once
       // This handles provider rate-limiting from prior burst requests
       const fetchAllXtream = async () => {
-        const liveResult = await fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension);
-        const moviesResult = await fetchXtreamMovies(baseUrl, username, password, limit);
-        const seriesResult = await fetchXtreamSeries(baseUrl, username, password, limit);
+        const [liveResult, moviesResult, seriesResult] = await Promise.all([
+          fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension),
+          fetchXtreamMovies(baseUrl, username, password, limit),
+          fetchXtreamSeries(baseUrl, username, password, limit),
+        ]);
         return { liveResult, moviesResult, seriesResult };
       };
 
@@ -784,10 +786,12 @@ Deno.serve(async (req) => {
       const { baseUrl, username, password } = xtreamCreds;
       const limit = safeMaxReturnPerType;
 
-      // Sequential to avoid CPU spike
-      const liveResult = await fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension);
-      const moviesResult = await fetchXtreamMovies(baseUrl, username, password, limit);
-      const seriesResult = await fetchXtreamSeries(baseUrl, username, password, limit);
+      // Parallelize type fetches to cut total wall time on blocked-M3U fallbacks
+      const [liveResult, moviesResult, seriesResult] = await Promise.all([
+        fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension),
+        fetchXtreamMovies(baseUrl, username, password, limit),
+        fetchXtreamSeries(baseUrl, username, password, limit),
+      ]);
 
       const returnedChannels = [
         ...liveResult.items,
