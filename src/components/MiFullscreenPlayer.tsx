@@ -159,13 +159,21 @@ export const MiFullscreenPlayer = ({
     const isHttps = rawUrl.startsWith('https://');
     const proxyUrl = getProxyWrappedUrl(rawUrl);
 
+    const hostname = (() => {
+      try { return new URL(rawUrl).hostname.toLowerCase(); } catch { return ''; }
+    })();
+    const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
+
     // Local file channels: prefer direct HTTPS playback, proxy only for plain HTTP
     if (channel.isLocal) {
       if (isHttp) return [proxyUrl];
       return [rawUrl, proxyUrl];
     }
 
-    // WEBTV playlists are often cloud-proxy blocked (458), so prefer direct HTTPS first.
+    // This provider frequently blocks cloud proxy (458); keep playback direct for HTTPS.
+    if (isHttps && isProxyChallengedHost) return [rawUrl];
+
+    // Default web strategy: direct HTTPS first, then proxy fallback.
     if (isHttps) return [rawUrl, proxyUrl];
 
     // Plain HTTP must be proxied on web to avoid mixed-content blocking.
