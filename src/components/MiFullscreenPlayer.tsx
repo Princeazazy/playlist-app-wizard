@@ -344,8 +344,8 @@ export const MiFullscreenPlayer = ({
     const startupTimeout = window.setTimeout(() => {
       const v = videoRef.current;
       if (!v) return;
-      if (v.readyState < 2 && v.paused && !error) {
-        setError('Stream did not start. Tap Play, or try another channel.');
+      if (v.readyState < 2 && v.paused) {
+        setError((prev) => prev ?? 'Stream did not start. Tap Play, or try another channel.');
       }
     }, 8000);
 
@@ -356,7 +356,7 @@ export const MiFullscreenPlayer = ({
         hlsRef.current = null;
       }
     };
-  }, [channel.url, buildPlayableCandidates, error]);
+  }, [channel.url, buildPlayableCandidates]);
 
   // Fetch external subtitle tracks from Xtream API for VOD content
   useEffect(() => {
