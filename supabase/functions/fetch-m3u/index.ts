@@ -436,7 +436,7 @@ async function fetchXtreamVodByCategory(
         items.push({
           name: stream.name || 'Unknown Movie',
           url: `${baseUrl}/movie/${username}/${password}/${stream.stream_id}.${ext}`,
-          logo: stream.stream_icon || '',
+          logo: fixLogoUrl(stream.stream_icon || ''),
           group: categoryName,
           type: 'movies' as const,
           stream_id: streamId,
