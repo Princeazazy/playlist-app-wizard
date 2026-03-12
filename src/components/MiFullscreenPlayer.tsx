@@ -159,13 +159,21 @@ export const MiFullscreenPlayer = ({
     const isHttps = rawUrl.startsWith('https://');
     const proxyUrl = getProxyWrappedUrl(rawUrl);
 
+    const hostname = (() => {
+      try { return new URL(rawUrl).hostname.toLowerCase(); } catch { return ''; }
+    })();
+    const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
+
     // Local file channels: prefer direct HTTPS playback, proxy only for plain HTTP
     if (channel.isLocal) {
       if (isHttp) return [proxyUrl];
       return [rawUrl, proxyUrl];
     }
 
-    // WEBTV playlists are often cloud-proxy blocked (458), so prefer direct HTTPS first.
+    // This provider frequently blocks cloud proxy (458); keep playback direct for HTTPS.
+    if (isHttps && isProxyChallengedHost) return [rawUrl];
+
+    // Default web strategy: direct HTTPS first, then proxy fallback.
     if (isHttps) return [rawUrl, proxyUrl];
 
     // Plain HTTP must be proxied on web to avoid mixed-content blocking.
@@ -218,6 +226,7 @@ export const MiFullscreenPlayer = ({
         const playableUrl = playableCandidates[candidateIndex];
         const isHlsStream = sourceUrl.includes('.m3u8');
         let movedNext = false;
+        let networkRecoveries = 0;
 
         const moveNextOnce = () => {
           if (movedNext) return;
@@ -238,7 +247,18 @@ export const MiFullscreenPlayer = ({
         video.load();
 
         if (isHlsStream && Hls.isSupported()) {
-          const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          const hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: !isVOD,
+            maxBufferLength: isVOD ? 45 : 20,
+            maxMaxBufferLength: isVOD ? 90 : 45,
+            manifestLoadingMaxRetry: 2,
+            levelLoadingMaxRetry: 3,
+            fragLoadingMaxRetry: 4,
+            manifestLoadingRetryDelay: 500,
+            levelLoadingRetryDelay: 1000,
+            fragLoadingRetryDelay: 1000,
+          });
           hlsRef.current = hls;
 
           hls.loadSource(playableUrl);
@@ -289,14 +309,6 @@ export const MiFullscreenPlayer = ({
             }
 
             const code = data?.response?.code as number | undefined;
-            const shouldRetryCandidate =
-              data.type === Hls.ErrorTypes.NETWORK_ERROR ||
-              [401, 403, 429, 458, 500, 502, 503, 504].includes(code || 0);
-
-            if (shouldRetryCandidate) {
-              moveNextOnce();
-              return;
-            }
 
             if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
               try {
@@ -306,6 +318,27 @@ export const MiFullscreenPlayer = ({
                 moveNextOnce();
                 return;
               }
+            }
+
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              const shouldSwitchCandidate = [401, 403, 429, 458, 500, 502, 503, 504].includes(code || 0);
+              if (shouldSwitchCandidate) {
+                moveNextOnce();
+                return;
+              }
+
+              if (networkRecoveries < 3) {
+                networkRecoveries += 1;
+                try {
+                  hls.startLoad();
+                  return;
+                } catch {
+                  // fall through to next candidate
+                }
+              }
+
+              moveNextOnce();
+              return;
             }
 
             moveNextOnce();

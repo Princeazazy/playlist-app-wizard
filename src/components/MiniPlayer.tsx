@@ -60,11 +60,15 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
       const isHls = sourceUrl.includes('.m3u8') || channel.url.includes('.m3u8');
 
       if (isHls && Hls.isSupported()) {
+        let networkRecoveries = 0;
         const hls = new Hls({
           maxBufferLength: 30,
           maxMaxBufferLength: 60,
           enableWorker: true,
           lowLatencyMode: false,
+          manifestLoadingMaxRetry: 2,
+          levelLoadingMaxRetry: 3,
+          fragLoadingMaxRetry: 4,
         });
 
         hlsRef.current = hls;
@@ -77,13 +81,37 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
-          if (data.fatal) {
-            if (candidateIndex + 1 < sourceCandidates.length) {
-              trySource(candidateIndex + 1);
+          if (!data.fatal) return;
+
+          if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            try {
+              hls.recoverMediaError();
               return;
+            } catch {
+              // continue to candidate fallback
             }
-            setError('Playback error');
           }
+
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            const code = data?.response?.code as number | undefined;
+            const isHardFailure = [401, 403, 429, 458, 500, 502, 503, 504].includes(code || 0);
+            if (!isHardFailure && networkRecoveries < 2) {
+              networkRecoveries += 1;
+              try {
+                hls.startLoad();
+                return;
+              } catch {
+                // continue to candidate fallback
+              }
+            }
+          }
+
+          if (candidateIndex + 1 < sourceCandidates.length) {
+            trySource(candidateIndex + 1);
+            return;
+          }
+
+          setError('Playback error');
         });
         return;
       }
