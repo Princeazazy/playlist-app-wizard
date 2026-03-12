@@ -16,6 +16,7 @@ interface Match {
   channels: string[];
   league: string;
   date: string;
+  dayLabel?: string;
 }
 
 interface LiveMatchesTickerProps {
