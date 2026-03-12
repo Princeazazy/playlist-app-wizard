@@ -135,6 +135,14 @@ export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatch
   // Compute the date label for the current page's matches
   const currentDateLabel = useMemo(() => {
     if (visibleMatches.length === 0) return '';
+    
+    // Use dayLabel from the API if available
+    const dayLabel = visibleMatches[0].dayLabel;
+    if (dayLabel === 'yesterday') return "Yesterday's Matches";
+    if (dayLabel === 'today') return "Today's Matches";
+    if (dayLabel === 'tomorrow') return "Tomorrow's Matches";
+    
+    // Fallback to date-based detection
     const matchDate = visibleMatches[0].date;
     if (!matchDate) return "Today's Matches";
     
