@@ -545,7 +545,7 @@ async function fetchXtreamSeriesByCategory(
         items.push({
           name: stream.name || 'Unknown Series',
           url: '',
-          logo: stream.cover || '',
+          logo: fixLogoUrl(stream.cover || ''),
           group: categoryName,
           type: 'series' as const,
           series_id: seriesId,
