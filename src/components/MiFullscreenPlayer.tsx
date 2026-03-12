@@ -146,23 +146,33 @@ export const MiFullscreenPlayer = ({
     return { streamProxyUrl };
   }, []);
 
-  const getPlayableUrl = (rawUrl: string) => {
-    const isNative = Capacitor.isNativePlatform();
-    if (isNative) return rawUrl;
-
-    if (channel.isLocal) {
-      if (rawUrl.startsWith('https://')) return rawUrl;
-      if (functionConfig.streamProxyUrl) {
-        return `${functionConfig.streamProxyUrl}?url=${encodeURIComponent(rawUrl)}`;
-      }
-      return rawUrl;
-    }
-
+  const getProxyWrappedUrl = useCallback((rawUrl: string) => {
     if (!functionConfig.streamProxyUrl) return rawUrl;
     return `${functionConfig.streamProxyUrl}?url=${encodeURIComponent(rawUrl)}`;
-  };
+  }, [functionConfig.streamProxyUrl]);
 
-  // HLS.js initialization
+  const buildPlayableCandidates = useCallback((rawUrl: string): string[] => {
+    const isNative = Capacitor.isNativePlatform();
+    if (isNative) return [rawUrl];
+
+    const isHttp = rawUrl.startsWith('http://');
+    const isHttps = rawUrl.startsWith('https://');
+    const proxyUrl = getProxyWrappedUrl(rawUrl);
+
+    // Local file channels: prefer direct HTTPS playback, proxy only for plain HTTP
+    if (channel.isLocal) {
+      if (isHttp) return [proxyUrl];
+      return [rawUrl, proxyUrl];
+    }
+
+    // WEBTV playlists are often cloud-proxy blocked (458), so prefer direct HTTPS first.
+    if (isHttps) return [rawUrl, proxyUrl];
+
+    // Plain HTTP must be proxied on web to avoid mixed-content blocking.
+    return [proxyUrl];
+  }, [channel.isLocal, getProxyWrappedUrl]);
+
+  // Playback initialization with direct-first fallback for WEBTV streams
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !channel.url) return;
@@ -182,134 +192,154 @@ export const MiFullscreenPlayer = ({
 
     const primaryUrl = derivedHlsUrl ?? originalUrl;
     const fallbackUrl = derivedHlsUrl ? originalUrl : null;
+    const sourceVariants = [primaryUrl, fallbackUrl].filter((u): u is string => !!u);
 
-    const attemptPlayback = (sourceUrl: string, onFail?: () => void) => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-
-      const playableUrl = getPlayableUrl(sourceUrl);
-      const isHls = sourceUrl.includes('.m3u8');
-
-      console.log('[Player] Attempting playback:', { sourceUrl: sourceUrl.substring(0, 80), playableUrl: playableUrl.substring(0, 80), isHls });
-
-      // Start muted to ensure autoplay works, then unmute
-      video.muted = true;
-      video.volume = 1;
-      video.removeAttribute('src');
-      video.load();
-
-      const onVideoErrorOnce = () => {
-        video.removeEventListener('error', onVideoErrorOnce);
-        onFail?.();
-      };
-      video.addEventListener('error', onVideoErrorOnce, { once: true });
-
-      if (isHls && Hls.isSupported()) {
-        const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-        hls.loadSource(playableUrl);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          // Detect subtitle tracks
-          if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
-            const tracks = hls.subtitleTracks.map((t, i) => ({
-              id: i,
-              name: t.name || t.lang || `Track ${i + 1}`,
-              lang: t.lang || '',
-            }));
-            setSubtitleTracks(tracks);
-            setActiveSubtitleTrack(hls.subtitleTrack);
-          }
-          
-          video.play().then(() => {
-            setIsPlaying(true);
-            // Unmute after successful play start
-            video.muted = false;
-          }).catch((e) => {
-            if (e?.name === 'NotAllowedError') {
-              setIsPlaying(false);
-              setError('Tap Play to start.');
-            } else {
-              onFail?.();
-            }
-          });
-        });
-        
-        // Listen for subtitle track changes
-        hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, () => {
-          if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
-            const tracks = hls.subtitleTracks.map((t, i) => ({
-              id: i,
-              name: t.name || t.lang || `Track ${i + 1}`,
-              lang: t.lang || '',
-            }));
-            setSubtitleTracks(tracks);
-          }
-        });
-
-        hls.on(Hls.Events.ERROR, (_event, data) => {
-          const code = data?.response?.code as number | undefined;
-          if (code === 401 || code === 403 || code === 502) {
-            setIsPlaying(false);
-            hls.stopLoad();
-            setError('This stream is blocked by the provider.');
-            return;
-          }
-          if (!data.fatal) {
-            if (data.details === 'bufferStalledError') {
-              try { hls.startLoad(); } catch { }
-            }
-            return;
-          }
-          setError(`Playback error: ${data.type}`);
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
-          else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
-          onFail?.();
-        });
-
-        hlsRef.current = hls;
+    const trySourceVariant = (variantIndex: number) => {
+      if (variantIndex >= sourceVariants.length) {
+        setIsPlaying(false);
+        setError('Stream failed to load.');
         return;
       }
 
-      if (isHls && video.canPlayType('application/vnd.apple.mpegurl')) {
+      const sourceUrl = sourceVariants[variantIndex];
+      const playableCandidates = buildPlayableCandidates(sourceUrl);
+
+      const tryCandidate = (candidateIndex: number) => {
+        if (candidateIndex >= playableCandidates.length) {
+          trySourceVariant(variantIndex + 1);
+          return;
+        }
+
+        if (hlsRef.current) {
+          hlsRef.current.destroy();
+          hlsRef.current = null;
+        }
+
+        const playableUrl = playableCandidates[candidateIndex];
+        const isHlsStream = sourceUrl.includes('.m3u8');
+        let movedNext = false;
+
+        const moveNextOnce = () => {
+          if (movedNext) return;
+          movedNext = true;
+          tryCandidate(candidateIndex + 1);
+        };
+
+        console.log('[Player] Attempting playback:', {
+          source: sourceUrl.substring(0, 120),
+          candidate: playableUrl.substring(0, 120),
+          viaProxy: playableUrl !== sourceUrl,
+          isHls: isHlsStream,
+        });
+
+        video.muted = true;
+        video.volume = 1;
+        video.removeAttribute('src');
+        video.load();
+
+        if (isHlsStream && Hls.isSupported()) {
+          const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          hlsRef.current = hls;
+
+          hls.loadSource(playableUrl);
+          hls.attachMedia(video);
+
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
+              const tracks = hls.subtitleTracks.map((t, i) => ({
+                id: i,
+                name: t.name || t.lang || `Track ${i + 1}`,
+                lang: t.lang || '',
+              }));
+              setSubtitleTracks(tracks);
+              setActiveSubtitleTrack(hls.subtitleTrack);
+            }
+
+            video.play().then(() => {
+              setIsPlaying(true);
+              setError(null);
+              video.muted = false;
+            }).catch((e) => {
+              if (e?.name === 'NotAllowedError') {
+                setIsPlaying(false);
+                setError('Tap Play to start.');
+              } else {
+                moveNextOnce();
+              }
+            });
+          });
+
+          hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, () => {
+            if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
+              const tracks = hls.subtitleTracks.map((t, i) => ({
+                id: i,
+                name: t.name || t.lang || `Track ${i + 1}`,
+                lang: t.lang || '',
+              }));
+              setSubtitleTracks(tracks);
+            }
+          });
+
+          hls.on(Hls.Events.ERROR, (_event, data) => {
+            if (!data.fatal) {
+              if (data.details === 'bufferStalledError') {
+                try { hls.startLoad(); } catch { }
+              }
+              return;
+            }
+
+            const code = data?.response?.code as number | undefined;
+            const shouldRetryCandidate =
+              data.type === Hls.ErrorTypes.NETWORK_ERROR ||
+              [401, 403, 429, 458, 500, 502, 503, 504].includes(code || 0);
+
+            if (shouldRetryCandidate) {
+              moveNextOnce();
+              return;
+            }
+
+            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              try {
+                hls.recoverMediaError();
+                return;
+              } catch {
+                moveNextOnce();
+                return;
+              }
+            }
+
+            moveNextOnce();
+          });
+
+          return;
+        }
+
+        const onVideoErrorOnce = () => {
+          video.removeEventListener('error', onVideoErrorOnce);
+          moveNextOnce();
+        };
+
+        video.addEventListener('error', onVideoErrorOnce, { once: true });
+
         video.src = playableUrl;
         video.play().then(() => {
           setIsPlaying(true);
+          setError(null);
           video.muted = false;
         }).catch((e) => {
-          setIsPlaying(false);
           if (e?.name === 'NotAllowedError') {
+            setIsPlaying(false);
             setError('Tap Play to start.');
-          } else {
-            onFail?.();
-            if (!onFail) setError('Stream failed to load.');
+            return;
           }
+          moveNextOnce();
         });
-        return;
-      }
+      };
 
-      video.src = playableUrl;
-      video.play().then(() => {
-        setIsPlaying(true);
-        video.muted = false;
-      }).catch((e) => {
-        setIsPlaying(false);
-        if (e?.name === 'NotAllowedError') {
-          setError('Tap Play to start.');
-        } else {
-          onFail?.();
-          if (!onFail) setError('Stream failed to load.');
-        }
-      });
+      tryCandidate(0);
     };
 
-    if (fallbackUrl) {
-      attemptPlayback(primaryUrl, () => attemptPlayback(fallbackUrl));
-    } else {
-      attemptPlayback(primaryUrl);
-    }
+    trySourceVariant(0);
 
     const startupTimeout = window.setTimeout(() => {
       const v = videoRef.current;
@@ -326,7 +356,7 @@ export const MiFullscreenPlayer = ({
         hlsRef.current = null;
       }
     };
-  }, [channel.url, functionConfig.streamProxyUrl]);
+  }, [channel.url, buildPlayableCandidates, error]);
 
   // Fetch external subtitle tracks from Xtream API for VOD content
   useEffect(() => {
