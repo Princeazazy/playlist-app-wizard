@@ -335,6 +335,7 @@ export const MiFullscreenPlayer = ({
         video.volume = 1;
         video.removeAttribute('src');
         video.load();
+        armStartupWatchdog();
 
         if (isHlsStream && Hls.isSupported()) {
           const hls = new Hls({
