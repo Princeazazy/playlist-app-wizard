@@ -21,7 +21,7 @@ const looksLikeUrl = (value: string) => {
 
 // Default IPTV playlist
 // NOTE: This contains provider credentials; prefer setting via Settings → Change Playlist instead of hardcoding.
-const DEFAULT_PLAYLIST_URL = 'http://ui-on.me:2095/get.php?username=Ameer26&password=Azazy&type=m3u_plus&output=ts';
+const DEFAULT_PLAYLIST_URL = 'https://cf.business-cdn-neo.su/get.php?username=1497x&password=211e58a55c&type=m3u_plus&output=ts';
 
 export const getStoredPlaylistUrl = (): string => {
   try {
