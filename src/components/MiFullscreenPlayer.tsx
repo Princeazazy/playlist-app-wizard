@@ -170,8 +170,8 @@ export const MiFullscreenPlayer = ({
       return [rawUrl, proxyUrl];
     }
 
-    // This provider frequently blocks cloud proxy (458); keep playback direct for HTTPS.
-    if (isHttps && isProxyChallengedHost) return [rawUrl];
+    // Challenged hosts: still try direct first, but keep proxy as fallback.
+    if (isHttps && isProxyChallengedHost) return [rawUrl, proxyUrl];
 
     // Default web strategy: direct HTTPS first, then proxy fallback.
     if (isHttps) return [rawUrl, proxyUrl];
