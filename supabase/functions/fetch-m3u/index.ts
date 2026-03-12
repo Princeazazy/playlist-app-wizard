@@ -284,7 +284,8 @@ async function fetchXtreamLiveByCategory(
   username: string,
   password: string,
   categoryMap: Map<string, string>,
-  limit: number
+  limit: number,
+  liveExtension: 'm3u8' | 'ts' = 'm3u8'
 ): Promise<XtreamFetchResult> {
   const items: any[] = [];
   const seenStreamIds = new Set<string>();
