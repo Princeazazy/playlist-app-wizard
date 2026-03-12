@@ -42,7 +42,7 @@ function openDB(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-export async function getCachedChannels(): Promise<Channel[] | null> {
+export async function getCachedChannels(sourceKey?: string): Promise<Channel[] | null> {
   try {
     const db = await openDB();
     return new Promise((resolve) => {
@@ -53,6 +53,12 @@ export async function getCachedChannels(): Promise<Channel[] | null> {
       request.onsuccess = () => {
         const entry = request.result as CacheEntry | undefined;
         if (entry && entry.channels && Array.isArray(entry.channels)) {
+          if (sourceKey && entry.sourceKey !== sourceKey) {
+            console.log('IndexedDB cache source mismatch, skipping stale cache');
+            resolve(null);
+            return;
+          }
+
           const age = Date.now() - entry.timestamp;
           console.log(`Loaded ${entry.channels.length} channels from IndexedDB cache (age: ${Math.round(age / 1000)}s)`);
           resolve(entry.channels);
