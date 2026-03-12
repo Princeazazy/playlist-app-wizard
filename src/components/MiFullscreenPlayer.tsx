@@ -204,33 +204,39 @@ export const MiFullscreenPlayer = ({
         if (!variants.includes(candidate)) variants.push(candidate);
       };
 
-      const hostname = (() => {
-        try { return new URL(baseUrl).hostname.toLowerCase(); } catch { return ''; }
-      })();
-      const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
-
       addVariant(baseUrl);
 
-      const liveTsSwap = /\/live\/.+\.ts(\?.*)?$/i.test(baseUrl)
+      const liveSwap = /\/live\/.+\.ts(\?.*)?$/i.test(baseUrl)
         ? baseUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
         : /\/live\/.+\.m3u8(\?.*)?$/i.test(baseUrl)
           ? baseUrl.replace(/\.m3u8(\?.*)?$/i, '.ts$1')
           : undefined;
 
-      if (liveTsSwap) {
-        if (isProxyChallengedHost && /\.m3u8(\?.*)?$/i.test(baseUrl)) {
-          addVariant(liveTsSwap);
-          addVariant(baseUrl);
-        } else {
-          addVariant(liveTsSwap);
-        }
+      const outputSwap = /output=ts/i.test(baseUrl)
+        ? baseUrl.replace(/output=ts/i, 'output=m3u8')
+        : /output=(m3u8|hls)/i.test(baseUrl)
+          ? baseUrl.replace(/output=(m3u8|hls)/i, 'output=ts')
+          : undefined;
+
+      const isTsLikeBase =
+        /\/live\/.+\.ts(\?.*)?$/i.test(baseUrl) ||
+        /(?:^|[?&])output=ts\b/i.test(baseUrl);
+
+      const isHlsLikeUrl = (url: string) =>
+        /\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url);
+
+      const orderedCandidates = [baseUrl, liveSwap, outputSwap].filter(
+        (candidate): candidate is string => !!candidate,
+      );
+
+      if (isTsLikeBase) {
+        orderedCandidates.sort((a, b) => Number(isHlsLikeUrl(b)) - Number(isHlsLikeUrl(a)));
+      } else if (isProxyChallengedHost && /\.m3u8(\?.*)?$/i.test(baseUrl)) {
+        // Keep HLS URL first for challenged hosts; TS fallback remains available if needed.
+        orderedCandidates.sort((a, b) => Number(isHlsLikeUrl(b)) - Number(isHlsLikeUrl(a)));
       }
 
-      if (/output=ts/i.test(baseUrl)) {
-        addVariant(baseUrl.replace(/output=ts/i, 'output=m3u8'));
-      } else if (/output=(m3u8|hls)/i.test(baseUrl)) {
-        addVariant(baseUrl.replace(/output=(m3u8|hls)/i, 'output=ts'));
-      }
+      orderedCandidates.forEach(addVariant);
 
       return variants;
     };
