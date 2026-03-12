@@ -80,7 +80,7 @@ serve(async (req) => {
     );
   }
 
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 5;
   let lastError: Error | null = null;
 
   // Multiple STB/IPTV user agents for rotation
@@ -111,70 +111,96 @@ serve(async (req) => {
 
       console.log(`[stream-proxy] attempt ${attempt} => ${upstreamUrl}`);
 
-      // Rotate user agents between attempts
-      const userAgent = stbUserAgents[(attempt - 1) % stbUserAgents.length];
-
-      // Default to IPTV-app-like headers (many providers block generic browser UAs in cloud proxies)
-      const iptvHeaders: Record<string, string> = {
-        "User-Agent": userAgent,
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "identity",
-        "Connection": "keep-alive",
-        "Origin": upstream.origin,
-        "Referer": upstream.origin + "/",
-        "X-Requested-With": "com.nst.iptvsmarterstvbox",
-        "X-Device-Type": "stb",
-      };
-
-      // Fallback to a standard browser header-set if the IPTV headers are rejected
-      const browserHeaders: Record<string, string> = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Origin": upstream.origin,
-        "Referer": upstream.origin + "/",
-      };
-
-      // Forward Range header for video seeking support
       const rangeHeader = req.headers.get("range");
+
+      // Try multiple header strategies; WEBTV providers often reject one profile but allow another.
+      const headerProfiles: Record<string, string>[] = [
+        {
+          "User-Agent": stbUserAgents[(attempt - 1) % stbUserAgents.length],
+          "Accept": "*/*",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Encoding": "identity",
+          "Connection": "keep-alive",
+          "Origin": upstream.origin,
+          "Referer": upstream.origin + "/",
+          "X-Requested-With": "com.nst.iptvsmarterstvbox",
+          "X-Device-Type": "stb",
+        },
+        {
+          "User-Agent": stbUserAgents[(attempt - 1) % stbUserAgents.length],
+          "Accept": "*/*",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Encoding": "identity",
+          "Connection": "keep-alive",
+          "X-Requested-With": "com.nst.iptvsmarterstvbox",
+          "X-Device-Type": "stb",
+        },
+        {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+          "Accept": "*/*",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Origin": upstream.origin,
+          "Referer": upstream.origin + "/",
+        },
+        {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+          "Accept": "*/*",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      ];
+
       if (rangeHeader) {
-        iptvHeaders["Range"] = rangeHeader;
-        browserHeaders["Range"] = rangeHeader;
+        for (const profile of headerProfiles) {
+          profile["Range"] = rangeHeader;
+        }
       }
 
-      // First attempt with IPTV headers
-      let res = await fetch(upstreamUrl, {
-        redirect: "follow",
-        headers: iptvHeaders,
-      });
+      let res: Response | null = null;
 
-      // Retry on 5xx errors
-      if (res.status >= 500 && attempt < MAX_RETRIES) {
-        console.log(`[Proxy] Upstream 5xx error (attempt ${attempt}/${MAX_RETRIES}), retrying with different UA...`);
+      for (let profileIdx = 0; profileIdx < headerProfiles.length; profileIdx++) {
+        const candidate = await fetch(upstreamUrl, {
+          redirect: "follow",
+          headers: headerProfiles[profileIdx],
+        });
+
+        if (candidate.ok) {
+          res = candidate;
+          break;
+        }
+
+        // Non-retriable missing resource
+        if (candidate.status === 404) {
+          res = candidate;
+          break;
+        }
+
+        // For auth/challenge/rate-limit/server errors, try next profile in this attempt.
+        if ([401, 403, 429, 458].includes(candidate.status) || candidate.status >= 500) {
+          console.log(`[Proxy] profile ${profileIdx + 1} returned ${candidate.status}, trying next profile...`);
+          continue;
+        }
+
+        // Other non-success statuses should be returned immediately.
+        res = candidate;
+        break;
+      }
+
+      if (!res) {
+        if (attempt < MAX_RETRIES) {
+          await new Promise((r) => setTimeout(r, 300 * attempt));
+          continue;
+        }
+
+        return new Response(
+          JSON.stringify({ error: "All upstream header profiles failed" }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Retry selected challenge/transient errors with rotated headers/user-agents
+      if (!res.ok && ([401, 403, 429, 458].includes(res.status) || res.status >= 500) && attempt < MAX_RETRIES) {
         await new Promise((r) => setTimeout(r, 300 * attempt));
         continue;
-      }
-
-      // On auth-style blocks, try browser headers
-      if (!res.ok && (res.status === 401 || res.status === 403)) {
-        console.log(`[Proxy] Got ${res.status} with IPTV headers, trying browser headers...`);
-        res = await fetch(upstreamUrl, {
-          redirect: "follow",
-          headers: browserHeaders,
-        });
-        
-        // If still failing, try with no referer (some providers block certain referers)
-        if (!res.ok && attempt < MAX_RETRIES) {
-          console.log(`[Proxy] Browser headers also failed, trying minimal headers...`);
-          res = await fetch(upstreamUrl, {
-            redirect: "follow",
-            headers: {
-              "User-Agent": stbUserAgents[attempt % stbUserAgents.length],
-              "Accept": "*/*",
-            },
-          });
-        }
       }
 
       if (!res.ok) {
