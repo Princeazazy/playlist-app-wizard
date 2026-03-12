@@ -243,7 +243,7 @@ async function fetchXtreamLive(
     }
 
     const effectiveLimit = limit > 0 ? Math.min(limit, XTREAM_MAX_ITEMS_PER_RESPONSE) : XTREAM_MAX_ITEMS_PER_RESPONSE;
-    return await fetchXtreamLiveByCategory(baseUrl, username, password, categoryMap, effectiveLimit);
+    return await fetchXtreamLiveByCategory(baseUrl, username, password, categoryMap, effectiveLimit, liveExtension);
   } catch (err) {
     console.error('Error fetching Xtream live streams:', err);
     return { items: [], total: 0 };
