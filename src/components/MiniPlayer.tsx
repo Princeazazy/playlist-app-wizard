@@ -117,6 +117,61 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
         decodedSourceUrl.includes('.m3u8') ||
         /(?:^|[?&])output=(m3u8|hls)\b/i.test(sourceUrl);
 
+      let movedNext = false;
+      let startupWatchdogId: ReturnType<typeof setTimeout> | null = null;
+
+      const clearStartupWatchdog = () => {
+        if (startupWatchdogId) {
+          window.clearTimeout(startupWatchdogId);
+          startupWatchdogId = null;
+        }
+      };
+
+      const clearPlaybackWatchers = () => {
+        clearStartupWatchdog();
+        video.removeEventListener('playing', onPlaybackProgress);
+        video.removeEventListener('loadeddata', onPlaybackProgress);
+        video.removeEventListener('timeupdate', onPlaybackProgress);
+      };
+
+      const moveNextOnce = () => {
+        if (movedNext) return;
+        movedNext = true;
+        clearPlaybackWatchers();
+        if (candidateIndex + 1 < sourceCandidates.length) {
+          trySource(candidateIndex + 1);
+          return;
+        }
+        setError('Playback error');
+      };
+
+      const onPlaybackProgress = () => {
+        if (video.readyState >= 2 || video.currentTime > 0.2 || video.videoWidth > 0) {
+          clearPlaybackWatchers();
+        }
+      };
+
+      const armStartupWatchdog = () => {
+        clearStartupWatchdog();
+        startupWatchdogId = window.setTimeout(() => {
+          if (movedNext) return;
+
+          const noProgress =
+            video.readyState < 2 &&
+            video.videoWidth === 0 &&
+            video.currentTime < 0.2;
+
+          if (noProgress) {
+            moveNextOnce();
+          }
+        }, 7000);
+      };
+
+      video.addEventListener('playing', onPlaybackProgress);
+      video.addEventListener('loadeddata', onPlaybackProgress);
+      video.addEventListener('timeupdate', onPlaybackProgress);
+      armStartupWatchdog();
+
       if (isHls && Hls.isSupported()) {
         let networkRecoveries = 0;
         const hls = new Hls({
