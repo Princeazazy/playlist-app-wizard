@@ -29,7 +29,7 @@ export const LivePreviewTile = ({
   const [previewError, setPreviewError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const streamProxyUrl = (() => {
     const supabaseUrl = (supabase as any).supabaseUrl as string | undefined;
