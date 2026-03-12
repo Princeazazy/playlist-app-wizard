@@ -88,7 +88,7 @@ export const MiFullscreenPlayer = ({
   // Now Playing banner state
   const [showNowPlaying, setShowNowPlaying] = useState(true);
   const [showEPGOverlay, setShowEPGOverlay] = useState(false);
-  const nowPlayingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const nowPlayingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isVOD = channel.group?.toLowerCase().includes('movie') ||
     channel.group?.toLowerCase().includes('series') ||
