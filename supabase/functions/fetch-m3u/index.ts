@@ -705,7 +705,7 @@ Deno.serve(async (req) => {
       // Retry logic: if first attempt returns 0 for all types, wait and retry once
       // This handles provider rate-limiting from prior burst requests
       const fetchAllXtream = async () => {
-        const liveResult = await fetchXtreamLive(baseUrl, username, password, limit);
+        const liveResult = await fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension);
         const moviesResult = await fetchXtreamMovies(baseUrl, username, password, limit);
         const seriesResult = await fetchXtreamSeries(baseUrl, username, password, limit);
         return { liveResult, moviesResult, seriesResult };
