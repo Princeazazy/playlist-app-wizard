@@ -170,8 +170,8 @@ export const MiFullscreenPlayer = ({
       return [rawUrl, proxyUrl];
     }
 
-    // This provider frequently blocks cloud proxy (458); keep playback direct for HTTPS.
-    if (isHttps && isProxyChallengedHost) return [rawUrl];
+    // Challenged hosts: still try direct first, but keep proxy as fallback.
+    if (isHttps && isProxyChallengedHost) return [rawUrl, proxyUrl];
 
     // Default web strategy: direct HTTPS first, then proxy fallback.
     if (isHttps) return [rawUrl, proxyUrl];
@@ -194,13 +194,30 @@ export const MiFullscreenPlayer = ({
 
     const originalUrl = channel.url;
     const isNative = Capacitor.isNativePlatform();
-    const derivedHlsUrl = !isNative && /\/live\/.+\.ts(\?.*)?$/i.test(originalUrl)
-      ? originalUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
-      : null;
 
-    const primaryUrl = derivedHlsUrl ?? originalUrl;
-    const fallbackUrl = derivedHlsUrl ? originalUrl : null;
-    const sourceVariants = [primaryUrl, fallbackUrl].filter((u): u is string => !!u);
+    const buildSourceVariants = (baseUrl: string): string[] => {
+      if (isNative) return [baseUrl];
+
+      const variants = [baseUrl];
+
+      // Try extension swap for live URLs
+      if (/\/live\/.+\.ts(\?.*)?$/i.test(baseUrl)) {
+        variants.push(baseUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1'));
+      } else if (/\/live\/.+\.m3u8(\?.*)?$/i.test(baseUrl)) {
+        variants.push(baseUrl.replace(/\.m3u8(\?.*)?$/i, '.ts$1'));
+      }
+
+      // Try output parameter swap for get.php style URLs
+      if (/output=ts/i.test(baseUrl)) {
+        variants.push(baseUrl.replace(/output=ts/i, 'output=m3u8'));
+      } else if (/output=(m3u8|hls)/i.test(baseUrl)) {
+        variants.push(baseUrl.replace(/output=(m3u8|hls)/i, 'output=ts'));
+      }
+
+      return Array.from(new Set(variants));
+    };
+
+    const sourceVariants = buildSourceVariants(originalUrl);
 
     const trySourceVariant = (variantIndex: number) => {
       if (variantIndex >= sourceVariants.length) {

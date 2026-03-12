@@ -182,15 +182,14 @@ const fetchSinglePlaylist = async (
     }
   }
   
-  // Web: use edge function - force Xtream API for proper content parsing
+  // Web: use backend parser, prefer raw M3U first for provider compatibility
   const { data, error } = await supabase.functions.invoke('fetch-m3u', {
     body: { 
       url, 
       maxChannels: 150000,
       maxBytesMB: 80, 
       maxReturnPerType: 50000,
-      preferXtreamApi: true,
-      forceXtreamApi: true,
+      preferXtreamApi: false,
     }
   });
   

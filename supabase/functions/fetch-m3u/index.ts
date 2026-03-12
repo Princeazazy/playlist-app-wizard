@@ -157,6 +157,18 @@ function isXtreamGetM3UUrl(url: string): boolean {
     return false;
   }
 }
+
+function getPreferredLiveExtensionFromUrl(url: string): 'm3u8' | 'ts' {
+  try {
+    const output = (new URL(url).searchParams.get('output') || '').toLowerCase();
+    if (output === 'ts') return 'ts';
+    if (output === 'hls' || output === 'm3u8') return 'm3u8';
+  } catch {
+    // ignore and use default
+  }
+  return 'm3u8';
+}
+
 type XtreamFetchResult = { items: any[]; total: number; tooLarge?: boolean };
 
 const XTREAM_MAX_JSON_BYTES = 40 * 1024 * 1024; // 40MB safety cap per API response
@@ -191,7 +203,8 @@ async function fetchXtreamLive(
   baseUrl: string,
   username: string,
   password: string,
-  limit: number = 0
+  limit: number = 0,
+  liveExtension: 'm3u8' | 'ts' = 'm3u8'
 ): Promise<XtreamFetchResult> {
   try {
     const catUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_live_categories`;
@@ -230,7 +243,7 @@ async function fetchXtreamLive(
     }
 
     const effectiveLimit = limit > 0 ? Math.min(limit, XTREAM_MAX_ITEMS_PER_RESPONSE) : XTREAM_MAX_ITEMS_PER_RESPONSE;
-    return await fetchXtreamLiveByCategory(baseUrl, username, password, categoryMap, effectiveLimit);
+    return await fetchXtreamLiveByCategory(baseUrl, username, password, categoryMap, effectiveLimit, liveExtension);
   } catch (err) {
     console.error('Error fetching Xtream live streams:', err);
     return { items: [], total: 0 };
@@ -271,7 +284,8 @@ async function fetchXtreamLiveByCategory(
   username: string,
   password: string,
   categoryMap: Map<string, string>,
-  limit: number
+  limit: number,
+  liveExtension: 'm3u8' | 'ts' = 'm3u8'
 ): Promise<XtreamFetchResult> {
   const items: any[] = [];
   const seenStreamIds = new Set<string>();
@@ -315,7 +329,7 @@ async function fetchXtreamLiveByCategory(
         if (seenStreamIds.has(streamId)) continue;
         seenStreamIds.add(streamId);
 
-        const streamUrl = `${baseUrl}/live/${username}/${password}/${stream.stream_id}.m3u8`;
+        const streamUrl = `${baseUrl}/live/${username}/${password}/${stream.stream_id}.${liveExtension}`;
         const categoryLower = categoryName.toLowerCase();
         // Only classify as sports based on CATEGORY name, not channel name
         // This prevents regular channels like "beIN Drama" from being misclassified
@@ -669,6 +683,7 @@ Deno.serve(async (req) => {
     // Check if this is an Xtream Codes URL
     const xtreamCreds = parseXtreamCredentials(url);
     const isGetM3U = isXtreamGetM3UUrl(url);
+    const preferredLiveExtension = getPreferredLiveExtensionFromUrl(url);
 
     // Use Xtream API when:
     // 1. We have valid credentials AND
@@ -690,7 +705,7 @@ Deno.serve(async (req) => {
       // Retry logic: if first attempt returns 0 for all types, wait and retry once
       // This handles provider rate-limiting from prior burst requests
       const fetchAllXtream = async () => {
-        const liveResult = await fetchXtreamLive(baseUrl, username, password, limit);
+        const liveResult = await fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension);
         const moviesResult = await fetchXtreamMovies(baseUrl, username, password, limit);
         const seriesResult = await fetchXtreamSeries(baseUrl, username, password, limit);
         return { liveResult, moviesResult, seriesResult };
@@ -770,7 +785,7 @@ Deno.serve(async (req) => {
       const limit = safeMaxReturnPerType;
 
       // Sequential to avoid CPU spike
-      const liveResult = await fetchXtreamLive(baseUrl, username, password, limit);
+      const liveResult = await fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension);
       const moviesResult = await fetchXtreamMovies(baseUrl, username, password, limit);
       const seriesResult = await fetchXtreamSeries(baseUrl, username, password, limit);
 
@@ -901,7 +916,7 @@ Deno.serve(async (req) => {
         
         if (channels.length === 0) {
           console.error('No channels parsed');
-          if (attempt === 4) {
+          if (attempt === 2) {
             return new Response(
               JSON.stringify({ error: 'No channels found in playlist' }),
               { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
