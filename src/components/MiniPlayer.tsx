@@ -48,10 +48,14 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
       })();
       const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
 
+      const isLikelyHls =
+        /\.m3u8(\?.*)?$/i.test(rawUrl) ||
+        /(?:^|[?&])output=(m3u8|hls)\b/i.test(rawUrl);
+
       if (isNative) return [rawUrl];
       if (!streamProxyUrl) return [rawUrl];
       if (rawUrl.startsWith('http://')) return [proxyUrl];
-      if (rawUrl.startsWith('https://') && isProxyChallengedHost) return [rawUrl];
+      if (rawUrl.startsWith('https://') && isProxyChallengedHost) return isLikelyHls ? [rawUrl, proxyUrl] : [rawUrl];
       if (rawUrl.startsWith('https://')) return [rawUrl, proxyUrl];
       return [rawUrl];
     };
