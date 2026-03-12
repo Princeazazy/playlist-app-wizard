@@ -297,15 +297,22 @@ export const useIPTV = (m3uUrl?: string) => {
     }
   }, [playlistUrlsKey.current]);
 
-  // Load from IndexedDB cache on mount (scoped to current playlist source)
+  // Load from IndexedDB cache on mount (prefer exact source cache, fall back to stale cache for instant boot)
   useEffect(() => {
     if (hasLocal || cacheLoaded.current) return;
     
     const loadCache = async () => {
-      const cached = await getCachedChannels(playlistUrlsKey.current);
+      const exactCached = await getCachedChannels(playlistUrlsKey.current);
+      const cached = exactCached ?? await getCachedChannels();
+      const usedStaleCache = !exactCached && !!cached;
+
       if (cached && cached.length > 0 && channels.length === 0) {
         const normalized = normalizeChannels(cached);
-        console.log(`Loaded ${cached.length} channels from IndexedDB cache`);
+        if (usedStaleCache) {
+          console.log(`Loaded ${cached.length} channels from stale IndexedDB cache for instant startup; refreshing in background`);
+        } else {
+          console.log(`Loaded ${cached.length} channels from IndexedDB cache`);
+        }
         setChannels(normalized);
         setLoading(false);
       }
