@@ -38,17 +38,38 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
 
     setError(null);
 
-    const proxyUrl = streamProxyUrl
-      ? `${streamProxyUrl}?url=${encodeURIComponent(channel.url)}`
-      : channel.url;
+    const buildPlayableCandidates = (rawUrl: string): string[] => {
+      const proxyUrl = streamProxyUrl
+        ? `${streamProxyUrl}?url=${encodeURIComponent(rawUrl)}`
+        : rawUrl;
 
-    const sourceCandidates: string[] = (() => {
-      if (isNative) return [channel.url];
-      if (!streamProxyUrl) return [channel.url];
-      if (channel.url.startsWith('http://')) return [proxyUrl];
-      if (channel.url.startsWith('https://')) return [channel.url, proxyUrl];
-      return [channel.url];
+      if (isNative) return [rawUrl];
+      if (!streamProxyUrl) return [rawUrl];
+      if (rawUrl.startsWith('http://')) return [proxyUrl];
+      if (rawUrl.startsWith('https://')) return [rawUrl, proxyUrl];
+      return [rawUrl];
+    };
+
+    const sourceVariants = (() => {
+      const base = channel.url;
+      const variants = [base];
+
+      if (/\/live\/.+\.ts(\?.*)?$/i.test(base)) {
+        variants.push(base.replace(/\.ts(\?.*)?$/i, '.m3u8$1'));
+      } else if (/\/live\/.+\.m3u8(\?.*)?$/i.test(base)) {
+        variants.push(base.replace(/\.m3u8(\?.*)?$/i, '.ts$1'));
+      }
+
+      if (/output=ts/i.test(base)) {
+        variants.push(base.replace(/output=ts/i, 'output=m3u8'));
+      } else if (/output=(m3u8|hls)/i.test(base)) {
+        variants.push(base.replace(/output=(m3u8|hls)/i, 'output=ts'));
+      }
+
+      return Array.from(new Set(variants));
     })();
+
+    const sourceCandidates = Array.from(new Set(sourceVariants.flatMap(buildPlayableCandidates)));
 
     const trySource = (candidateIndex: number) => {
       const sourceUrl = sourceCandidates[candidateIndex];
