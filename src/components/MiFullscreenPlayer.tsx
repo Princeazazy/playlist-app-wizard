@@ -231,9 +231,6 @@ export const MiFullscreenPlayer = ({
 
       if (isTsLikeBase) {
         orderedCandidates.sort((a, b) => Number(isHlsLikeUrl(b)) - Number(isHlsLikeUrl(a)));
-      } else if (isProxyChallengedHost && /\.m3u8(\?.*)?$/i.test(baseUrl)) {
-        // Keep HLS URL first for challenged hosts; TS fallback remains available if needed.
-        orderedCandidates.sort((a, b) => Number(isHlsLikeUrl(b)) - Number(isHlsLikeUrl(a)));
       }
 
       orderedCandidates.forEach(addVariant);
