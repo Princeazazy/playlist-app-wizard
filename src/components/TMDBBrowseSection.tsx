@@ -26,6 +26,15 @@ const MediaCard = ({ item, onClick }: { item: TMDBItem; onClick?: () => void }) 
           alt={item.title}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
           loading="lazy"
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (target.dataset.fallbackApplied !== '1') {
+              target.dataset.fallbackApplied = '1';
+              target.src = '/placeholder.svg';
+            } else {
+              target.style.display = 'none';
+            }
+          }}
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-muted">
