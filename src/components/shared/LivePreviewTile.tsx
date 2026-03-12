@@ -60,53 +60,79 @@ export const LivePreviewTile = ({
     setIsPreviewLoading(true);
     setPreviewError(false);
 
-    let sourceUrl = channel.url;
-    if (!channel.isLocal && streamProxyUrl) {
-      sourceUrl = `${streamProxyUrl}?url=${encodeURIComponent(channel.url)}`;
-    }
+    const proxyUrl = streamProxyUrl
+      ? `${streamProxyUrl}?url=${encodeURIComponent(channel.url)}`
+      : channel.url;
 
-    const isHls = sourceUrl.includes('.m3u8') || channel.url.includes('.m3u8');
+    const sourceCandidates: string[] = (() => {
+      if (!streamProxyUrl) return [channel.url];
+      if (channel.url.startsWith('http://')) return [proxyUrl];
+      if (channel.url.startsWith('https://')) return [channel.url, proxyUrl];
+      return [channel.url];
+    })();
 
-    try {
-      if (isHls && Hls.isSupported()) {
-        const hls = new Hls({
-          maxBufferLength: 5,
-          maxMaxBufferLength: 10,
-          enableWorker: true,
-          lowLatencyMode: true,
-        });
+    const tryPreviewSource = async (candidateIndex: number): Promise<void> => {
+      const sourceUrl = sourceCandidates[candidateIndex];
+      if (!sourceUrl) {
+        setPreviewError(true);
+        setIsPreviewLoading(false);
+        return;
+      }
 
-        hlsRef.current = hls;
-        hls.loadSource(sourceUrl);
-        hls.attachMedia(video);
+      const isHls = sourceUrl.includes('.m3u8') || channel.url.includes('.m3u8');
 
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.muted = true;
-          video.play().catch(() => setPreviewError(true));
-          setIsPreviewLoading(false);
-        });
+      try {
+        if (isHls && Hls.isSupported()) {
+          const hls = new Hls({
+            maxBufferLength: 5,
+            maxMaxBufferLength: 10,
+            enableWorker: true,
+            lowLatencyMode: true,
+          });
 
-        hls.on(Hls.Events.ERROR, (_, data) => {
-          if (data.fatal) {
+          hlsRef.current = hls;
+          hls.loadSource(sourceUrl);
+          hls.attachMedia(video);
+
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.muted = true;
+            video.play().catch(async () => {
+              if (candidateIndex + 1 < sourceCandidates.length) {
+                await tryPreviewSource(candidateIndex + 1);
+                return;
+              }
+              setPreviewError(true);
+            });
+            setIsPreviewLoading(false);
+          });
+
+          hls.on(Hls.Events.ERROR, async (_event, data) => {
+            if (!data.fatal) return;
+            if (candidateIndex + 1 < sourceCandidates.length) {
+              await tryPreviewSource(candidateIndex + 1);
+              return;
+            }
             setPreviewError(true);
             setIsPreviewLoading(false);
-          }
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          });
+          return;
+        }
+
         video.src = sourceUrl;
         video.muted = true;
         await video.play();
         setIsPreviewLoading(false);
-      } else {
-        video.src = sourceUrl;
-        video.muted = true;
-        await video.play();
+      } catch {
+        if (candidateIndex + 1 < sourceCandidates.length) {
+          await tryPreviewSource(candidateIndex + 1);
+          return;
+        }
+        setPreviewError(true);
         setIsPreviewLoading(false);
       }
-    } catch {
-      setPreviewError(true);
-      setIsPreviewLoading(false);
-    }
+    };
+
+    await tryPreviewSource(0);
   };
 
   const cleanupHls = () => {
