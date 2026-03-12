@@ -224,11 +224,7 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
         video.src = sourceUrl;
         video.muted = isMuted;
         video.play().catch(() => {
-          if (candidateIndex + 1 < sourceCandidates.length) {
-            trySource(candidateIndex + 1);
-            return;
-          }
-          setError('Playback error');
+        moveNextOnce();
         });
         return;
       }
