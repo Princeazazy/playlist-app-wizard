@@ -683,6 +683,7 @@ Deno.serve(async (req) => {
     // Check if this is an Xtream Codes URL
     const xtreamCreds = parseXtreamCredentials(url);
     const isGetM3U = isXtreamGetM3UUrl(url);
+    const preferredLiveExtension = getPreferredLiveExtensionFromUrl(url);
 
     // Use Xtream API when:
     // 1. We have valid credentials AND
