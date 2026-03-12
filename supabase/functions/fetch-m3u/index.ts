@@ -173,7 +173,7 @@ type XtreamFetchResult = { items: any[]; total: number; tooLarge?: boolean };
 
 const XTREAM_MAX_JSON_BYTES = 40 * 1024 * 1024; // 40MB safety cap per API response
 const XTREAM_MAX_ITEMS_PER_RESPONSE = 50000; // Raised to capture full Arabia TV catalog
-const CATEGORY_FETCH_TIMEOUT = 10000; // 10s timeout per category fetch
+const CATEGORY_FETCH_TIMEOUT = 6000; // 6s timeout per category fetch to avoid long stalls
 const MAX_CATEGORIES_PER_TYPE = 500; // Reasonable category cap
 
 function responseTooLarge(res: Response, maxBytes: number): boolean {
