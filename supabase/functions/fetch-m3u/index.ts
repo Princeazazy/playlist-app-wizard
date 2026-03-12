@@ -157,6 +157,18 @@ function isXtreamGetM3UUrl(url: string): boolean {
     return false;
   }
 }
+
+function getPreferredLiveExtensionFromUrl(url: string): 'm3u8' | 'ts' {
+  try {
+    const output = (new URL(url).searchParams.get('output') || '').toLowerCase();
+    if (output === 'ts') return 'ts';
+    if (output === 'hls' || output === 'm3u8') return 'm3u8';
+  } catch {
+    // ignore and use default
+  }
+  return 'm3u8';
+}
+
 type XtreamFetchResult = { items: any[]; total: number; tooLarge?: boolean };
 
 const XTREAM_MAX_JSON_BYTES = 40 * 1024 * 1024; // 40MB safety cap per API response
