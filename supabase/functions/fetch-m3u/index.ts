@@ -328,7 +328,7 @@ async function fetchXtreamLiveByCategory(
         items.push({
           name: stream.name || 'Unknown Channel',
           url: streamUrl,
-          logo: stream.stream_icon || '',
+          logo: fixLogoUrl(stream.stream_icon || ''),
           group: categoryName,
           type: isSports ? 'sports' : 'live',
           stream_id: streamId,
