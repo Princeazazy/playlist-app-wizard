@@ -203,7 +203,8 @@ async function fetchXtreamLive(
   baseUrl: string,
   username: string,
   password: string,
-  limit: number = 0
+  limit: number = 0,
+  liveExtension: 'm3u8' | 'ts' = 'm3u8'
 ): Promise<XtreamFetchResult> {
   try {
     const catUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_live_categories`;
