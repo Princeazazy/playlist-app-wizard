@@ -113,8 +113,30 @@ serve(async (req) => {
 
       const rangeHeader = req.headers.get("range");
 
-      // Try multiple header strategies; WEBTV providers often reject one profile but allow another.
+      const passthroughUserAgent = req.headers.get("user-agent") || stbUserAgents[(attempt - 1) % stbUserAgents.length];
+
       const headerProfiles: Record<string, string>[] = [
+        // Profile 1: Plain fetch (no spoofing) - some providers reject STB/browser spoofed headers
+        {},
+        // Profile 2: Keep client-like UA, minimal headers
+        {
+          "User-Agent": passthroughUserAgent,
+          "Accept": "*/*",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Encoding": "identity",
+          "Connection": "keep-alive",
+        },
+        // Profile 3: STB app style (without forced Origin/Referer)
+        {
+          "User-Agent": stbUserAgents[(attempt - 1) % stbUserAgents.length],
+          "Accept": "*/*",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept-Encoding": "identity",
+          "Connection": "keep-alive",
+          "X-Requested-With": "com.nst.iptvsmarterstvbox",
+          "X-Device-Type": "stb",
+        },
+        // Profile 4: STB app style + Origin/Referer
         {
           "User-Agent": stbUserAgents[(attempt - 1) % stbUserAgents.length],
           "Accept": "*/*",
@@ -126,26 +148,19 @@ serve(async (req) => {
           "X-Requested-With": "com.nst.iptvsmarterstvbox",
           "X-Device-Type": "stb",
         },
+        // Profile 5: Generic browser
         {
-          "User-Agent": stbUserAgents[(attempt - 1) % stbUserAgents.length],
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
           "Accept": "*/*",
           "Accept-Language": "en-US,en;q=0.9",
-          "Accept-Encoding": "identity",
-          "Connection": "keep-alive",
-          "X-Requested-With": "com.nst.iptvsmarterstvbox",
-          "X-Device-Type": "stb",
         },
+        // Profile 6: Browser + Origin/Referer
         {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
           "Accept": "*/*",
           "Accept-Language": "en-US,en;q=0.9",
           "Origin": upstream.origin,
           "Referer": upstream.origin + "/",
-        },
-        {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-          "Accept": "*/*",
-          "Accept-Language": "en-US,en;q=0.9",
         },
       ];
 
