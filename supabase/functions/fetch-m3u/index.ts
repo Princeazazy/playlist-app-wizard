@@ -916,7 +916,7 @@ Deno.serve(async (req) => {
         
         if (channels.length === 0) {
           console.error('No channels parsed');
-          if (attempt === 4) {
+          if (attempt === 2) {
             return new Response(
               JSON.stringify({ error: 'No channels found in playlist' }),
               { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
