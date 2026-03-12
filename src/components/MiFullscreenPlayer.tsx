@@ -170,8 +170,11 @@ export const MiFullscreenPlayer = ({
       return [rawUrl, proxyUrl];
     }
 
-    // This host consistently blocks cloud proxy with 458; avoid proxy loops.
-    if (isHttps && isProxyChallengedHost) return [rawUrl];
+    // This host often blocks cloud proxy on TS; keep proxy as last-resort only for HLS-like URLs.
+    if (isHttps && isProxyChallengedHost) {
+      const isLikelyHls = /\.m3u8(\?.*)?$/i.test(rawUrl) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(rawUrl);
+      return isLikelyHls ? [rawUrl, proxyUrl] : [rawUrl];
+    }
 
     // Default web strategy: direct HTTPS first, then proxy fallback.
     if (isHttps) return [rawUrl, proxyUrl];
@@ -204,33 +207,36 @@ export const MiFullscreenPlayer = ({
         if (!variants.includes(candidate)) variants.push(candidate);
       };
 
-      const hostname = (() => {
-        try { return new URL(baseUrl).hostname.toLowerCase(); } catch { return ''; }
-      })();
-      const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
-
       addVariant(baseUrl);
 
-      const liveTsSwap = /\/live\/.+\.ts(\?.*)?$/i.test(baseUrl)
+      const liveSwap = /\/live\/.+\.ts(\?.*)?$/i.test(baseUrl)
         ? baseUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
         : /\/live\/.+\.m3u8(\?.*)?$/i.test(baseUrl)
           ? baseUrl.replace(/\.m3u8(\?.*)?$/i, '.ts$1')
           : undefined;
 
-      if (liveTsSwap) {
-        if (isProxyChallengedHost && /\.m3u8(\?.*)?$/i.test(baseUrl)) {
-          addVariant(liveTsSwap);
-          addVariant(baseUrl);
-        } else {
-          addVariant(liveTsSwap);
-        }
+      const outputSwap = /output=ts/i.test(baseUrl)
+        ? baseUrl.replace(/output=ts/i, 'output=m3u8')
+        : /output=(m3u8|hls)/i.test(baseUrl)
+          ? baseUrl.replace(/output=(m3u8|hls)/i, 'output=ts')
+          : undefined;
+
+      const isTsLikeBase =
+        /\/live\/.+\.ts(\?.*)?$/i.test(baseUrl) ||
+        /(?:^|[?&])output=ts\b/i.test(baseUrl);
+
+      const isHlsLikeUrl = (url: string) =>
+        /\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url);
+
+      const orderedCandidates = [baseUrl, liveSwap, outputSwap].filter(
+        (candidate): candidate is string => !!candidate,
+      );
+
+      if (isTsLikeBase) {
+        orderedCandidates.sort((a, b) => Number(isHlsLikeUrl(b)) - Number(isHlsLikeUrl(a)));
       }
 
-      if (/output=ts/i.test(baseUrl)) {
-        addVariant(baseUrl.replace(/output=ts/i, 'output=m3u8'));
-      } else if (/output=(m3u8|hls)/i.test(baseUrl)) {
-        addVariant(baseUrl.replace(/output=(m3u8|hls)/i, 'output=ts'));
-      }
+      orderedCandidates.forEach(addVariant);
 
       return variants;
     };
@@ -268,12 +274,55 @@ export const MiFullscreenPlayer = ({
           /(?:^|[?&])output=(m3u8|hls)\b/i.test(sourceUrl);
         let movedNext = false;
         let networkRecoveries = 0;
+        let startupWatchdogId: ReturnType<typeof setTimeout> | null = null;
+
+        const clearStartupWatchdog = () => {
+          if (startupWatchdogId) {
+            window.clearTimeout(startupWatchdogId);
+            startupWatchdogId = null;
+          }
+        };
+
+        const clearPlaybackWatchers = () => {
+          clearStartupWatchdog();
+          video.removeEventListener('playing', onPlaybackProgress);
+          video.removeEventListener('loadeddata', onPlaybackProgress);
+          video.removeEventListener('timeupdate', onPlaybackProgress);
+        };
 
         const moveNextOnce = () => {
           if (movedNext) return;
           movedNext = true;
+          clearPlaybackWatchers();
           tryCandidate(candidateIndex + 1);
         };
+
+        const onPlaybackProgress = () => {
+          if (video.readyState >= 2 || video.currentTime > 0.2 || video.videoWidth > 0) {
+            clearPlaybackWatchers();
+          }
+        };
+
+        const armStartupWatchdog = () => {
+          clearStartupWatchdog();
+          startupWatchdogId = window.setTimeout(() => {
+            if (movedNext) return;
+
+            const noProgress =
+              video.readyState < 2 &&
+              video.videoWidth === 0 &&
+              video.currentTime < 0.2;
+
+            if (noProgress) {
+              console.warn('[Player] Startup stalled, trying fallback source...');
+              moveNextOnce();
+            }
+          }, 7000);
+        };
+
+        video.addEventListener('playing', onPlaybackProgress);
+        video.addEventListener('loadeddata', onPlaybackProgress);
+        video.addEventListener('timeupdate', onPlaybackProgress);
 
         console.log('[Player] Attempting playback:', {
           source: sourceUrl.substring(0, 120),
@@ -286,6 +335,7 @@ export const MiFullscreenPlayer = ({
         video.volume = 1;
         video.removeAttribute('src');
         video.load();
+        armStartupWatchdog();
 
         if (isHlsStream && Hls.isSupported()) {
           const hls = new Hls({
@@ -322,6 +372,7 @@ export const MiFullscreenPlayer = ({
               video.muted = false;
             }).catch((e) => {
               if (e?.name === 'NotAllowedError') {
+                clearPlaybackWatchers();
                 setIsPlaying(false);
                 setError('Tap Play to start.');
               } else {
@@ -402,6 +453,7 @@ export const MiFullscreenPlayer = ({
           video.muted = false;
         }).catch((e) => {
           if (e?.name === 'NotAllowedError') {
+            clearPlaybackWatchers();
             setIsPlaying(false);
             setError('Tap Play to start.');
             return;
