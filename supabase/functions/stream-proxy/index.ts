@@ -228,8 +228,8 @@ serve(async (req) => {
             upstream_status: res.status,
             upstream_url: upstreamUrl,
             hint:
-              res.status === 403 || res.status === 401
-                ? "This provider may block cloud/proxy playback. Use Local M3U mode for direct playback."
+              res.status === 403 || res.status === 401 || res.status === 458
+                ? "This provider challenged the cloud proxy for this stream (upstream status: " + res.status + "). Try another channel or contact provider to allow WEBTV cloud playback."
                 : undefined,
           }),
           { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
