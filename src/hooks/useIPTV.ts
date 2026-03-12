@@ -404,16 +404,31 @@ export const useIPTV = (m3uUrl?: string) => {
         if (!hasCachedData) {
           setLoading(true);
         }
-        
-        // Progressive loading: update UI as each playlist completes
-        console.log(`Fetching ${playlistUrls.length} playlist(s) progressively...`);
+
+        // Fast bootstrap gets first usable catalog quickly, then full sync runs in background
+        const bootstrapFetchOptions = {
+          maxChannels: 30000,
+          maxBytesMB: 24,
+          maxReturnPerType: 3500,
+          preferXtreamApi: false,
+        };
+
+        const fullFetchOptions = {
+          maxChannels: 150000,
+          maxBytesMB: 80,
+          maxReturnPerType: 50000,
+          preferXtreamApi: false,
+        };
+
+        const activeFetchOptions = hasCachedData ? fullFetchOptions : bootstrapFetchOptions;
+        console.log(`Fetching ${playlistUrls.length} playlist(s) progressively [${hasCachedData ? 'full' : 'fast-bootstrap'}]...`);
+
         const completedArrays: Channel[][] = [];
         const errors: string[] = [];
-        let firstResultShown = false;
         
         // Start all fetches in parallel but handle each as it resolves
         const promises = playlistUrls.map((url, idx) => 
-          fetchSinglePlaylist(url, idx)
+          fetchSinglePlaylist(url, idx, 0, activeFetchOptions)
             .then(result => {
               console.log(`Playlist ${idx + 1}: ${result.length} channels loaded`);
               if (result.length > 0) {
@@ -437,7 +452,6 @@ export const useIPTV = (m3uUrl?: string) => {
                 
                 setChannels(merged);
                 setLoading(false);
-                firstResultShown = true;
                 
                 // Cache progressively too
                 setCachedChannels(merged, playlistUrlsKey.current).catch(err => console.warn('Failed to cache:', err));
@@ -467,6 +481,41 @@ export const useIPTV = (m3uUrl?: string) => {
             loadDemoChannels();
           }
           return;
+        }
+
+        // If we bootstrapped without cache, fetch full catalog in background without blocking UI
+        if (!hasCachedData) {
+          const runBackgroundFullSync = async () => {
+            try {
+              console.log('Starting background full catalog sync...');
+              const fullResults = await Promise.all(
+                playlistUrls.map((url, idx) =>
+                  fetchSinglePlaylist(url, idx, 0, fullFetchOptions).catch((err) => {
+                    console.warn(`Background full sync failed for playlist ${idx + 1}:`, err);
+                    return [] as Channel[];
+                  })
+                )
+              );
+
+              const nonEmpty = fullResults.filter((arr) => arr.length > 0);
+              if (nonEmpty.length === 0) return;
+
+              let merged: Channel[] =
+                nonEmpty.length === 1 ? nonEmpty[0] : mergeAndDeduplicate(nonEmpty);
+              merged = merged.map((ch, i) => ({ ...ch, id: `channel-${i}` }));
+
+              setChannels((prev) => (merged.length > prev.length ? merged : prev));
+              setCachedChannels(merged, playlistUrlsKey.current).catch((err) =>
+                console.warn('Failed to cache full sync:', err)
+              );
+
+              console.log(`Background full catalog sync complete: ${merged.length} channels`);
+            } catch (err) {
+              console.warn('Background full catalog sync failed:', err);
+            }
+          };
+
+          void runBackgroundFullSync();
         }
         
         // Only log partial failures as warnings, don't show error UI if we have channels
