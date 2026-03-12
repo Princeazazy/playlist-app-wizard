@@ -418,7 +418,7 @@ export const useIPTV = (m3uUrl?: string) => {
                 firstResultShown = true;
                 
                 // Cache progressively too
-                setCachedChannels(merged).catch(err => console.warn('Failed to cache:', err));
+                setCachedChannels(merged, playlistUrlsKey.current).catch(err => console.warn('Failed to cache:', err));
               }
               return result;
             })
