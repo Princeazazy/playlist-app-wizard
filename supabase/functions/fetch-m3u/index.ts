@@ -599,7 +599,7 @@ function parseM3UContent(chunk: string, existingChannels: { name: string; url: s
       currentChannel = {
         name,
         url: '',
-        logo: logoMatch ? logoMatch[1] : '',
+        logo: fixLogoUrl(logoMatch ? logoMatch[1] : ''),
         group,
         type
       };
