@@ -362,7 +362,7 @@ export const useIPTV = (m3uUrl?: string) => {
         type: (ch.group?.toLowerCase().includes('sport') ? 'sports' : 'live') as Channel['type'],
       }));
       setChannels(mappedChannels);
-      setCachedChannels(mappedChannels);
+      setCachedChannels(mappedChannels, playlistUrlsKey.current);
       setError(null);
       setLoading(false);
     };
