@@ -372,6 +372,7 @@ export const MiFullscreenPlayer = ({
               video.muted = false;
             }).catch((e) => {
               if (e?.name === 'NotAllowedError') {
+                clearPlaybackWatchers();
                 setIsPlaying(false);
                 setError('Tap Play to start.');
               } else {
