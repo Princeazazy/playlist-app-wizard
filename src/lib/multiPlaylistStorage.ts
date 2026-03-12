@@ -112,12 +112,12 @@ export const hasPlaylistSources = (): boolean => {
 
 // Default playlist URLs - ONLY these should be active
 const DEFAULT_PLAYLISTS: { url: string; name: string }[] = [
-  { url: 'http://ccirskjs.theuniversetv.com/get.php?username=PRINCEAZAZY&password=ELAZAZY&type=m3u_plus&output=mpegts', name: 'Universe TV' },
+  { url: 'https://cf.business-cdn-neo.su/get.php?username=1497x&password=211e58a55c&type=m3u_plus&output=ts', name: 'Universe TV' },
 ];
 
 // Version key to track when defaults change - bump this to force cleanup
 const PLAYLIST_CONFIG_VERSION_KEY = 'mi-player-playlist-config-version';
-const CURRENT_CONFIG_VERSION = 4; // Bump to force re-sync
+const CURRENT_CONFIG_VERSION = 5; // Bump to force re-sync
 
 // Migrate from old single-playlist storage and enforce ONLY default playlists
 export const migrateFromLegacyStorage = (): void => {
