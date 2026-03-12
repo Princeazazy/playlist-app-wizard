@@ -274,12 +274,55 @@ export const MiFullscreenPlayer = ({
           /(?:^|[?&])output=(m3u8|hls)\b/i.test(sourceUrl);
         let movedNext = false;
         let networkRecoveries = 0;
+        let startupWatchdogId: ReturnType<typeof setTimeout> | null = null;
+
+        const clearStartupWatchdog = () => {
+          if (startupWatchdogId) {
+            window.clearTimeout(startupWatchdogId);
+            startupWatchdogId = null;
+          }
+        };
+
+        const clearPlaybackWatchers = () => {
+          clearStartupWatchdog();
+          video.removeEventListener('playing', onPlaybackProgress);
+          video.removeEventListener('loadeddata', onPlaybackProgress);
+          video.removeEventListener('timeupdate', onPlaybackProgress);
+        };
 
         const moveNextOnce = () => {
           if (movedNext) return;
           movedNext = true;
+          clearPlaybackWatchers();
           tryCandidate(candidateIndex + 1);
         };
+
+        const onPlaybackProgress = () => {
+          if (video.readyState >= 2 || video.currentTime > 0.2 || video.videoWidth > 0) {
+            clearPlaybackWatchers();
+          }
+        };
+
+        const armStartupWatchdog = () => {
+          clearStartupWatchdog();
+          startupWatchdogId = window.setTimeout(() => {
+            if (movedNext) return;
+
+            const noProgress =
+              video.readyState < 2 &&
+              video.videoWidth === 0 &&
+              video.currentTime < 0.2;
+
+            if (noProgress) {
+              console.warn('[Player] Startup stalled, trying fallback source...');
+              moveNextOnce();
+            }
+          }, 7000);
+        };
+
+        video.addEventListener('playing', onPlaybackProgress);
+        video.addEventListener('loadeddata', onPlaybackProgress);
+        video.addEventListener('timeupdate', onPlaybackProgress);
 
         console.log('[Player] Attempting playback:', {
           source: sourceUrl.substring(0, 120),
