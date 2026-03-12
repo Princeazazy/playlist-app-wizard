@@ -219,12 +219,7 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
             }
           }
 
-          if (candidateIndex + 1 < sourceCandidates.length) {
-            trySource(candidateIndex + 1);
-            return;
-          }
-
-          setError('Playback error');
+          moveNextOnce();
         });
         return;
       }
