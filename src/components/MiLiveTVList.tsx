@@ -42,7 +42,7 @@ const LivePreviewChannelTile = memo(({
   const [previewReady, setPreviewReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const streamProxyUrl = useMemo(() => {
     const supabaseUrl = (supabase as any).supabaseUrl as string | undefined;

@@ -568,7 +568,7 @@ export const MiFullscreenPlayer = ({
   }, []);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
     const handleMouseMove = () => {
       setShowControls(true);
       clearTimeout(timeout);
