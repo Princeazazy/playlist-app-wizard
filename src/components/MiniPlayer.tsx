@@ -68,12 +68,9 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
         if (!variants.includes(candidate)) variants.push(candidate);
       };
 
-      const hostname = (() => {
-        try { return new URL(base).hostname.toLowerCase(); } catch { return ''; }
-      })();
-      const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
-
-      addVariant(base);
+      const isTsLikeBase =
+        /\/live\/.+\.ts(\?.*)?$/i.test(base) ||
+        /(?:^|[?&])output=ts\b/i.test(base);
 
       const liveSwap = /\/live\/.+\.ts(\?.*)?$/i.test(base)
         ? base.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
@@ -81,20 +78,24 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
           ? base.replace(/\.m3u8(\?.*)?$/i, '.ts$1')
           : undefined;
 
-      if (liveSwap) {
-        if (isProxyChallengedHost && /\.m3u8(\?.*)?$/i.test(base)) {
-          addVariant(liveSwap);
-          addVariant(base);
-        } else {
-          addVariant(liveSwap);
-        }
+      const outputSwap = /output=ts/i.test(base)
+        ? base.replace(/output=ts/i, 'output=m3u8')
+        : /output=(m3u8|hls)/i.test(base)
+          ? base.replace(/output=(m3u8|hls)/i, 'output=ts')
+          : undefined;
+
+      const isHlsLikeUrl = (url: string) =>
+        /\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url);
+
+      const orderedCandidates = [base, liveSwap, outputSwap].filter(
+        (candidate): candidate is string => !!candidate,
+      );
+
+      if (isTsLikeBase) {
+        orderedCandidates.sort((a, b) => Number(isHlsLikeUrl(b)) - Number(isHlsLikeUrl(a)));
       }
 
-      if (/output=ts/i.test(base)) {
-        addVariant(base.replace(/output=ts/i, 'output=m3u8'));
-      } else if (/output=(m3u8|hls)/i.test(base)) {
-        addVariant(base.replace(/output=(m3u8|hls)/i, 'output=ts'));
-      }
+      orderedCandidates.forEach(addVariant);
 
       return variants;
     })();
