@@ -159,9 +159,7 @@ export const MiFullscreenPlayer = ({
     }
 
     if (!functionConfig.streamProxyUrl) return rawUrl;
-    return rawUrl.startsWith('http://')
-      ? `${functionConfig.streamProxyUrl}?url=${encodeURIComponent(rawUrl)}`
-      : rawUrl;
+    return `${functionConfig.streamProxyUrl}?url=${encodeURIComponent(rawUrl)}`;
   };
 
   // HLS.js initialization
