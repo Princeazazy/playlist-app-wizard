@@ -161,8 +161,23 @@ const convertLocalChannels = (localChannels: LocalChannel[]): Channel[] => {
 const fetchSinglePlaylist = async (
   url: string,
   sourceIndex: number,
-  retryCount: number = 0
+  retryCount: number = 0,
+  options?: {
+    maxChannels?: number;
+    maxBytesMB?: number;
+    maxReturnPerType?: number;
+    preferXtreamApi?: boolean;
+    forceXtreamApi?: boolean;
+  }
 ): Promise<Channel[]> => {
+  const {
+    maxChannels = 150000,
+    maxBytesMB = 80,
+    maxReturnPerType = 50000,
+    preferXtreamApi = false,
+    forceXtreamApi = false,
+  } = options ?? {};
+
   const isCapacitorNative = Capacitor.isNativePlatform();
   
   if (isCapacitorNative) {
@@ -184,12 +199,13 @@ const fetchSinglePlaylist = async (
   
   // Web: use backend parser, prefer raw M3U first for provider compatibility
   const { data, error } = await supabase.functions.invoke('fetch-m3u', {
-    body: { 
-      url, 
-      maxChannels: 150000,
-      maxBytesMB: 80, 
-      maxReturnPerType: 50000,
-      preferXtreamApi: false,
+    body: {
+      url,
+      maxChannels,
+      maxBytesMB,
+      maxReturnPerType,
+      preferXtreamApi,
+      forceXtreamApi,
     }
   });
   
@@ -205,7 +221,7 @@ const fetchSinglePlaylist = async (
       const delay = (retryCount + 1) * 5000;
       console.log(`[Playlist ${sourceIndex + 1}] Got 0 channels, retrying in ${delay / 1000}s (attempt ${retryCount + 2}/3)...`);
       await new Promise(r => setTimeout(r, delay));
-      return fetchSinglePlaylist(url, sourceIndex, retryCount + 1);
+      return fetchSinglePlaylist(url, sourceIndex, retryCount + 1, options);
     }
     
     return data.channels
