@@ -111,10 +111,14 @@ const PlaylistCard = ({ channel, onClick, tmdbPoster }: { channel: Channel; onCl
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
             loading="lazy"
             onError={(e) => {
-              if (tmdbPoster && channel.logo && e.currentTarget.src !== channel.logo) {
-                e.currentTarget.src = channel.logo;
+              const target = e.currentTarget;
+              if (tmdbPoster && channel.logo && target.src !== channel.logo) {
+                target.src = channel.logo;
+              } else if (target.dataset.fallbackApplied !== '1') {
+                target.dataset.fallbackApplied = '1';
+                target.src = '/placeholder.svg';
               } else {
-                e.currentTarget.style.display = 'none';
+                target.style.display = 'none';
               }
             }}
           />

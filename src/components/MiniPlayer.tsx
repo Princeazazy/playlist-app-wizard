@@ -43,30 +43,56 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
         ? `${streamProxyUrl}?url=${encodeURIComponent(rawUrl)}`
         : rawUrl;
 
+      const hostname = (() => {
+        try { return new URL(rawUrl).hostname.toLowerCase(); } catch { return ''; }
+      })();
+      const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
+
       if (isNative) return [rawUrl];
       if (!streamProxyUrl) return [rawUrl];
       if (rawUrl.startsWith('http://')) return [proxyUrl];
+      if (rawUrl.startsWith('https://') && isProxyChallengedHost) return [rawUrl];
       if (rawUrl.startsWith('https://')) return [rawUrl, proxyUrl];
       return [rawUrl];
     };
 
     const sourceVariants = (() => {
       const base = channel.url;
-      const variants = [base];
+      const variants: string[] = [];
+      const addVariant = (candidate: string | undefined) => {
+        if (!candidate) return;
+        if (!variants.includes(candidate)) variants.push(candidate);
+      };
 
-      if (/\/live\/.+\.ts(\?.*)?$/i.test(base)) {
-        variants.push(base.replace(/\.ts(\?.*)?$/i, '.m3u8$1'));
-      } else if (/\/live\/.+\.m3u8(\?.*)?$/i.test(base)) {
-        variants.push(base.replace(/\.m3u8(\?.*)?$/i, '.ts$1'));
+      const hostname = (() => {
+        try { return new URL(base).hostname.toLowerCase(); } catch { return ''; }
+      })();
+      const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
+
+      addVariant(base);
+
+      const liveSwap = /\/live\/.+\.ts(\?.*)?$/i.test(base)
+        ? base.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
+        : /\/live\/.+\.m3u8(\?.*)?$/i.test(base)
+          ? base.replace(/\.m3u8(\?.*)?$/i, '.ts$1')
+          : undefined;
+
+      if (liveSwap) {
+        if (isProxyChallengedHost && /\.m3u8(\?.*)?$/i.test(base)) {
+          addVariant(liveSwap);
+          addVariant(base);
+        } else {
+          addVariant(liveSwap);
+        }
       }
 
       if (/output=ts/i.test(base)) {
-        variants.push(base.replace(/output=ts/i, 'output=m3u8'));
+        addVariant(base.replace(/output=ts/i, 'output=m3u8'));
       } else if (/output=(m3u8|hls)/i.test(base)) {
-        variants.push(base.replace(/output=(m3u8|hls)/i, 'output=ts'));
+        addVariant(base.replace(/output=(m3u8|hls)/i, 'output=ts'));
       }
 
-      return Array.from(new Set(variants));
+      return variants;
     })();
 
     const sourceCandidates = Array.from(new Set(sourceVariants.flatMap(buildPlayableCandidates)));
@@ -78,12 +104,13 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
         return;
       }
 
+      const decodedSourceUrl = (() => {
+        try { return decodeURIComponent(sourceUrl); } catch { return sourceUrl; }
+      })();
       const isHls =
         sourceUrl.includes('.m3u8') ||
-        decodeURIComponent(sourceUrl).includes('.m3u8') ||
-        sourceUrl.includes('output=m3u8') ||
-        sourceUrl.includes('output=hls') ||
-        channel.url.includes('.m3u8');
+        decodedSourceUrl.includes('.m3u8') ||
+        /(?:^|[?&])output=(m3u8|hls)\b/i.test(sourceUrl);
 
       if (isHls && Hls.isSupported()) {
         let networkRecoveries = 0;

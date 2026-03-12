@@ -94,7 +94,7 @@ export const useBulkChannelLogos = (channels: { name: string; logo?: string }[])
 
   // Returns the resolved logo for a channel
   const getLogoForChannel = useCallback((channelName: string, existingLogo?: string): string | undefined => {
-    return existingLogo || logoMap[channelName];
+    return existingLogo || logoMap[channelName] || '/placeholder.svg';
   }, [logoMap]);
 
   return { logoMap, getLogoForChannel };

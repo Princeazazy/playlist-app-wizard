@@ -77,7 +77,7 @@ export const MiMovieDetail = ({
   };
 
   // Get poster URL - prefer item's own logo (from playlist provider), only use TMDB poster if no local logo exists
-  const posterUrl = item.logo || tmdbData?.posterUrl || tmdbData?.poster || item.backdrop_path?.[0] || 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=400&h=600&fit=crop';
+  const posterUrl = item.logo || tmdbData?.posterUrl || tmdbData?.poster || item.backdrop_path?.[0] || '/placeholder.svg';
 
   const trailerKey = tmdbData?.trailer?.key;
 

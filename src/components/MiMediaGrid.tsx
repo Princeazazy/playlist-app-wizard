@@ -1254,13 +1254,16 @@ export const MiMediaGrid = ({
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             const target = e.currentTarget;
-                            // Fallback chain: provider logo → TMDB poster → hide
+                            // Fallback chain: provider logo → TMDB poster → backdrop → placeholder
                             if (item.logo && target.src !== item.logo) {
                               target.src = item.logo;
                             } else if (tmdbPoster && target.src !== tmdbPoster) {
                               target.src = tmdbPoster;
                             } else if (item.backdrop_path?.[0] && target.src !== item.backdrop_path[0]) {
                               target.src = item.backdrop_path[0];
+                            } else if (target.dataset.fallbackApplied !== '1') {
+                              target.dataset.fallbackApplied = '1';
+                              target.src = '/placeholder.svg';
                             } else {
                               target.style.display = 'none';
                             }
