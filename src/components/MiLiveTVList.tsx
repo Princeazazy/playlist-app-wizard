@@ -191,6 +191,7 @@ const LivePreviewChannelTile = memo(({
                 target.style.display = 'none';
               }
             }}
+          />
         ) : !previewReady && !resolvedLogo ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
             <Tv className="w-8 h-8 text-primary/50" />
