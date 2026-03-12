@@ -11,6 +11,7 @@ interface CacheEntry {
   key: string;
   channels: Channel[];
   timestamp: number;
+  sourceKey?: string;
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
