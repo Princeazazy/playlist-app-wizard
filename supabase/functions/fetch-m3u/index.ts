@@ -63,6 +63,16 @@ function getStbHeaders(index: number = 0): Record<string, string> {
   };
 }
 
+// Fix HTTP logo URLs → HTTPS (browsers block mixed content on HTTPS pages)
+function fixLogoUrl(url: string): string {
+  if (!url) return url;
+  // Many IPTV providers serve logos over HTTP - upgrade to HTTPS
+  if (url.startsWith('http://')) {
+    return url.replace('http://', 'https://');
+  }
+  return url;
+}
+
 // Determine content type from group/name
 function getContentType(group: string, name: string): 'live' | 'movies' | 'series' | 'sports' {
   const groupLower = (group || '').toLowerCase();

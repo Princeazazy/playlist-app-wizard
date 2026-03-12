@@ -15,9 +15,10 @@ interface Match {
   channels: string[];
   league: string;
   date: string; // YYYY-MM-DD
+  dayLabel: string; // 'yesterday' | 'today' | 'tomorrow'
 }
 
-function parseMatches(html: string): Match[] {
+function parseMatches(html: string, dayLabel: string): Match[] {
   const matches: Match[] = [];
   
   // Normalize whitespace for easier regex matching
@@ -45,8 +46,8 @@ function parseMatches(html: string): Match[] {
       const homeTeam = tmNameMatches[0][1].trim();
       const awayTeam = tmNameMatches[1][1].trim();
       
-      // Extract team logos
-      const logoMatches = [...block.matchAll(/(?:data-src|src)="(https:\/\/www\.yalla-shoot--hd\.live\/wp-content\/uploads\/[^"]+)"/g)];
+      // Extract team logos - match any domain's img src or data-src
+      const logoMatches = [...block.matchAll(/(?:data-src|src)="(https?:\/\/[^"]+\/wp-content\/uploads\/[^"]+)"/g)];
       const homeLogo = logoMatches.length > 0 ? logoMatches[0][1] : '';
       const awayLogo = logoMatches.length > 1 ? logoMatches[1][1] : '';
       
@@ -107,6 +108,7 @@ function parseMatches(html: string): Match[] {
         channels,
         league,
         date,
+        dayLabel,
       });
     } catch (e) {
       console.error('Error parsing match block:', e);
@@ -116,33 +118,50 @@ function parseMatches(html: string): Match[] {
   return matches;
 }
 
+async function fetchPage(url: string): Promise<string> {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml',
+      'Accept-Language': 'ar,en;q=0.9',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  }
+
+  return response.text();
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Fetching live matches from yalla-shoot...');
+    console.log('Fetching live matches from yalla-shoot-live-online...');
     
-    const response = await fetch('https://www.yalla-shoot--hd.live/', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'ar,en;q=0.9',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.status}`);
-    }
-
-    const html = await response.text();
-    const matches = parseMatches(html);
+    const baseUrl = 'https://www.yalla-shoot-live-online.com';
     
-    console.log(`Parsed ${matches.length} matches`);
+    // Fetch all three day pages in parallel
+    const [yesterdayHtml, todayHtml, tomorrowHtml] = await Promise.all([
+      fetchPage(`${baseUrl}/matches-yesterday/`).catch(e => { console.warn('Yesterday fetch failed:', e.message); return ''; }),
+      fetchPage(`${baseUrl}/matches-today/`).catch(e => { console.warn('Today fetch failed:', e.message); return ''; }),
+      fetchPage(`${baseUrl}/matches-tomorrow/`).catch(e => { console.warn('Tomorrow fetch failed:', e.message); return ''; }),
+    ]);
+
+    const yesterdayMatches = yesterdayHtml ? parseMatches(yesterdayHtml, 'yesterday') : [];
+    const todayMatches = todayHtml ? parseMatches(todayHtml, 'today') : [];
+    const tomorrowMatches = tomorrowHtml ? parseMatches(tomorrowHtml, 'tomorrow') : [];
+
+    // Combine: today first (most relevant), then tomorrow, then yesterday
+    const allMatches = [...todayMatches, ...tomorrowMatches, ...yesterdayMatches];
+    
+    console.log(`Parsed ${allMatches.length} matches (yesterday: ${yesterdayMatches.length}, today: ${todayMatches.length}, tomorrow: ${tomorrowMatches.length})`);
 
     return new Response(
-      JSON.stringify({ success: true, matches, fetchedAt: new Date().toISOString() }),
+      JSON.stringify({ success: true, matches: allMatches, fetchedAt: new Date().toISOString() }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
