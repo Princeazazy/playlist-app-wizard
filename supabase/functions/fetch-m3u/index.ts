@@ -63,6 +63,16 @@ function getStbHeaders(index: number = 0): Record<string, string> {
   };
 }
 
+// Fix HTTP logo URLs → HTTPS (browsers block mixed content on HTTPS pages)
+function fixLogoUrl(url: string): string {
+  if (!url) return url;
+  // Many IPTV providers serve logos over HTTP - upgrade to HTTPS
+  if (url.startsWith('http://')) {
+    return url.replace('http://', 'https://');
+  }
+  return url;
+}
+
 // Determine content type from group/name
 function getContentType(group: string, name: string): 'live' | 'movies' | 'series' | 'sports' {
   const groupLower = (group || '').toLowerCase();
@@ -318,7 +328,7 @@ async function fetchXtreamLiveByCategory(
         items.push({
           name: stream.name || 'Unknown Channel',
           url: streamUrl,
-          logo: stream.stream_icon || '',
+          logo: fixLogoUrl(stream.stream_icon || ''),
           group: categoryName,
           type: isSports ? 'sports' : 'live',
           stream_id: streamId,
@@ -426,7 +436,7 @@ async function fetchXtreamVodByCategory(
         items.push({
           name: stream.name || 'Unknown Movie',
           url: `${baseUrl}/movie/${username}/${password}/${stream.stream_id}.${ext}`,
-          logo: stream.stream_icon || '',
+          logo: fixLogoUrl(stream.stream_icon || ''),
           group: categoryName,
           type: 'movies' as const,
           stream_id: streamId,
@@ -535,7 +545,7 @@ async function fetchXtreamSeriesByCategory(
         items.push({
           name: stream.name || 'Unknown Series',
           url: '',
-          logo: stream.cover || '',
+          logo: fixLogoUrl(stream.cover || ''),
           group: categoryName,
           type: 'series' as const,
           series_id: seriesId,
@@ -589,7 +599,7 @@ function parseM3UContent(chunk: string, existingChannels: { name: string; url: s
       currentChannel = {
         name,
         url: '',
-        logo: logoMatch ? logoMatch[1] : '',
+        logo: fixLogoUrl(logoMatch ? logoMatch[1] : ''),
         group,
         type
       };
