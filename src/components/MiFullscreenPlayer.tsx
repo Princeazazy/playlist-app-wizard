@@ -1,5 +1,4 @@
-import { useRef, useEffect, useMemo, useState, useCallback, memo } from 'react';
-import { Capacitor } from '@capacitor/core';
+import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import {
   Play,
@@ -20,6 +19,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Channel } from '@/hooks/useIPTV';
 import { useWeather } from '@/hooks/useWeather';
 import { useWatchProgress, saveLastPlayed } from '@/hooks/useWatchProgress';
+import { isNativeOrWebView } from '@/lib/platformDetect';
+import { useResilientPlayback } from '@/hooks/useResilientPlayback';
 import { EPGGuide } from './EPGGuide';
 import { WeatherIcon } from './shared/WeatherIcon';
 
