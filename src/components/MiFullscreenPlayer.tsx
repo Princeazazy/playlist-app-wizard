@@ -264,24 +264,17 @@ export const MiFullscreenPlayer = ({
 
   useEffect(() => {
     const video = videoRef.current;
-    const container = containerRef.current;
     if (!video) return;
 
     const onPlaying = () => { setIsPlaying(true); setError(null); };
     const onPause = () => setIsPlaying(false);
-    const onVideoError = () => {
-      const mediaError = video.error;
-      setError(mediaError ? `Playback error: ${mediaError.code}` : 'Playback error');
-    };
 
     video.addEventListener('playing', onPlaying);
     video.addEventListener('pause', onPause);
-    video.addEventListener('error', onVideoError);
 
     return () => {
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('pause', onPause);
-      video.removeEventListener('error', onVideoError);
     };
   }, []);
 
