@@ -576,7 +576,15 @@ export const MiFullscreenPlayer = ({
         crossOrigin="anonymous"
       />
 
-      {/* Error overlay */}
+      {(playbackState === 'connecting' || playbackState === 'buffering' || playbackState === 'reconnecting') && !error && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="px-4 py-2 rounded-full bg-black/55 backdrop-blur-sm text-white text-sm font-medium">
+            {playbackStatusText}
+          </div>
+        </div>
+      )}
+
+      {/* Error overlay */
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80">
           <div className="text-center max-w-md px-6">
