@@ -147,343 +147,59 @@ export const MiFullscreenPlayer = ({
     return { streamProxyUrl };
   }, []);
 
-  const getProxyWrappedUrl = useCallback((rawUrl: string) => {
-    if (!functionConfig.streamProxyUrl) return rawUrl;
-    return `${functionConfig.streamProxyUrl}?url=${encodeURIComponent(rawUrl)}`;
-  }, [functionConfig.streamProxyUrl]);
+  const applyHlsSubtitleTracks = useCallback((hlsInstance: Hls) => {
+    if (!hlsInstance.subtitleTracks || hlsInstance.subtitleTracks.length === 0) return;
 
-  const buildPlayableCandidates = useCallback((rawUrl: string): string[] => {
-    const isNative = Capacitor.isNativePlatform();
-    if (isNative) return [rawUrl];
+    const tracks = hlsInstance.subtitleTracks.map((track, index) => ({
+      id: index,
+      name: track.name || track.lang || `Track ${index + 1}`,
+      lang: track.lang || '',
+    }));
 
-    const isHttp = rawUrl.startsWith('http://');
-    const isHttps = rawUrl.startsWith('https://');
-    const proxyUrl = getProxyWrappedUrl(rawUrl);
+    setSubtitleTracks(tracks);
+    setActiveSubtitleTrack(hlsInstance.subtitleTrack);
+  }, []);
 
-    const hostname = (() => {
-      try { return new URL(rawUrl).hostname.toLowerCase(); } catch { return ''; }
-    })();
-    const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
+  const {
+    hlsRef,
+    playbackState,
+    error: playbackError,
+    retryCount,
+    retryPlayback,
+  } = useResilientPlayback({
+    videoRef,
+    channel,
+    isVOD,
+    forceMuted: !isNativeOrWebView(),
+    maxReconnectCycles: 6,
+    logPrefix: 'FullscreenPlayer',
+    onManifestParsed: applyHlsSubtitleTracks,
+    onSubtitleTracksUpdated: applyHlsSubtitleTracks,
+  });
 
-    // Local file channels: prefer direct HTTPS playback, proxy only for plain HTTP
-    if (channel.isLocal) {
-      if (isHttp) return [proxyUrl];
-      return [rawUrl, proxyUrl];
-    }
-
-    // This host often blocks cloud proxy on TS; keep proxy as last-resort only for HLS-like URLs.
-    if (isHttps && isProxyChallengedHost) {
-      const isLikelyHls = /\.m3u8(\?.*)?$/i.test(rawUrl) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(rawUrl);
-      return isLikelyHls ? [rawUrl, proxyUrl] : [rawUrl];
-    }
-
-    // Default web strategy: direct HTTPS first, then proxy fallback.
-    if (isHttps) return [rawUrl, proxyUrl];
-
-    // Plain HTTP must be proxied on web to avoid mixed-content blocking.
-    return [proxyUrl];
-  }, [channel.isLocal, getProxyWrappedUrl]);
-
-  // Playback initialization with direct-first fallback for WEBTV streams
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !channel.url) return;
-
-    setError(null);
-
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
+    if (playbackError) {
+      setError(playbackError);
+      setIsPlaying(false);
+      return;
     }
 
-    const originalUrl = channel.url;
-    const isNative = Capacitor.isNativePlatform();
+    if (playbackState === 'playing') {
+      setIsPlaying(true);
+      setError(null);
+      return;
+    }
 
-    const buildSourceVariants = (baseUrl: string): string[] => {
-      if (isNative) return [baseUrl];
+    if (playbackState === 'buffering' || playbackState === 'connecting' || playbackState === 'reconnecting' || playbackState === 'failed') {
+      setIsPlaying(false);
+    }
+  }, [playbackError, playbackState]);
 
-      const variants: string[] = [];
-      const addVariant = (candidate: string | undefined) => {
-        if (!candidate) return;
-        if (!variants.includes(candidate)) variants.push(candidate);
-      };
-
-      addVariant(baseUrl);
-
-      const liveSwap = /\/live\/.+\.ts(\?.*)?$/i.test(baseUrl)
-        ? baseUrl.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
-        : /\/live\/.+\.m3u8(\?.*)?$/i.test(baseUrl)
-          ? baseUrl.replace(/\.m3u8(\?.*)?$/i, '.ts$1')
-          : undefined;
-
-      const outputSwap = /output=ts/i.test(baseUrl)
-        ? baseUrl.replace(/output=ts/i, 'output=m3u8')
-        : /output=(m3u8|hls)/i.test(baseUrl)
-          ? baseUrl.replace(/output=(m3u8|hls)/i, 'output=ts')
-          : undefined;
-
-      const isTsLikeBase =
-        /\/live\/.+\.ts(\?.*)?$/i.test(baseUrl) ||
-        /(?:^|[?&])output=ts\b/i.test(baseUrl);
-
-      const isHlsLikeUrl = (url: string) =>
-        /\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url);
-
-      const orderedCandidates = [baseUrl, liveSwap, outputSwap].filter(
-        (candidate): candidate is string => !!candidate,
-      );
-
-      if (isTsLikeBase) {
-        orderedCandidates.sort((a, b) => Number(isHlsLikeUrl(b)) - Number(isHlsLikeUrl(a)));
-      }
-
-      orderedCandidates.forEach(addVariant);
-
-      return variants;
-    };
-
-    const sourceVariants = buildSourceVariants(originalUrl);
-
-    const trySourceVariant = (variantIndex: number) => {
-      if (variantIndex >= sourceVariants.length) {
-        setIsPlaying(false);
-        setError('Stream failed to load.');
-        return;
-      }
-
-      const sourceUrl = sourceVariants[variantIndex];
-      const playableCandidates = buildPlayableCandidates(sourceUrl);
-
-      const tryCandidate = (candidateIndex: number) => {
-        if (candidateIndex >= playableCandidates.length) {
-          trySourceVariant(variantIndex + 1);
-          return;
-        }
-
-        if (hlsRef.current) {
-          hlsRef.current.destroy();
-          hlsRef.current = null;
-        }
-
-        const playableUrl = playableCandidates[candidateIndex];
-        const decodedSourceUrl = (() => {
-          try { return decodeURIComponent(sourceUrl); } catch { return sourceUrl; }
-        })();
-        const isHlsStream =
-          sourceUrl.includes('.m3u8') ||
-          decodedSourceUrl.includes('.m3u8') ||
-          /(?:^|[?&])output=(m3u8|hls)\b/i.test(sourceUrl);
-        let movedNext = false;
-        let networkRecoveries = 0;
-        let startupWatchdogId: ReturnType<typeof setTimeout> | null = null;
-
-        const clearStartupWatchdog = () => {
-          if (startupWatchdogId) {
-            window.clearTimeout(startupWatchdogId);
-            startupWatchdogId = null;
-          }
-        };
-
-        const clearPlaybackWatchers = () => {
-          clearStartupWatchdog();
-          video.removeEventListener('playing', onPlaybackProgress);
-          video.removeEventListener('loadeddata', onPlaybackProgress);
-          video.removeEventListener('timeupdate', onPlaybackProgress);
-        };
-
-        const moveNextOnce = () => {
-          if (movedNext) return;
-          movedNext = true;
-          clearPlaybackWatchers();
-          tryCandidate(candidateIndex + 1);
-        };
-
-        const onPlaybackProgress = () => {
-          if (video.readyState >= 2 || video.currentTime > 0.2 || video.videoWidth > 0) {
-            clearPlaybackWatchers();
-          }
-        };
-
-        const armStartupWatchdog = () => {
-          clearStartupWatchdog();
-          startupWatchdogId = window.setTimeout(() => {
-            if (movedNext) return;
-
-            const noProgress =
-              video.readyState < 2 &&
-              video.videoWidth === 0 &&
-              video.currentTime < 0.2;
-
-            if (noProgress) {
-              console.warn('[Player] Startup stalled, trying fallback source...');
-              moveNextOnce();
-            }
-          }, 7000);
-        };
-
-        video.addEventListener('playing', onPlaybackProgress);
-        video.addEventListener('loadeddata', onPlaybackProgress);
-        video.addEventListener('timeupdate', onPlaybackProgress);
-
-        console.log('[Player] Attempting playback:', {
-          source: sourceUrl.substring(0, 120),
-          candidate: playableUrl.substring(0, 120),
-          viaProxy: playableUrl !== sourceUrl,
-          isHls: isHlsStream,
-        });
-
-        video.muted = true;
-        video.volume = 1;
-        video.removeAttribute('src');
-        video.load();
-        armStartupWatchdog();
-
-        if (isHlsStream && Hls.isSupported()) {
-          const hls = new Hls({
-            enableWorker: true,
-            lowLatencyMode: !isVOD,
-            maxBufferLength: isVOD ? 45 : 20,
-            maxMaxBufferLength: isVOD ? 90 : 45,
-            manifestLoadingMaxRetry: 2,
-            levelLoadingMaxRetry: 3,
-            fragLoadingMaxRetry: 4,
-            manifestLoadingRetryDelay: 500,
-            levelLoadingRetryDelay: 1000,
-            fragLoadingRetryDelay: 1000,
-          });
-          hlsRef.current = hls;
-
-          hls.loadSource(playableUrl);
-          hls.attachMedia(video);
-
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
-              const tracks = hls.subtitleTracks.map((t, i) => ({
-                id: i,
-                name: t.name || t.lang || `Track ${i + 1}`,
-                lang: t.lang || '',
-              }));
-              setSubtitleTracks(tracks);
-              setActiveSubtitleTrack(hls.subtitleTrack);
-            }
-
-            video.play().then(() => {
-              setIsPlaying(true);
-              setError(null);
-              video.muted = false;
-            }).catch((e) => {
-              if (e?.name === 'NotAllowedError') {
-                clearPlaybackWatchers();
-                setIsPlaying(false);
-                setError('Tap Play to start.');
-              } else {
-                moveNextOnce();
-              }
-            });
-          });
-
-          hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, () => {
-            if (hls.subtitleTracks && hls.subtitleTracks.length > 0) {
-              const tracks = hls.subtitleTracks.map((t, i) => ({
-                id: i,
-                name: t.name || t.lang || `Track ${i + 1}`,
-                lang: t.lang || '',
-              }));
-              setSubtitleTracks(tracks);
-            }
-          });
-
-          hls.on(Hls.Events.ERROR, (_event, data) => {
-            if (!data.fatal) {
-              if (data.details === 'bufferStalledError') {
-                try { hls.startLoad(); } catch { }
-              }
-              return;
-            }
-
-            const code = data?.response?.code as number | undefined;
-
-            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-              try {
-                hls.recoverMediaError();
-                return;
-              } catch {
-                moveNextOnce();
-                return;
-              }
-            }
-
-            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-              const shouldSwitchCandidate = [401, 403, 429, 458, 500, 502, 503, 504].includes(code || 0);
-              if (shouldSwitchCandidate) {
-                moveNextOnce();
-                return;
-              }
-
-              if (networkRecoveries < 3) {
-                networkRecoveries += 1;
-                try {
-                  hls.startLoad();
-                  return;
-                } catch {
-                  // fall through to next candidate
-                }
-              }
-
-              moveNextOnce();
-              return;
-            }
-
-            moveNextOnce();
-          });
-
-          return;
-        }
-
-        const onVideoErrorOnce = () => {
-          video.removeEventListener('error', onVideoErrorOnce);
-          moveNextOnce();
-        };
-
-        video.addEventListener('error', onVideoErrorOnce, { once: true });
-
-        video.src = playableUrl;
-        video.play().then(() => {
-          setIsPlaying(true);
-          setError(null);
-          video.muted = false;
-        }).catch((e) => {
-          if (e?.name === 'NotAllowedError') {
-            clearPlaybackWatchers();
-            setIsPlaying(false);
-            setError('Tap Play to start.');
-            return;
-          }
-          moveNextOnce();
-        });
-      };
-
-      tryCandidate(0);
-    };
-
-    trySourceVariant(0);
-
-    const startupTimeout = window.setTimeout(() => {
-      const v = videoRef.current;
-      if (!v) return;
-      if (v.readyState < 2 && v.paused) {
-        setError((prev) => prev ?? 'Stream did not start. Tap Play, or try another channel.');
-      }
-    }, 8000);
-
-    return () => {
-      window.clearTimeout(startupTimeout);
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-    };
-  }, [channel.url, buildPlayableCandidates]);
+  useEffect(() => {
+    subtitlesFetchedRef.current = false;
+    setSubtitleTracks([]);
+    setActiveSubtitleTrack(-1);
+  }, [channel.id]);
 
   // Fetch external subtitle tracks from Xtream API for VOD content
   useEffect(() => {
