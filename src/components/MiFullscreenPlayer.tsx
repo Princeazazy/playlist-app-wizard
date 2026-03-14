@@ -584,7 +584,7 @@ export const MiFullscreenPlayer = ({
         </div>
       )}
 
-      {/* Error overlay */
+      {/* Error overlay */}
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80">
           <div className="text-center max-w-md px-6">
