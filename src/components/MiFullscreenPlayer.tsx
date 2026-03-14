@@ -13,7 +13,6 @@ import {
   Subtitles,
   X,
   Calendar,
-  Radio,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Channel } from '@/hooks/useIPTV';
