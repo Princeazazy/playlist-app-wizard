@@ -581,10 +581,29 @@ export const MiFullscreenPlayer = ({
         <div className="absolute inset-0 flex items-center justify-center bg-black/80">
           <div className="text-center max-w-md px-6">
             <p className="text-white text-lg mb-3">{error}</p>
-            <button onClick={onClose} className="px-6 py-3 rounded-xl bg-white/10 text-white hover:bg-white/15">Back</button>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  retryPlayback();
+                }}
+                className="px-6 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+              >
+                Retry Stream
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className="px-6 py-3 rounded-xl bg-white/10 text-white hover:bg-white/15"
+              >
+                Back
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      )
 
       {/* Resume Prompt */}
       {showResumePrompt && isVOD && (
