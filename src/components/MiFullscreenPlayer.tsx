@@ -679,8 +679,12 @@ export const MiFullscreenPlayer = ({
           )}
         </div>
 
-        {/* Top Right - Time, Weather & Subtitle Toggle */}
+        {/* Top Right - Status, Time, Weather & Subtitle Toggle */}
         <div className="absolute top-6 right-6 flex items-center gap-4 text-white/80">
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${playbackStatusClass}`}>
+            {playbackStatusText}
+          </span>
+
           {/* Subtitle button */}
           {(isMultiSub || subtitleTracks.length > 0) && (
             <button
@@ -691,6 +695,18 @@ export const MiFullscreenPlayer = ({
               <Subtitles className="w-5 h-5" />
             </button>
           )}
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              retryPlayback();
+            }}
+            className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-medium"
+            title="Reload stream"
+          >
+            Reload
+          </button>
+
           <span className="text-lg font-medium">{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           <div className="flex items-center gap-1">
             <WeatherIcon icon={weather.icon} />
