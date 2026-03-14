@@ -430,6 +430,29 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut, onSwitchPr
               </div>
             </div>
 
+            {/* Active Provider Info */}
+            {activeProvider && (
+              <div className="mt-4 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                <div className="flex items-center gap-2 text-sm">
+                  <Wifi className="w-4 h-4 text-primary" />
+                  <span className="text-muted-foreground">Provider:</span>
+                  <span className="text-foreground font-medium">{activeProvider.name}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 capitalize">{activeProvider.config.type === 'xtream' ? 'Xtream Codes' : activeProvider.config.type === 'm3u' ? 'M3U Playlist' : 'Access Code'}</p>
+              </div>
+            )}
+
+            {/* Switch Provider */}
+            {onSwitchProvider && (
+              <button
+                onClick={onSwitchProvider}
+                className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium"
+              >
+                <ArrowRightLeft className="w-5 h-5" />
+                Switch Provider
+              </button>
+            )}
+
             {/* Sign Out */}
             <button
               onClick={() => {
@@ -437,7 +460,7 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut, onSwitchPr
                 if (onSignOut) onSignOut();
                 else window.location.reload();
               }}
-              className="mt-6 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors font-medium"
+              className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors font-medium"
             >
               <LogOut className="w-5 h-5" />
               Sign Out
