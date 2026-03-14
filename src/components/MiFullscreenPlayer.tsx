@@ -521,17 +521,43 @@ export const MiFullscreenPlayer = ({
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
+
+    if (playbackState === 'failed') {
+      retryPlayback();
+      return;
+    }
+
     if (!video.paused) {
       video.pause();
       setIsPlaying(false);
       return;
     }
-    video.play().then(() => { setIsPlaying(true); setError(null); }).catch((e) => {
+
+    video.play().then(() => {
+      setIsPlaying(true);
+      setError(null);
+    }).catch((e) => {
       setIsPlaying(false);
       if (e?.name === 'NotAllowedError') setError('Autoplay was blocked — tap Play to start.');
       else setError('Playback failed.');
     });
   };
+
+  const playbackStatusText = (() => {
+    if (playbackState === 'connecting') return 'Connecting';
+    if (playbackState === 'buffering') return 'Buffering';
+    if (playbackState === 'reconnecting') return `Reconnecting${retryCount > 0 ? ` (${retryCount})` : ''}`;
+    if (playbackState === 'failed') return 'Failed to play';
+    return 'Live';
+  })();
+
+  const playbackStatusClass = (() => {
+    if (playbackState === 'failed') return 'bg-destructive/85 text-destructive-foreground';
+    if (playbackState === 'reconnecting') return 'bg-primary/85 text-primary-foreground';
+    if (playbackState === 'buffering') return 'bg-accent/85 text-accent-foreground';
+    if (playbackState === 'connecting') return 'bg-muted/85 text-foreground';
+    return 'bg-primary text-primary-foreground';
+  })();
 
   return (
     <div
