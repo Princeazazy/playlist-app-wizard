@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, User, Shield, ListVideo, Trash2, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Check, X, Upload, FileVideo, Download, Loader2, Pencil, Users, Plus, ShieldOff, UserX, UserCheck, LogOut } from 'lucide-react';
+import { ChevronLeft, User, Shield, ListVideo, Trash2, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Check, X, Upload, FileVideo, Download, Loader2, Pencil, Users, Plus, ShieldOff, UserX, UserCheck, LogOut, Wifi, ArrowRightLeft } from 'lucide-react';
 import { getProfileName, setProfileName, getProfileInitial } from '@/lib/profileStorage';
 import { getAppSession, clearAppSession } from '@/lib/appSession';
 import { toast } from 'sonner';
@@ -26,6 +26,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
+import { ProviderAccount } from '@/lib/providers/types';
 
 const WeatherIcon = ({ icon }: { icon: string }) => {
   switch (icon) {
@@ -41,9 +42,11 @@ interface MiSettingsPageProps {
   onBack: () => void;
   onPlaylistChange?: () => void;
   onSignOut?: () => void;
+  onSwitchProvider?: () => void;
+  activeProvider?: ProviderAccount | null;
 }
 
-export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut }: MiSettingsPageProps) => {
+export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut, onSwitchProvider, activeProvider }: MiSettingsPageProps) => {
   const [time, setTime] = useState(new Date());
   const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
   const [showParentalDialog, setShowParentalDialog] = useState(false);
