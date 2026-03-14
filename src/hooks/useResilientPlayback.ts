@@ -38,6 +38,8 @@ const isTsLikeUrl = (url: string): boolean => (
   /\/live\/.+\.ts(\?.*)?$/i.test(url) || /(?:^|[?&])output=ts\b/i.test(url)
 );
 
+const getRetryDelay = (cycle: number) => RETRY_BACKOFF_MS[Math.min(Math.max(cycle - 1, 0), RETRY_BACKOFF_MS.length - 1)];
+
 export const useResilientPlayback = ({
   videoRef,
   channel,
@@ -57,80 +59,20 @@ export const useResilientPlayback = ({
   const [manualRetryNonce, setManualRetryNonce] = useState(0);
 
   const hlsRef = useRef<Hls | null>(null);
-  const sessionIdRef = useRef(0);
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const watchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const stalledIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const attemptCleanupRef = useRef<(() => void) | null>(null);
 
   const log = useCallback((event: string, details?: Record<string, unknown>) => {
     console.info(`[${logPrefix}] ${event}`, {
       channelId: channel.id,
       channelName: channel.name,
-      state: playbackState,
-      retryCount,
       ...details,
     });
-  }, [channel.id, channel.name, logPrefix, playbackState, retryCount]);
+  }, [channel.id, channel.name, logPrefix]);
 
   const streamProxyUrl = useMemo(() => {
     const supabaseUrl = (supabase as any).supabaseUrl as string | undefined;
     if (!supabaseUrl) return '';
     return new URL('functions/v1/stream-proxy', supabaseUrl).toString();
   }, []);
-
-  const clearReconnectTimer = useCallback(() => {
-    if (reconnectTimerRef.current) {
-      window.clearTimeout(reconnectTimerRef.current);
-      reconnectTimerRef.current = null;
-    }
-  }, []);
-
-  const clearWatchers = useCallback(() => {
-    if (watchdogTimerRef.current) {
-      window.clearTimeout(watchdogTimerRef.current);
-      watchdogTimerRef.current = null;
-    }
-
-    if (stalledIntervalRef.current) {
-      window.clearInterval(stalledIntervalRef.current);
-      stalledIntervalRef.current = null;
-    }
-
-    if (attemptCleanupRef.current) {
-      attemptCleanupRef.current();
-      attemptCleanupRef.current = null;
-    }
-  }, []);
-
-  const destroyPlayer = useCallback((video?: HTMLVideoElement | null) => {
-    clearWatchers();
-
-    if (hlsRef.current) {
-      try {
-        hlsRef.current.destroy();
-      } catch {
-        // no-op
-      }
-      hlsRef.current = null;
-      log('destroyed_hls_instance');
-    }
-
-    if (!video) return;
-
-    try {
-      video.pause();
-    } catch {
-      // no-op
-    }
-
-    try {
-      video.removeAttribute('src');
-      video.load();
-    } catch {
-      // no-op
-    }
-  }, [clearWatchers, log]);
 
   const buildPlayableCandidates = useCallback((rawUrl: string): string[] => {
     if (Capacitor.isNativePlatform()) return [rawUrl];
@@ -154,9 +96,8 @@ export const useResilientPlayback = ({
     const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
 
     if (channel.isLocal) {
-      if (rawUrl.startsWith('http://')) {
-        add(proxyUrl);
-      } else {
+      if (rawUrl.startsWith('http://')) add(proxyUrl);
+      else {
         add(rawUrl);
         add(proxyUrl);
       }
@@ -170,9 +111,7 @@ export const useResilientPlayback = ({
 
     if (rawUrl.startsWith('https://')) {
       add(rawUrl);
-      if (!(isProxyChallengedHost && !isLikelyHlsUrl(rawUrl))) {
-        add(proxyUrl);
-      }
+      if (!(isProxyChallengedHost && !isLikelyHlsUrl(rawUrl))) add(proxyUrl);
       return candidates;
     }
 
@@ -212,54 +151,106 @@ export const useResilientPlayback = ({
     return Array.from(new Set(variants.flatMap(buildPlayableCandidates)));
   }, [channel.url, buildPlayableCandidates]);
 
-  const scheduleReconnect = useCallback((sessionId: number, reconnectCycle: number, reason: string) => {
-    clearReconnectTimer();
+  const retryPlayback = useCallback(() => {
+    setManualRetryNonce((value) => value + 1);
+  }, []);
 
-    if (reconnectCycle > maxReconnectCycles) {
-      setPlaybackState('failed');
-      setError('Failed to play stream after multiple recovery attempts.');
-      log('fatal_error', { reason, reconnectCycle });
-      return;
-    }
-
-    const delay = RETRY_BACKOFF_MS[Math.min(reconnectCycle - 1, RETRY_BACKOFF_MS.length - 1)];
-    setPlaybackState('reconnecting');
-    setRetryCount(reconnectCycle);
-
-    log('reconnecting', { reason, reconnectCycle, delay });
-
-    reconnectTimerRef.current = window.setTimeout(() => {
-      if (sessionIdRef.current !== sessionId) return;
-      startSession(sessionId, reconnectCycle, 'reconnect_timer');
-    }, delay);
-  }, [clearReconnectTimer, log, maxReconnectCycles]);
-
-  const startSession = useCallback((sessionId: number, reconnectCycle = 0, trigger: string = 'channel_change') => {
+  useEffect(() => {
     const video = videoRef.current;
+
     if (!video || !channel.url || sourceCandidates.length === 0) {
       setPlaybackState('failed');
       setError('No playable stream URL found.');
       return;
     }
 
-    clearReconnectTimer();
-    clearWatchers();
-
+    let canceled = false;
+    let reconnectCycle = 0;
     let candidateIndex = 0;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let startupWatchdog: ReturnType<typeof setTimeout> | null = null;
+    let stalledMonitor: ReturnType<typeof setInterval> | null = null;
+    let detachVideoListeners: (() => void) | null = null;
 
-    const tryCandidate = () => {
-      if (sessionIdRef.current !== sessionId) return;
+    const clearTimers = () => {
+      if (reconnectTimer) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      if (startupWatchdog) {
+        window.clearTimeout(startupWatchdog);
+        startupWatchdog = null;
+      }
+      if (stalledMonitor) {
+        window.clearInterval(stalledMonitor);
+        stalledMonitor = null;
+      }
+      if (detachVideoListeners) {
+        detachVideoListeners();
+        detachVideoListeners = null;
+      }
+    };
+
+    const teardownPlayback = () => {
+      clearTimers();
+
+      if (hlsRef.current) {
+        try {
+          hlsRef.current.destroy();
+        } catch {
+          // no-op
+        }
+        hlsRef.current = null;
+      }
+
+      try {
+        video.pause();
+      } catch {
+        // no-op
+      }
+
+      try {
+        video.removeAttribute('src');
+        video.load();
+      } catch {
+        // no-op
+      }
+    };
+
+    const fail = (message: string, reason: string) => {
+      if (canceled) return;
+      setPlaybackState('failed');
+      setError(message);
+      log('fatal_error', { reason, reconnectCycle });
+    };
+
+    const startCandidate = (trigger: string) => {
+      if (canceled) return;
 
       if (candidateIndex >= sourceCandidates.length) {
-        scheduleReconnect(sessionId, reconnectCycle + 1, 'all_candidates_exhausted');
+        reconnectCycle += 1;
+
+        if (reconnectCycle > maxReconnectCycles) {
+          fail('Failed to play stream after multiple recovery attempts.', 'max_retries_exceeded');
+          return;
+        }
+
+        const delay = getRetryDelay(reconnectCycle);
+        setPlaybackState('reconnecting');
+        setRetryCount(reconnectCycle);
+        log('reconnecting', { reason: 'all_candidates_exhausted', reconnectCycle, delay });
+
+        candidateIndex = 0;
+        reconnectTimer = window.setTimeout(() => startCandidate('reconnect_timer'), delay);
         return;
       }
 
       const candidateUrl = sourceCandidates[candidateIndex++];
+      const isHls = isLikelyHlsUrl(candidateUrl);
 
-      destroyPlayer(video);
-      setActiveSource(candidateUrl);
+      teardownPlayback();
       setError(null);
+      setActiveSource(candidateUrl);
       setPlaybackState(reconnectCycle > 0 ? 'reconnecting' : 'connecting');
 
       log('player_init', {
@@ -267,74 +258,69 @@ export const useResilientPlayback = ({
         reconnectCycle,
         candidateIndex,
         candidateCount: sourceCandidates.length,
-        isHls: isLikelyHlsUrl(candidateUrl),
-        candidateUrl: candidateUrl.slice(0, 160),
+        isHls,
+        candidate: candidateUrl.slice(0, 160),
       });
 
+      let switchedCandidate = false;
       let networkRecoveries = 0;
       let mediaRecoveries = 0;
-      let switchedCandidate = false;
       let lastTime = 0;
-      let stallStartedAt = Date.now();
+      let stallSince = Date.now();
 
-      const moveToNextCandidate = (reason: string, details?: Record<string, unknown>) => {
-        if (switchedCandidate) return;
+      const moveNext = (reason: string, details?: Record<string, unknown>) => {
+        if (canceled || switchedCandidate) return;
         switchedCandidate = true;
-        clearWatchers();
+        clearTimers();
         log('switch_candidate', { reason, ...details });
-        window.setTimeout(tryCandidate, 0);
+        window.setTimeout(() => startCandidate(reason), 0);
       };
 
       const onPlaying = () => {
-        stallStartedAt = Date.now();
+        if (canceled) return;
+        stallSince = Date.now();
         setPlaybackState('playing');
         setError(null);
+        if (!forceMuted) video.muted = false;
         log('playing', { currentTime: video.currentTime });
-
-        if (!forceMuted) {
-          video.muted = false;
-        }
       };
 
       const onWaiting = () => {
-        if (playbackState !== 'reconnecting') {
-          setPlaybackState('buffering');
-        }
+        if (canceled) return;
+        setPlaybackState('buffering');
         log('buffering', { readyState: video.readyState });
       };
 
       const onStalled = () => {
+        if (canceled) return;
         setPlaybackState('buffering');
-        log('stalled', { readyState: video.readyState });
+        log('stalled', { reason: 'video_stalled_event' });
 
         if (hlsRef.current && networkRecoveries < 2) {
           networkRecoveries += 1;
+          setPlaybackState('reconnecting');
           try {
             hlsRef.current.startLoad(-1);
             void video.play().catch(() => undefined);
-            setPlaybackState('reconnecting');
+            stallSince = Date.now();
             return;
           } catch {
             // continue to candidate fallback below
           }
         }
 
-        moveToNextCandidate('video_stalled_event');
+        moveNext('video_stalled_event');
       };
 
       const onVideoError = () => {
-        const mediaError = video.error;
-        log('fatal_error', {
-          reason: 'video_error_event',
-          mediaErrorCode: mediaError?.code,
-        });
-        moveToNextCandidate('video_error_event', { mediaErrorCode: mediaError?.code });
+        if (canceled) return;
+        moveNext('video_error_event', { mediaErrorCode: video.error?.code });
       };
 
       const onTimeUpdate = () => {
         if (video.currentTime > lastTime + 0.05) {
           lastTime = video.currentTime;
-          stallStartedAt = Date.now();
+          stallSince = Date.now();
         }
       };
 
@@ -344,7 +330,7 @@ export const useResilientPlayback = ({
       video.addEventListener('error', onVideoError);
       video.addEventListener('timeupdate', onTimeUpdate);
 
-      attemptCleanupRef.current = () => {
+      detachVideoListeners = () => {
         video.removeEventListener('playing', onPlaying);
         video.removeEventListener('waiting', onWaiting);
         video.removeEventListener('stalled', onStalled);
@@ -352,70 +338,59 @@ export const useResilientPlayback = ({
         video.removeEventListener('timeupdate', onTimeUpdate);
       };
 
-      watchdogTimerRef.current = window.setTimeout(() => {
-        if (sessionIdRef.current !== sessionId || switchedCandidate) return;
-
+      startupWatchdog = window.setTimeout(() => {
+        if (canceled || switchedCandidate) return;
         const noStartupProgress = video.readyState < 2 && video.currentTime < 0.2 && video.videoWidth === 0;
         if (noStartupProgress) {
-          log('startup_timeout', { candidateUrl: candidateUrl.slice(0, 160) });
-          moveToNextCandidate('startup_timeout');
+          log('startup_timeout', { candidate: candidateUrl.slice(0, 160) });
+          moveNext('startup_timeout');
         }
       }, startupTimeoutMs);
 
-      stalledIntervalRef.current = window.setInterval(() => {
-        if (sessionIdRef.current !== sessionId || switchedCandidate) return;
+      stalledMonitor = window.setInterval(() => {
+        if (canceled || switchedCandidate) return;
         if (video.paused || video.seeking || video.ended) return;
 
-        const elapsedSinceProgress = Date.now() - stallStartedAt;
-        const progressStopped = elapsedSinceProgress >= stalledThresholdMs;
+        const stalledFor = Date.now() - stallSince;
+        if (stalledFor < stalledThresholdMs) return;
 
-        if (!progressStopped) return;
-
+        setPlaybackState('reconnecting');
         log('stalled', {
           reason: 'progress_not_advancing',
-          elapsedSinceProgress,
+          stalledFor,
           currentTime: video.currentTime,
         });
 
         if (hlsRef.current && networkRecoveries < 2) {
           networkRecoveries += 1;
-          setPlaybackState('reconnecting');
-
           try {
             hlsRef.current.startLoad(-1);
             void video.play().catch(() => undefined);
-            stallStartedAt = Date.now();
+            stallSince = Date.now();
             return;
           } catch {
-            // continue to fallback below
+            // continue to candidate fallback below
           }
         }
 
-        moveToNextCandidate('progress_stalled');
+        moveNext('progress_stalled');
       }, 3000);
 
-      const playVideo = async () => {
+      const startPlayback = async () => {
         try {
           video.muted = forceMuted || reconnectCycle > 0;
           await video.play();
-          if (!forceMuted) {
-            video.muted = false;
-          }
+          if (!forceMuted) video.muted = false;
         } catch (playError) {
-          const name = (playError as { name?: string })?.name;
-
-          if (name === 'NotAllowedError') {
-            setPlaybackState('failed');
-            setError('Autoplay blocked by browser. Tap retry to start playback.');
-            log('fatal_error', { reason: 'autoplay_blocked' });
+          const errorName = (playError as { name?: string })?.name;
+          if (errorName === 'NotAllowedError') {
+            fail('Autoplay blocked by browser. Tap retry to start playback.', 'autoplay_blocked');
             return;
           }
 
-          moveToNextCandidate('play_call_failed', { error: String(playError) });
+          moveNext('play_call_failed', { errorName, error: String(playError) });
         }
       };
-
-      const isHls = isLikelyHlsUrl(candidateUrl);
 
       if (isHls && Hls.isSupported()) {
         const hls = new Hls({
@@ -436,30 +411,32 @@ export const useResilientPlayback = ({
         hls.loadSource(candidateUrl);
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (canceled) return;
           log('manifest_loaded', { levels: hls.levels.length });
           onManifestParsed?.(hls);
-          void playVideo();
+          void startPlayback();
         });
 
         hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, () => {
+          if (canceled) return;
           onSubtitleTracksUpdated?.(hls);
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
+          if (canceled || switchedCandidate) return;
+
           const detail = data.details as string | undefined;
-          const responseCode = data.response?.code;
+          const statusCode = data.response?.code;
 
           log(data.fatal ? 'fatal_error' : 'non_fatal_error', {
             errorType: data.type,
             detail,
             fatal: data.fatal,
-            responseCode,
+            statusCode,
           });
 
           if (!data.fatal) {
-            if (detail === 'bufferStalledError') {
-              setPlaybackState('buffering');
-            }
+            if (detail === 'bufferStalledError') setPlaybackState('buffering');
             return;
           }
 
@@ -475,12 +452,12 @@ export const useResilientPlayback = ({
               }
             }
 
-            moveToNextCandidate('media_decode_error');
+            moveNext('media_decode_error', { detail });
             return;
           }
 
           if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            const hardStatus = [401, 403, 404, 429, 458, 500, 502, 503, 504].includes(responseCode || 0);
+            const hardStatus = [401, 403, 404, 429, 458, 500, 502, 503, 504].includes(statusCode || 0);
 
             if (!hardStatus && networkRecoveries < 2) {
               networkRecoveries += 1;
@@ -493,11 +470,11 @@ export const useResilientPlayback = ({
               }
             }
 
-            moveToNextCandidate('network_error', { responseCode, detail });
+            moveNext('network_error', { detail, statusCode });
             return;
           }
 
-          moveToNextCandidate('unhandled_hls_fatal_error', { detail, responseCode });
+          moveNext('unhandled_hls_fatal_error', { detail, statusCode });
         });
 
         return;
@@ -505,58 +482,38 @@ export const useResilientPlayback = ({
 
       if (video.canPlayType('application/vnd.apple.mpegurl') || !isHls) {
         video.src = candidateUrl;
-        void playVideo();
+        void startPlayback();
         return;
       }
 
-      moveToNextCandidate('unsupported_format');
+      moveNext('unsupported_format');
     };
-
-    tryCandidate();
-  }, [
-    channel.url,
-    clearReconnectTimer,
-    clearWatchers,
-    destroyPlayer,
-    forceMuted,
-    isVOD,
-    log,
-    onManifestParsed,
-    onSubtitleTracksUpdated,
-    playbackState,
-    scheduleReconnect,
-    sourceCandidates,
-    stalledThresholdMs,
-    startupTimeoutMs,
-    videoRef,
-  ]);
-
-  const retryPlayback = useCallback(() => {
-    setManualRetryNonce((value) => value + 1);
-  }, []);
-
-  useEffect(() => {
-    if (!channel.url) {
-      setPlaybackState('failed');
-      setError('No stream URL available.');
-      return;
-    }
-
-    sessionIdRef.current += 1;
-    const sessionId = sessionIdRef.current;
 
     setRetryCount(0);
     setPlaybackState('connecting');
     setError(null);
-
-    startSession(sessionId, 0, manualRetryNonce > 0 ? 'manual_retry' : 'channel_change');
+    startCandidate(manualRetryNonce > 0 ? 'manual_retry' : 'channel_change');
 
     return () => {
-      clearReconnectTimer();
-      destroyPlayer(videoRef.current);
-      log('destroyed', { sessionId });
+      canceled = true;
+      teardownPlayback();
+      log('destroyed', { manualRetryNonce });
     };
-  }, [channel.id, channel.url, clearReconnectTimer, destroyPlayer, log, manualRetryNonce, startSession, videoRef]);
+  }, [
+    channel.id,
+    channel.url,
+    forceMuted,
+    isVOD,
+    log,
+    manualRetryNonce,
+    maxReconnectCycles,
+    onManifestParsed,
+    onSubtitleTracksUpdated,
+    sourceCandidates,
+    startupTimeoutMs,
+    stalledThresholdMs,
+    videoRef,
+  ]);
 
   return {
     hlsRef,
