@@ -603,7 +603,7 @@ export const MiFullscreenPlayer = ({
             </div>
           </div>
         </div>
-      )
+      )}
 
       {/* Resume Prompt */}
       {showResumePrompt && isVOD && (
