@@ -56,7 +56,6 @@ export const MiFullscreenPlayer = ({
 }: MiFullscreenPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const hlsRef = useRef<Hls | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(true);
 
