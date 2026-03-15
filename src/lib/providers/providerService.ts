@@ -163,13 +163,16 @@ export async function fetchProviderContent(
     throw new Error('Unknown provider type');
   }
 
+  // Always prefer Xtream API — it's 3-5x faster than M3U parsing because
+  // it fetches live/movies/series categories in parallel via JSON endpoints
+  // instead of streaming and parsing a huge M3U text file.
   const { data, error } = await supabase.functions.invoke('fetch-m3u', {
     body: {
       url: m3uUrl,
       maxChannels,
       maxBytesMB,
       maxReturnPerType,
-      preferXtreamApi: false,
+      preferXtreamApi: true,
     },
   });
 
