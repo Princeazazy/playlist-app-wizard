@@ -294,7 +294,7 @@ async function fetchXtreamLive(
   }
 }
 
-// Fetch Xtream Codes VOD (movies) - IPTV Smarters compatible
+// Fetch Xtream Codes VOD (movies) — bulk first, per-category fallback
 async function fetchXtreamMovies(
   baseUrl: string,
   username: string,
@@ -306,7 +306,7 @@ async function fetchXtreamMovies(
     const categoriesRes = await fetchWithTimeout(
       `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_vod_categories`,
       { headers: getStbHeaders(2) },
-      6000
+      15000
     );
 
     if (!categoriesRes.ok) {
@@ -316,7 +316,7 @@ async function fetchXtreamMovies(
 
     const categories = await categoriesRes.json();
     const limitedCategories = Array.isArray(categories) ? categories.slice(0, MAX_CATEGORIES_PER_TYPE) : [];
-    console.log(`Found ${categories?.length || 0} VOD categories, using ${limitedCategories.length}`);
+    console.log(`Found ${categories?.length || 0} VOD categories`);
 
     const categoryMap = new Map<string, string>();
     for (const cat of limitedCategories) {
@@ -324,8 +324,63 @@ async function fetchXtreamMovies(
     }
 
     const effectiveLimit = limit > 0 ? Math.min(limit, XTREAM_MAX_ITEMS_PER_RESPONSE) : XTREAM_MAX_ITEMS_PER_RESPONSE;
-    const result = await fetchXtreamVodByCategory(baseUrl, username, password, categoryMap, effectiveLimit);
-    return result;
+
+    // Try BULK fetch first
+    try {
+      const bulkUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_vod_streams`;
+      console.log('Trying bulk VOD fetch...');
+      const bulkRes = await fetchWithTimeout(bulkUrl, { headers: getStbHeaders(2) }, 30000);
+      
+      if (bulkRes.ok) {
+        const bulkText = await bulkRes.text();
+        if (bulkText.length <= XTREAM_MAX_JSON_BYTES) {
+          const streams = JSON.parse(bulkText);
+          if (Array.isArray(streams) && streams.length > 0) {
+            console.log(`Bulk VOD fetch returned ${streams.length} streams`);
+            const items: any[] = [];
+            const seenStreamIds = new Set<string>();
+            
+            for (const stream of streams) {
+              if (items.length >= effectiveLimit) break;
+              const streamId = String(stream.stream_id);
+              if (seenStreamIds.has(streamId)) continue;
+              seenStreamIds.add(streamId);
+              
+              const catId = String(stream.category_id || '');
+              const categoryName = categoryMap.get(catId) || 'Uncategorized';
+              const ext = stream.container_extension || 'mp4';
+              
+              items.push({
+                name: stream.name || 'Unknown Movie',
+                url: `${baseUrl}/movie/${username}/${password}/${stream.stream_id}.${ext}`,
+                logo: fixLogoUrl(stream.stream_icon || ''),
+                group: categoryName,
+                type: 'movies' as const,
+                stream_id: streamId,
+                category_id: catId,
+                rating: stream.rating || '',
+                year: stream.year || '',
+                plot: stream.plot || '',
+                genre: stream.genre || '',
+                duration: stream.duration || '',
+                container_extension: ext,
+              });
+            }
+            
+            console.log(`Collected ${items.length} movie items via bulk (limit ${effectiveLimit})`);
+            return { items, total: streams.length };
+          }
+        } else {
+          console.log(`Bulk VOD response too large (${bulkText.length} bytes), falling back to per-category`);
+        }
+      }
+    } catch (bulkErr) {
+      console.warn('Bulk VOD fetch failed, falling back to per-category:', bulkErr);
+    }
+
+    // Fallback to per-category
+    console.log('Falling back to per-category VOD fetch...');
+    return await fetchXtreamVodByCategory(baseUrl, username, password, categoryMap, effectiveLimit);
   } catch (err) {
     console.error('Error fetching Xtream VOD:', err);
     return { items: [], total: 0 };
@@ -342,10 +397,8 @@ async function fetchXtreamVodByCategory(
   const items: any[] = [];
   const seenStreamIds = new Set<string>();
   let total = 0;
-  // Keep original provider order - no priority sorting
   const categoryEntries = Array.from(categoryMap.entries());
 
-  // Fetch in sequential batches of 10 for faster parallel fetching
   const batchSize = 10;
   for (let i = 0; i < categoryEntries.length && items.length < limit; i += batchSize) {
     const batch = categoryEntries.slice(i, i + batchSize);
