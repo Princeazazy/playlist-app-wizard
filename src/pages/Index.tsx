@@ -256,17 +256,27 @@ const Index = () => {
     return <ArabiaIntro onComplete={handleIntroComplete} />;
   }
 
-  // 2. App auth
+  // 2. Session validation
+  if (!sessionValidated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // 3. App auth
   if (!authenticated) {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
-  // 3. Provider setup — show if no active account or user requested it
+  // 4. Provider setup — show if no active account or user requested it
   if (!activeAccount || showProviderSetup) {
     return (
       <ProviderSetup
         onProviderReady={handleProviderReady}
         existingAccounts={cachedAccounts}
+        onSignOut={handleSignOut}
       />
     );
   }
