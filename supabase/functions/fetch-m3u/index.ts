@@ -443,8 +443,6 @@ async function fetchXtreamVodByCategory(
           category_id: categoryId,
           rating: stream.rating || '',
           year: stream.year || '',
-          plot: stream.plot || '',
-          genre: stream.genre || '',
           duration: stream.duration || '',
           container_extension: ext,
         });
