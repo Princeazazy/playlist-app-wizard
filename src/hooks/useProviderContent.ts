@@ -136,11 +136,16 @@ export function useProviderContent(account: ProviderAccount | null) {
 
   const refresh = useCallback(async () => {
     console.log('[Provider] Refreshing...');
+    setLoading(true);
+    setError(null);
+    setChannels([]);
+    cacheLoaded.current = false;
+
     try {
       const { clearChannelCache } = await import('@/lib/channelCache');
       await clearChannelCache();
     } catch {}
-    setError(null);
+
     setRefreshKey(k => k + 1);
   }, []);
 
