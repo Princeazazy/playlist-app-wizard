@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
 import { useTMDBPosters } from '@/hooks/useTMDBPosters';
@@ -161,48 +161,13 @@ const CategoryRow = ({
   onSelectItem?: (item: TMDBItem) => void;
   loading?: boolean;
 }) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  
-  const visibleItems = items.slice(
-    currentPage * ITEMS_PER_PAGE,
-    (currentPage + 1) * ITEMS_PER_PAGE
-  );
-
-  useEffect(() => {
-    if (items.length <= ITEMS_PER_PAGE || isPaused) return;
-    const interval = setInterval(() => {
-      setCurrentPage((prev) => (prev + 1) % totalPages);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [items.length, totalPages, isPaused]);
-
   return (
-    <div 
-      className="space-y-3"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
+    <div className="space-y-3">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <Icon className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         </div>
-        
-        {!loading && totalPages > 1 && (
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
       
       {loading ? (
@@ -210,13 +175,14 @@ const CategoryRow = ({
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : items.length > 0 ? (
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 transition-opacity duration-300">
-          {visibleItems.map((item) => (
-            <MediaCard
-              key={`${item.id}-${item.mediaType}-${currentPage}`}
-              item={item}
-              onClick={() => onSelectItem?.(item)}
-            />
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          {items.map((item) => (
+            <div key={`${item.id}-${item.mediaType}`} className="flex-shrink-0 w-[calc((100%-60px)/6)] min-w-[140px]">
+              <MediaCard
+                item={item}
+                onClick={() => onSelectItem?.(item)}
+              />
+            </div>
           ))}
         </div>
       ) : (
@@ -239,73 +205,29 @@ const PlaylistRow = ({
   channels: Channel[]; 
   onChannelSelect?: (channel: Channel) => void;
 }) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const totalPages = Math.ceil(channels.length / ITEMS_PER_PAGE);
   const { getPosterForChannel } = useTMDBPosters(channels);
-  
-  const visibleItems = channels.slice(
-    currentPage * ITEMS_PER_PAGE,
-    (currentPage + 1) * ITEMS_PER_PAGE
-  );
-
-  useEffect(() => {
-    if (channels.length <= ITEMS_PER_PAGE || isPaused) return;
-    const interval = setInterval(() => {
-      setCurrentPage((prev) => (prev + 1) % totalPages);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [channels.length, totalPages, isPaused]);
 
   if (channels.length === 0) return null;
 
   return (
-    <div 
-      className="space-y-3"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
+    <div className="space-y-3">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <Icon className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         </div>
-        
-        {totalPages > 1 && (
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
       
-      <div className="relative overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPage}
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -60 }}
-            transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="grid grid-cols-3 md:grid-cols-6 gap-3"
-          >
-            {visibleItems.map((channel) => (
-              <PlaylistCard
-                key={`${channel.id}-${currentPage}`}
-                channel={channel}
-                tmdbPoster={getPosterForChannel(channel.name)}
-                onClick={() => onChannelSelect?.(channel)}
-              />
-            ))}
-          </motion.div>
-        </AnimatePresence>
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        {channels.map((channel) => (
+          <div key={channel.id} className="flex-shrink-0 w-[calc((100%-60px)/6)] min-w-[140px]">
+            <PlaylistCard
+              channel={channel}
+              tmdbPoster={getPosterForChannel(channel.name)}
+              onClick={() => onChannelSelect?.(channel)}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
