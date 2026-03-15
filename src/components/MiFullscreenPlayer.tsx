@@ -578,7 +578,7 @@ export const MiFullscreenPlayer = ({
 
       {/* Error overlay */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10" onClick={(e) => e.stopPropagation()}>
           <div className="text-center max-w-md px-6">
             <p className="text-white text-lg mb-3">{error}</p>
             <div className="flex items-center justify-center gap-3">
