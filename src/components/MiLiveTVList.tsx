@@ -181,7 +181,7 @@ const LivePreviewChannelTile = memo(({
             src={resolvedLogo}
             alt={channel.name}
             loading="lazy"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain p-1"
             onError={(e) => {
               const target = e.currentTarget;
               if (target.dataset.fallbackApplied !== '1') {
