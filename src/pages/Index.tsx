@@ -82,6 +82,7 @@ const Index = () => {
   const [activeAccount, setActiveAccount] = useState<ProviderAccount | null>(() => getActiveAccount());
   const [showProviderSetup, setShowProviderSetup] = useState(false);
   const [cachedAccounts, setCachedAccounts] = useState<ProviderAccount[]>(() => getProviderAccounts());
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
 
   // Content from active provider
   const { channels: rawChannels, loading, error, refresh } = useProviderContent(activeAccount);
