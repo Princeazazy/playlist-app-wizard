@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, memo, useCallback } from 'react';
 import { LiveMatchesTicker } from './LiveMatchesTicker';
-import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Calendar, Heart, Loader2, Mic, MicOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Calendar, Heart, Loader2, Mic, MicOff, Trophy } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -528,10 +528,12 @@ export const MiLiveTVList = ({
 
   // Auto-select first group when groups load and no group is selected
   useEffect(() => {
-    if (groups.length > 0 && (!selectedGroup || !groups.find(g => g.name === selectedGroup))) {
-      setSelectedGroup(groups[0].name);
+    if (category === 'sports' && !selectedGroup) {
+      setSelectedGroup('__match_center__');
+    } else if (groups.length > 0 && (!selectedGroup || (!groups.find(g => g.name === selectedGroup) && selectedGroup !== '__match_center__'))) {
+      setSelectedGroup(category === 'sports' ? '__match_center__' : groups[0].name);
     }
-  }, [groups, selectedGroup]);
+  }, [groups, selectedGroup, category]);
 
   const filteredChannels = useMemo(() => {
     const hasSearchQuery = effectiveSearchQuery.trim().length > 0;
@@ -719,6 +721,32 @@ export const MiLiveTVList = ({
 
         {/* Category List */}
         <div className="flex-1 overflow-y-auto px-2 space-y-1 mi-scrollbar">
+          {/* Match Center tab - Sports only */}
+          {category === 'sports' && (
+            <button
+              onClick={() => handleGroupSelect('__match_center__')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                selectedGroup === '__match_center__'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
+              }`}
+            >
+              <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                <Trophy className="w-5 h-5 text-primary" />
+              </div>
+              {(!sidebarCollapsed || isMobile) && (
+                <div className="flex-1 text-left min-w-0">
+                  <p className={`text-sm truncate ${selectedGroup === '__match_center__' ? 'font-semibold' : ''}`}>
+                    Match Center
+                  </p>
+                  {selectedGroup === '__match_center__' && (
+                    <p className="text-xs text-muted-foreground">Scores & Schedule</p>
+                  )}
+                </div>
+              )}
+            </button>
+          )}
+
           {groups.map((group) => (
             <button
               key={group.name}
@@ -861,35 +889,36 @@ export const MiLiveTVList = ({
           </div>
         </div>
 
-        {/* Channel Rows with Live Preview */}
+        {/* Main Content Area */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-2 mi-scrollbar" onScroll={onScroll}>
-          {/* Live Matches Ticker for Sports */}
-          {category === 'sports' && (
-            <div className="mb-4">
-              <LiveMatchesTicker sportsChannels={channels} onChannelSelect={onChannelSelect} />
-            </div>
-          )}
-            {visibleChannels.map((channel, index) => (
-              <LivePreviewChannelTile
-                key={channel.id}
-                channel={channel}
-                isActive={currentChannel?.id === channel.id}
-                isFocused={focusedIndex === index}
-                isFavorite={favorites.has(channel.id)}
-                resolvedLogo={getLogoForChannel(channel.name, channel.logo)}
-                onClick={() => onChannelSelect(channel)}
-                onToggleFavorite={() => onToggleFavorite(channel.id)}
-                onHover={setHoveredChannel}
-              />
-            ))}
+          {/* Match Center view (sports only) */}
+          {category === 'sports' && selectedGroup === '__match_center__' ? (
+            <LiveMatchesTicker sportsChannels={channels} onChannelSelect={onChannelSelect} />
+          ) : (
+            <>
+              {visibleChannels.map((channel, index) => (
+                <LivePreviewChannelTile
+                  key={channel.id}
+                  channel={channel}
+                  isActive={currentChannel?.id === channel.id}
+                  isFocused={focusedIndex === index}
+                  isFavorite={favorites.has(channel.id)}
+                  resolvedLogo={getLogoForChannel(channel.name, channel.logo)}
+                  onClick={() => onChannelSelect(channel)}
+                  onToggleFavorite={() => onToggleFavorite(channel.id)}
+                  onHover={setHoveredChannel}
+                />
+              ))}
 
-          {hasMore && <div className="py-4 text-center text-muted-foreground text-sm">Loading more…</div>}
-          
-          {filteredChannels.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-64">
-              <p className="text-muted-foreground text-lg">No channels found</p>
-              <p className="text-muted-foreground/60 text-sm mt-2">Try adjusting your search or filters</p>
-            </div>
+              {hasMore && <div className="py-4 text-center text-muted-foreground text-sm">Loading more…</div>}
+              
+              {filteredChannels.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-64">
+                  <p className="text-muted-foreground text-lg">No channels found</p>
+                  <p className="text-muted-foreground/60 text-sm mt-2">Try adjusting your search or filters</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
