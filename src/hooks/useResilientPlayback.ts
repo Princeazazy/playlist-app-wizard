@@ -105,6 +105,10 @@ export const useResilientPlayback = ({
     }
 
     if (rawUrl.startsWith('http://')) {
+      // Mixed-content-safe fallback order: try upgraded HTTPS first, then proxy.
+      // Some providers support HTTPS even when playlist URLs are published as HTTP.
+      const upgradedHttps = rawUrl.replace(/^http:\/\//i, 'https://');
+      add(upgradedHttps);
       add(proxyUrl);
       return candidates;
     }
