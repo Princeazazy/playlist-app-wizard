@@ -410,8 +410,8 @@ async function fetchXtreamVodByCategory(
   // Keep original provider order - no priority sorting
   const categoryEntries = Array.from(categoryMap.entries());
 
-  // Fetch in sequential batches of 5 to preserve order
-  const batchSize = 5;
+  // Fetch in sequential batches of 10 for faster parallel fetching
+  const batchSize = 10;
   for (let i = 0; i < categoryEntries.length && items.length < limit; i += batchSize) {
     const batch = categoryEntries.slice(i, i + batchSize);
     
