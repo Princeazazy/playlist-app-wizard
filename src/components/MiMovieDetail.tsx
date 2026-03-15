@@ -66,7 +66,7 @@ export const MiMovieDetail = ({
     fetchTMDBData();
   }, [item.name, search, getDetails]);
 
-  // Use TMDB data if available, otherwise fall back to item data
+  // Use TMDB data if available, otherwise fall back to provider plot, then playlist item data
   const metadata = {
     genre: tmdbData?.genres?.map(g => g.name).join(', ') || item.genre || 'Unknown',
     rating: tmdbData?.rating?.toFixed(1) || item.rating || 'N/A',
@@ -74,7 +74,7 @@ export const MiMovieDetail = ({
     languages: 'EN',
     director: item.director || 'Unknown',
     ageRating: '+13',
-    plot: tmdbData?.overview || item.plot || 'No description available.',
+    plot: tmdbData?.overview || providerPlot || item.plot || 'No description available.',
     year: tmdbData?.year || item.year || 'Unknown',
   };
 
