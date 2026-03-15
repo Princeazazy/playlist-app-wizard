@@ -762,7 +762,7 @@ export const MiLiveTVList = ({
                   <img 
                     src={getGroupLogo(group)!} 
                     alt={group.displayName} 
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-contain p-1" 
                   />
                 ) : (
                   <span className="text-base">{getCategoryEmoji(group.displayName)}</span>
