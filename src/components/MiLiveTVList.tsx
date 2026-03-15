@@ -528,10 +528,12 @@ export const MiLiveTVList = ({
 
   // Auto-select first group when groups load and no group is selected
   useEffect(() => {
-    if (groups.length > 0 && (!selectedGroup || !groups.find(g => g.name === selectedGroup))) {
-      setSelectedGroup(groups[0].name);
+    if (category === 'sports' && !selectedGroup) {
+      setSelectedGroup('__match_center__');
+    } else if (groups.length > 0 && (!selectedGroup || (!groups.find(g => g.name === selectedGroup) && selectedGroup !== '__match_center__'))) {
+      setSelectedGroup(category === 'sports' ? '__match_center__' : groups[0].name);
     }
-  }, [groups, selectedGroup]);
+  }, [groups, selectedGroup, category]);
 
   const filteredChannels = useMemo(() => {
     const hasSearchQuery = effectiveSearchQuery.trim().length > 0;
