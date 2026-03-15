@@ -161,48 +161,13 @@ const CategoryRow = ({
   onSelectItem?: (item: TMDBItem) => void;
   loading?: boolean;
 }) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  
-  const visibleItems = items.slice(
-    currentPage * ITEMS_PER_PAGE,
-    (currentPage + 1) * ITEMS_PER_PAGE
-  );
-
-  useEffect(() => {
-    if (items.length <= ITEMS_PER_PAGE || isPaused) return;
-    const interval = setInterval(() => {
-      setCurrentPage((prev) => (prev + 1) % totalPages);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [items.length, totalPages, isPaused]);
-
   return (
-    <div 
-      className="space-y-3"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
+    <div className="space-y-3">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <Icon className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         </div>
-        
-        {!loading && totalPages > 1 && (
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
       
       {loading ? (
@@ -210,13 +175,14 @@ const CategoryRow = ({
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : items.length > 0 ? (
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 transition-opacity duration-300">
-          {visibleItems.map((item) => (
-            <MediaCard
-              key={`${item.id}-${item.mediaType}-${currentPage}`}
-              item={item}
-              onClick={() => onSelectItem?.(item)}
-            />
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          {items.map((item) => (
+            <div key={`${item.id}-${item.mediaType}`} className="flex-shrink-0 w-[calc((100%-60px)/6)] min-w-[140px]">
+              <MediaCard
+                item={item}
+                onClick={() => onSelectItem?.(item)}
+              />
+            </div>
           ))}
         </div>
       ) : (
