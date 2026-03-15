@@ -607,6 +607,13 @@ export const MiLiveTVList = ({
 
   // Get logo for groups - use country flag for countries, first channel logo for streaming services and others
   const getGroupLogo = (group: { name: string; displayName: string; firstLogo?: string; originalNames: string[] }): string | null => {
+    // Sports mode: use sports-specific meta
+    if (category === 'sports') {
+      const meta = SPORTS_GROUP_META[group.name];
+      if (meta?.flagUrl) return meta.flagUrl;
+      return group.firstLogo || null;
+    }
+
     const countryInfo = getCountryInfo(group.displayName);
     
     // For streaming services, use explicit flagUrl if set (e.g., MBC logo), otherwise first channel logo
@@ -636,6 +643,10 @@ export const MiLiveTVList = ({
 
   // Check if a group is a streaming service (for logo styling)
   const isStreamingServiceGroup = (group: { displayName: string }): boolean => {
+    if (category === 'sports') {
+      const meta = SPORTS_GROUP_META[group.displayName];
+      return !!meta?.isService;
+    }
     const countryInfo = getCountryInfo(group.displayName);
     return !!countryInfo?.isStreamingService;
   };
