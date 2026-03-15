@@ -263,6 +263,12 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [], onSignOu
                 <Plus className="w-4 h-4" />
                 Add New Playlist
               </button>
+
+              {onSignOut && (
+                <button onClick={onSignOut} className="w-full py-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
+                  Sign Out
+                </button>
+              )}
             </motion.div>
           )}
 
