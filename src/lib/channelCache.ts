@@ -5,7 +5,7 @@ const DB_NAME = 'arabia-iptv-cache';
 const DB_VERSION = 1;
 const STORE_NAME = 'channels';
 const CACHE_KEY = 'main';
-const CACHE_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
+const CACHE_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 interface CacheEntry {
   key: string;

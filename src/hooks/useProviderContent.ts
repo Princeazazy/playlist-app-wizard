@@ -54,7 +54,7 @@ export function useProviderContent(account: ProviderAccount | null) {
     load();
   }, [account, cacheKey, channels.length]);
 
-  // Fetch content
+  // Fetch content — single full fetch (no bootstrap/background split)
   useEffect(() => {
     if (!account) {
       setLoading(false);
@@ -68,14 +68,13 @@ export function useProviderContent(account: ProviderAccount | null) {
       if (!hasCached) setLoading(true);
 
       try {
-        // Fast bootstrap first
-        const bootstrapOpts = hasCached
-          ? { maxChannels: 150000, maxBytesMB: 80, maxReturnPerType: 50000 }
-          : { maxChannels: 30000, maxBytesMB: 24, maxReturnPerType: 3500 };
+        console.log(`[Provider] Fetching full content for "${account.name}"`);
 
-        console.log(`[Provider] Fetching content for "${account.name}" [${hasCached ? 'full' : 'bootstrap'}]`);
-
-        const result = await fetchProviderContent(account.config, account.id, bootstrapOpts);
+        const result = await fetchProviderContent(account.config, account.id, {
+          maxChannels: 150000,
+          maxBytesMB: 80,
+          maxReturnPerType: 50000,
+        });
 
         if (cancelled) return;
 
@@ -101,23 +100,6 @@ export function useProviderContent(account: ProviderAccount | null) {
 
         // Cache
         setCachedChannels(withIds, cacheKey).catch(e => console.warn('Cache failed:', e));
-
-        // If bootstrap, do full sync in background
-        if (!hasCached && withIds.length > 0) {
-          try {
-            const fullResult = await fetchProviderContent(account.config, account.id, {
-              maxChannels: 150000, maxBytesMB: 80, maxReturnPerType: 50000,
-            });
-            if (!cancelled && fullResult.length > withIds.length) {
-              const fullWithIds = fullResult.map((ch, i) => ({ ...ch, id: `${account.id}-ch-${i}` }));
-              setChannels(fullWithIds);
-              setCachedChannels(fullWithIds, cacheKey).catch(() => {});
-              console.log(`[Provider] Full sync: ${fullWithIds.length} channels`);
-            }
-          } catch (e) {
-            console.warn('[Provider] Background full sync failed:', e);
-          }
-        }
       } catch (err: any) {
         if (cancelled) return;
         console.error('[Provider] Fetch failed:', err);

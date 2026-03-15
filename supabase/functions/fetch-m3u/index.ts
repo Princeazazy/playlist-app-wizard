@@ -173,7 +173,7 @@ type XtreamFetchResult = { items: any[]; total: number; tooLarge?: boolean };
 
 const XTREAM_MAX_JSON_BYTES = 40 * 1024 * 1024; // 40MB safety cap per API response
 const XTREAM_MAX_ITEMS_PER_RESPONSE = 50000; // Raised to capture full Arabia TV catalog
-const CATEGORY_FETCH_TIMEOUT = 6000; // 6s timeout per category fetch to avoid long stalls
+const CATEGORY_FETCH_TIMEOUT = 12000; // 12s timeout per category fetch
 const MAX_CATEGORIES_PER_TYPE = 500; // Reasonable category cap
 
 function responseTooLarge(res: Response, maxBytes: number): boolean {
@@ -294,8 +294,8 @@ async function fetchXtreamLiveByCategory(
   const categoryEntries = Array.from(categoryMap.entries());
   const categoryIds = categoryEntries.map(([id]) => id);
 
-  // Fetch categories in sequential batches of 5 to preserve order
-  const batchSize = 5;
+  // Fetch in sequential batches of 10 for faster parallel fetching
+  const batchSize = 10;
   for (let i = 0; i < categoryIds.length && items.length < limit; i += batchSize) {
     const batch = categoryIds.slice(i, i + batchSize);
     
@@ -410,8 +410,8 @@ async function fetchXtreamVodByCategory(
   // Keep original provider order - no priority sorting
   const categoryEntries = Array.from(categoryMap.entries());
 
-  // Fetch in sequential batches of 5 to preserve order
-  const batchSize = 5;
+  // Fetch in sequential batches of 10 for faster parallel fetching
+  const batchSize = 10;
   for (let i = 0; i < categoryEntries.length && items.length < limit; i += batchSize) {
     const batch = categoryEntries.slice(i, i + batchSize);
     
@@ -520,8 +520,8 @@ async function fetchXtreamSeriesByCategory(
   // Keep original provider order - no priority sorting
   const categoryEntries = Array.from(categoryMap.entries());
 
-  // Fetch in sequential batches of 5 to preserve order
-  const batchSize = 5;
+  // Fetch in sequential batches of 10 for faster parallel fetching
+  const batchSize = 10;
   for (let i = 0; i < categoryEntries.length && items.length < limit; i += batchSize) {
     const batch = categoryEntries.slice(i, i + batchSize);
     
@@ -722,14 +722,13 @@ Deno.serve(async (req) => {
     const isGetM3U = isXtreamGetM3UUrl(url);
     const preferredLiveExtension = getPreferredLiveExtensionFromUrl(url);
 
-    // Use Xtream API when:
-    // 1. We have valid credentials AND
-    // 2. Either forceXtreamApi is set, OR (preferXtreamApi is set AND it's not a get.php URL)
-    // forceXtreamApi bypasses the get.php safety check - useful when we know Xtream API works
-    const canUseXtreamApi = !!xtreamCreds && (forceXtreamApi || (preferXtreamApi && !isGetM3U));
+    // Use Xtream API when we have valid credentials AND preferXtreamApi is set.
+    // The Xtream API is much faster (parallel category fetches) vs streaming M3U parsing.
+    // For get.php URLs, still use Xtream API — the JSON endpoints are more reliable.
+    const canUseXtreamApi = !!xtreamCreds && (forceXtreamApi || preferXtreamApi);
 
-    if (xtreamCreds && preferXtreamApi && isGetM3U && !forceXtreamApi) {
-      console.log('Xtream get.php detected; forcing streaming M3U parsing (override preferXtreamApi). Use forceXtreamApi=true to override.');
+    if (xtreamCreds && preferXtreamApi && isGetM3U) {
+      console.log('Xtream get.php detected; using Xtream API for faster parallel fetching.');
     }
 
     if (canUseXtreamApi) {
