@@ -566,6 +566,8 @@ export const MiLiveTVList = ({
     }
 
     return filtered;
+  }, [channels, effectiveSearchQuery, selectedGroup, localShowFavoritesOnly, favorites, sortBy, category, sportsChannelGroupMap, normalizedGroupMap]);
+
   const { visibleItems: visibleChannels, onScroll, ensureIndexVisible, hasMore } = useProgressiveList(filteredChannels, { initial: 40, step: 60 });
 
   // Keyboard navigation
