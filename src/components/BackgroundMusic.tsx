@@ -48,5 +48,5 @@ export const BackgroundMusic = ({
     };
   }, []);
 
-  return <audio ref={audioRef} src={src} preload="auto" />;
+  return <audio ref={audioRef} src={src} preload="none" />;
 };

@@ -142,9 +142,9 @@ export async function fetchProviderContent(
   }
 ): Promise<NormalizedChannel[]> {
   const {
-    maxChannels = 150000,
-    maxBytesMB = 80,
-    maxReturnPerType = 50000,
+    maxChannels = 250000,
+    maxBytesMB = 60,
+    maxReturnPerType = 100000,
   } = options || {};
 
   let m3uUrl: string;
@@ -183,15 +183,19 @@ export async function fetchProviderContent(
     return [];
   }
 
-  // Normalize into our common model
+  // Normalize into our common model (skip expensive text cleaning for huge catalogs)
+  const shouldCleanText = data.channels.length <= 20000;
+
   return data.channels
     .filter((ch: any) => ch.name && (ch.url || ch.type === 'series'))
     .map((ch: any, idx: number): NormalizedChannel => ({
       id: `${providerId}-ch-${idx}`,
-      name: cleanChannelName(ch.name),
+      name: shouldCleanText ? cleanChannelName(ch.name) : String(ch.name || '').trim(),
       url: ch.url || '',
       logo: ch.logo || undefined,
-      group: ch.group ? cleanGroupName(ch.group) : 'Uncategorized',
+      group: ch.group
+        ? (shouldCleanText ? cleanGroupName(ch.group) : String(ch.group).trim())
+        : 'Uncategorized',
       type: (ch.type || 'live') as ContentType,
       providerId,
       streamId: ch.stream_id,

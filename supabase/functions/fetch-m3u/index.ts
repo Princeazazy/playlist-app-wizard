@@ -172,7 +172,7 @@ function getPreferredLiveExtensionFromUrl(url: string): 'm3u8' | 'ts' {
 type XtreamFetchResult = { items: any[]; total: number; tooLarge?: boolean };
 
 const XTREAM_MAX_JSON_BYTES = 40 * 1024 * 1024; // 40MB safety cap per API response
-const XTREAM_MAX_ITEMS_PER_RESPONSE = 50000; // Raised to capture full Arabia TV catalog
+const XTREAM_MAX_ITEMS_PER_RESPONSE = 100000; // Allow full large catalogs without truncation
 const CATEGORY_FETCH_TIMEOUT = 12000; // 12s timeout per category fetch
 const MAX_CATEGORIES_PER_TYPE = 500; // Reasonable category cap
 
@@ -360,8 +360,6 @@ async function fetchXtreamMovies(
                 category_id: catId,
                 rating: stream.rating || '',
                 year: stream.year || '',
-                plot: stream.plot || '',
-                genre: stream.genre || '',
                 duration: stream.duration || '',
                 container_extension: ext,
               });
@@ -445,8 +443,6 @@ async function fetchXtreamVodByCategory(
           category_id: categoryId,
           rating: stream.rating || '',
           year: stream.year || '',
-          plot: stream.plot || '',
-          genre: stream.genre || '',
           duration: stream.duration || '',
           container_extension: ext,
         });
@@ -523,13 +519,6 @@ async function fetchXtreamSeries(
                 rating: stream.rating || '',
                 rating_5based: stream.rating_5based || 0,
                 year: stream.releaseDate || stream.year || '',
-                plot: stream.plot || '',
-                cast: stream.cast || '',
-                director: stream.director || '',
-                genre: stream.genre || '',
-                backdrop_path: stream.backdrop_path || [],
-                tmdb_id: stream.tmdb_id || '',
-                last_modified: stream.last_modified || '',
                 _baseUrl: baseUrl,
                 _username: username,
                 _password: password,
@@ -616,13 +605,6 @@ async function fetchXtreamSeriesByCategory(
           rating: stream.rating || '',
           rating_5based: stream.rating_5based || 0,
           year: stream.releaseDate || stream.year || '',
-          plot: stream.plot || '',
-          cast: stream.cast || '',
-          director: stream.director || '',
-          genre: stream.genre || '',
-          backdrop_path: stream.backdrop_path || [],
-          tmdb_id: stream.tmdb_id || '',
-          last_modified: stream.last_modified || '',
           _baseUrl: baseUrl,
           _username: username,
           _password: password,
