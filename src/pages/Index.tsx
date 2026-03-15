@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { NormalizedChannel, ProviderAccount } from '@/lib/providers/types';
 import {
@@ -57,6 +58,25 @@ const toChannel = (nc: NormalizedChannel): Channel => ({
 const Index = () => {
   const [showIntro, setShowIntro] = useState(true);
   const [authenticated, setAuthenticated] = useState(() => isLoggedIn());
+  const [sessionValidated, setSessionValidated] = useState(false);
+
+  // Validate session on mount — clear stale sessions
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      setSessionValidated(true);
+      return;
+    }
+    // Quick validation: try to list providers; if it fails with auth error, clear session
+    fetchProviderAccounts()
+      .then(() => setSessionValidated(true))
+      .catch(() => {
+        clearAppSession();
+        clearProviderCache();
+        clearActiveAccount();
+        setAuthenticated(false);
+        setSessionValidated(true);
+      });
+  }, []);
 
   // Provider state
   const [activeAccount, setActiveAccount] = useState<ProviderAccount | null>(() => getActiveAccount());
@@ -237,17 +257,27 @@ const Index = () => {
     return <ArabiaIntro onComplete={handleIntroComplete} />;
   }
 
-  // 2. App auth
+  // 2. Session validation
+  if (!sessionValidated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // 3. App auth
   if (!authenticated) {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
-  // 3. Provider setup — show if no active account or user requested it
+  // 4. Provider setup — show if no active account or user requested it
   if (!activeAccount || showProviderSetup) {
     return (
       <ProviderSetup
         onProviderReady={handleProviderReady}
         existingAccounts={cachedAccounts}
+        onSignOut={handleSignOut}
       />
     );
   }

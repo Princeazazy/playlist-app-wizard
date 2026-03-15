@@ -21,11 +21,12 @@ import { authenticateXtream, validateM3UUrl } from '@/lib/providers/providerServ
 interface ProviderSetupProps {
   onProviderReady: (account: ProviderAccount) => void;
   existingAccounts?: ProviderAccount[];
+  onSignOut?: () => void;
 }
 
 type SetupStep = 'select-method' | 'xtream-form' | 'm3u-form' | 'access-code-form' | 'account-list';
 
-export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: ProviderSetupProps) => {
+export const ProviderSetup = ({ onProviderReady, existingAccounts = [], onSignOut }: ProviderSetupProps) => {
   const [step, setStep] = useState<SetupStep>(existingAccounts.length > 0 ? 'account-list' : 'select-method');
   const [accounts, setAccounts] = useState<ProviderAccount[]>(existingAccounts);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
@@ -262,6 +263,12 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: Provid
                 <Plus className="w-4 h-4" />
                 Add New Playlist
               </button>
+
+              {onSignOut && (
+                <button onClick={onSignOut} className="w-full py-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
+                  Sign Out
+                </button>
+              )}
             </motion.div>
           )}
 
