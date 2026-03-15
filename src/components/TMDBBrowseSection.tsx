@@ -402,28 +402,50 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     
     const arabicContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
-      // Skip if already in Ramadan row
-      if (ramadanNames.has(ch.name.trim().toLowerCase())) return false;
+
+      const name = ch.name || '';
+      const nameLower = name.toLowerCase();
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
+
+      // Skip if already in Ramadan row
+      if (ramadanNames.has(name.trim().toLowerCase())) return false;
+
       // Skip Ramadan groups
       if (group.includes('رمضان') || groupLower.includes('ramadan')) return false;
-      // Broad Arabic detection
-      const isArabic = /عرب|مسلسلات|مصر|خليج|سعود|لبنان|سوري|arabic|^ar[\s|:\-]/i.test(group);
-      return isArabic && !isSportsContent(ch);
+
+      // Must be Arabic-tagged group
+      const isArabicGroup = /عرب|مسلسلات|مصر|خليج|سعود|لبنان|سوري|arabic|^ar[\s|:\-]/i.test(group);
+      if (!isArabicGroup) return false;
+
+      // Remove obvious non-Arabic/subbed entries
+      if (/\bsubs?\b|subbed|subtitle|vostfr|english|eng\b|foreign/i.test(nameLower)) return false;
+
+      // Exclude sports and kids/cartoon content
+      if (isSportsContent(ch)) return false;
+      if (/cartoon|كرتون|رسوم|animat|kids|children|disney|pixar|cuphead/i.test(`${nameLower} ${groupLower}`)) return false;
+
+      // STRICT: Title itself must contain Arabic script to avoid English titles in Arabic groups
+      const cleanedName = name.replace(/^\s*[A-Z]{2,4}\s*[:\-|]\s*/i, '').replace(/^\s*subs?\s*[:\-|]?\s*/i, '').trim();
+      if (!containsArabicText(cleanedName)) return false;
+
+      return true;
     });
-    return arabicContent.sort((a, b) => {
-      const groupA = a.group || '';
-      const groupB = b.group || '';
-      const scoreMap = (g: string) => {
-        if (g.includes('2026')) return 3;
-        if (g.includes('تعرض حاليا') || g.toLowerCase().includes('now showing')) return 2;
-        if (g.includes('2025')) return 1;
-        return 0;
-      };
-      return scoreMap(groupB) - scoreMap(groupA);
-    }).slice(0, 30);
-  }, [channels]);
+
+    return arabicContent
+      .sort((a, b) => {
+        const groupA = a.group || '';
+        const groupB = b.group || '';
+        const scoreMap = (g: string) => {
+          if (g.includes('2026')) return 3;
+          if (g.includes('تعرض حاليا') || g.toLowerCase().includes('now showing')) return 2;
+          if (g.includes('2025')) return 1;
+          return 0;
+        };
+        return scoreMap(groupB) - scoreMap(groupA);
+      })
+      .slice(0, 30);
+  }, [channels, ramadanShows]);
 
   const arabicMovies = useMemo(() => {
     const containsArabicText = (text: string) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
