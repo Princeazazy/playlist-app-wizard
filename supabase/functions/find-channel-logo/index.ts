@@ -35,9 +35,17 @@ function toHttps(url: string): string {
 
 function cleanSearchName(name: string): string {
   return name
-    .replace(/^\s*[A-Z]{2,3}\s*[:\-|]\s*\|?\s*/i, "")
+    // Strip country/provider prefixes like "KH:", "EG:", "AR |", "MA:", etc.
+    .replace(/^\s*[A-Z]{2,4}\s*[:\-|]\s*\|?\s*/i, "")
     .replace(/^\s*[A-Z]{2}\s+(MOV|SER|SERIES|MOVIES?)\s*[:\-|]?\s*/i, "")
+    // Strip quality/codec tags
     .replace(/\b(HD|SD|FHD|UHD|4K|1080P|720P|480P|HEVC|X264|X265|WEB[- ]?DL|WEBRIP|BLURAY|BRRIP|CAM|TS)\b/gi, "")
+    // Strip "multi sub", "dubbed", "subbed" etc.
+    .replace(/\b(multi\s*sub|dubbed|subbed|vostfr|vf|vo)\b/gi, "")
+    // Strip trailing episode/season markers like "S01", "E12", "الحلقة 5"
+    .replace(/\b[sS]\d{1,2}[eE]\d{1,2}\b/g, "")
+    .replace(/\bS\d{1,2}\b$/i, "")
+    .replace(/الحلقة\s*\d+/g, "")
     .replace(/[_|]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
