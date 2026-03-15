@@ -142,9 +142,9 @@ export async function fetchProviderContent(
   }
 ): Promise<NormalizedChannel[]> {
   const {
-    maxChannels = 150000,
-    maxBytesMB = 80,
-    maxReturnPerType = 50000,
+    maxChannels = 250000,
+    maxBytesMB = 60,
+    maxReturnPerType = 100000,
   } = options || {};
 
   let m3uUrl: string;

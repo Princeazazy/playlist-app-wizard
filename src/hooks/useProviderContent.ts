@@ -54,7 +54,7 @@ export function useProviderContent(account: ProviderAccount | null) {
     load();
   }, [account, cacheKey, channels.length]);
 
-  // Fetch content — single full fetch (no bootstrap/background split)
+  // Fetch content — cache-first bootstrap + background full sync
   useEffect(() => {
     if (!account) {
       setLoading(false);
@@ -65,41 +65,61 @@ export function useProviderContent(account: ProviderAccount | null) {
 
     const fetchContent = async () => {
       const hasCached = channels.length > 0;
+      const shouldBootstrap = !hasCached;
       if (!hasCached) setLoading(true);
 
       try {
-        console.log(`[Provider] Fetching full content for "${account.name}"`);
+        const firstPassOptions = shouldBootstrap
+          ? { maxChannels: 90000, maxBytesMB: 60, maxReturnPerType: 12000 }
+          : { maxChannels: 250000, maxBytesMB: 60, maxReturnPerType: 100000 };
 
-        const result = await fetchProviderContent(account.config, account.id, {
-          maxChannels: 150000,
-          maxBytesMB: 80,
-          maxReturnPerType: 50000,
-        });
+        console.log(`[Provider] Fetching content for "${account.name}" [${shouldBootstrap ? 'bootstrap' : 'full'}]`);
+
+        const firstPass = await fetchProviderContent(account.config, account.id, firstPassOptions);
 
         if (cancelled) return;
 
-        if (result.length === 0 && !hasCached) {
+        if (firstPass.length === 0 && !hasCached) {
           setError('No channels found. Check your credentials.');
           setLoading(false);
           return;
         }
 
-        // Assign stable IDs
-        const withIds = result.map((ch, i) => ({ ...ch, id: `${account.id}-ch-${i}` }));
+        const firstWithIds = firstPass.map((ch, i) => ({ ...ch, id: `${account.id}-ch-${i}` }));
 
-        console.log(`[Provider] Loaded ${withIds.length} channels`, {
-          live: withIds.filter(c => c.type === 'live').length,
-          movies: withIds.filter(c => c.type === 'movies').length,
-          series: withIds.filter(c => c.type === 'series').length,
-          sports: withIds.filter(c => c.type === 'sports').length,
-        });
-
-        setChannels(withIds);
+        setChannels(firstWithIds);
         setError(null);
         setLoading(false);
+        setCachedChannels(firstWithIds, cacheKey).catch(e => console.warn('Cache failed:', e));
 
-        // Cache
-        setCachedChannels(withIds, cacheKey).catch(e => console.warn('Cache failed:', e));
+        console.log(`[Provider] Loaded ${firstWithIds.length} channels`, {
+          live: firstWithIds.filter(c => c.type === 'live').length,
+          movies: firstWithIds.filter(c => c.type === 'movies').length,
+          series: firstWithIds.filter(c => c.type === 'series').length,
+          sports: firstWithIds.filter(c => c.type === 'sports').length,
+        });
+
+        // If we bootstrapped, fetch full catalog in background
+        if (shouldBootstrap) {
+          try {
+            const fullResult = await fetchProviderContent(account.config, account.id, {
+              maxChannels: 250000,
+              maxBytesMB: 60,
+              maxReturnPerType: 100000,
+            });
+
+            if (cancelled || fullResult.length === 0) return;
+
+            if (fullResult.length > firstWithIds.length) {
+              const fullWithIds = fullResult.map((ch, i) => ({ ...ch, id: `${account.id}-ch-${i}` }));
+              setChannels(fullWithIds);
+              setCachedChannels(fullWithIds, cacheKey).catch(() => {});
+              console.log(`[Provider] Full sync completed: ${fullWithIds.length} channels`);
+            }
+          } catch (e) {
+            console.warn('[Provider] Background full sync failed:', e);
+          }
+        }
       } catch (err: any) {
         if (cancelled) return;
         console.error('[Provider] Fetch failed:', err);
@@ -120,8 +140,7 @@ export function useProviderContent(account: ProviderAccount | null) {
       const { clearChannelCache } = await import('@/lib/channelCache');
       await clearChannelCache();
     } catch {}
-    setChannels([]);
-    setLoading(true);
+    setError(null);
     setRefreshKey(k => k + 1);
   }, []);
 

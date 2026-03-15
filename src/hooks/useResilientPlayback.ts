@@ -111,7 +111,7 @@ export const useResilientPlayback = ({
 
     if (rawUrl.startsWith('https://')) {
       add(rawUrl);
-      if (!(isProxyChallengedHost && !isLikelyHlsUrl(rawUrl))) add(proxyUrl);
+      if (!isProxyChallengedHost) add(proxyUrl);
       return candidates;
     }
 
