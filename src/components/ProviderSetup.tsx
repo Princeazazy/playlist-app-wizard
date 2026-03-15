@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wifi, Link2, Key, ChevronRight, Loader2, CheckCircle2, AlertCircle, Plus, Trash2, ArrowLeft, Radio } from 'lucide-react';
+import { Wifi, Link2, Key, ChevronRight, Loader2, CheckCircle2, AlertCircle, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { ChromaKeyVideo } from '@/components/shared/ChromaKeyVideo';
 import logoVideo from '@/assets/logo-transparent.mp4';
 import {
   ProviderAccount,
-  ProviderType,
   XtreamConfig,
   M3UConfig,
   AccessCodeConfig,
@@ -15,7 +14,7 @@ import {
   addProviderAccount,
   removeProviderAccount,
   setActiveAccountId,
-  createProviderAccount,
+  fetchProviderAccounts,
 } from '@/lib/providers/storage';
 import { authenticateXtream, validateM3UUrl } from '@/lib/providers/providerService';
 
@@ -29,6 +28,7 @@ type SetupStep = 'select-method' | 'xtream-form' | 'm3u-form' | 'access-code-for
 export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: ProviderSetupProps) => {
   const [step, setStep] = useState<SetupStep>(existingAccounts.length > 0 ? 'account-list' : 'select-method');
   const [accounts, setAccounts] = useState<ProviderAccount[]>(existingAccounts);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
 
   // Xtream form
   const [xtreamServer, setXtreamServer] = useState('');
@@ -50,6 +50,25 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: Provid
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState('');
   const [connectSuccess, setConnectSuccess] = useState('');
+
+  // Load providers from DB on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const dbAccounts = await fetchProviderAccounts();
+        if (!cancelled) {
+          setAccounts(dbAccounts);
+          setStep(dbAccounts.length > 0 ? 'account-list' : 'select-method');
+        }
+      } catch {
+        // fallback to existing
+      } finally {
+        if (!cancelled) setLoadingAccounts(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const resetForms = () => {
     setXtreamServer(''); setXtreamUser(''); setXtreamPass(''); setXtreamName('');
@@ -80,20 +99,23 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: Provid
       return;
     }
 
-    setConnectSuccess('Connected! Loading content...');
-    const account = createProviderAccount(
-      xtreamName.trim() || `${config.username}@${new URL(config.serverUrl).hostname}`,
-      config,
-      { accountInfo: result.accountInfo, providerName: result.providerName }
-    );
-    addProviderAccount(account);
-    setActiveAccountId(account.id);
-    setAccounts(getProviderAccounts());
+    setConnectSuccess('Connected! Saving...');
 
-    setTimeout(() => {
+    try {
+      const account = await addProviderAccount({
+        name: xtreamName.trim() || `${config.username}@${new URL(config.serverUrl).hostname}`,
+        config,
+        accountInfo: result.accountInfo,
+        providerName: result.providerName,
+      });
+      setActiveAccountId(account.id);
+      setAccounts(await fetchProviderAccounts());
       setConnecting(false);
       onProviderReady(account);
-    }, 500);
+    } catch (err: any) {
+      setConnectError(err.message || 'Failed to save provider');
+      setConnecting(false);
+    }
   };
 
   // ── M3U Login ────────────────────────────────────────────
@@ -117,19 +139,21 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: Provid
       return;
     }
 
-    setConnectSuccess(`Found ${result.channelCount} channels! Loading...`);
-    const account = createProviderAccount(
-      m3uName.trim() || 'M3U Playlist',
-      config
-    );
-    addProviderAccount(account);
-    setActiveAccountId(account.id);
-    setAccounts(getProviderAccounts());
+    setConnectSuccess(`Found ${result.channelCount} channels! Saving...`);
 
-    setTimeout(() => {
+    try {
+      const account = await addProviderAccount({
+        name: m3uName.trim() || 'M3U Playlist',
+        config,
+      });
+      setActiveAccountId(account.id);
+      setAccounts(await fetchProviderAccounts());
       setConnecting(false);
       onProviderReady(account);
-    }, 500);
+    } catch (err: any) {
+      setConnectError(err.message || 'Failed to save provider');
+      setConnecting(false);
+    }
   };
 
   // ── Access Code Login ────────────────────────────────────
@@ -145,7 +169,6 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: Provid
       accessCode: acCode.trim(),
     };
 
-    // Try to validate as M3U-style
     const serverUrl = config.serverUrl.replace(/\/+$/, '');
     const testUrl = `${serverUrl}/get.php?username=${encodeURIComponent(config.accessCode)}&password=${encodeURIComponent(config.accessCode)}&type=m3u_plus&output=ts`;
 
@@ -158,23 +181,27 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: Provid
     }
 
     setConnectSuccess(`Found ${result.channelCount} channels!`);
-    const account = createProviderAccount(
-      acName.trim() || 'Portal Access',
-      config
-    );
-    addProviderAccount(account);
-    setActiveAccountId(account.id);
-    setAccounts(getProviderAccounts());
 
-    setTimeout(() => {
+    try {
+      const account = await addProviderAccount({
+        name: acName.trim() || 'Portal Access',
+        config,
+      });
+      setActiveAccountId(account.id);
+      setAccounts(await fetchProviderAccounts());
       setConnecting(false);
       onProviderReady(account);
-    }, 500);
+    } catch (err: any) {
+      setConnectError(err.message || 'Failed to save provider');
+      setConnecting(false);
+    }
   };
 
-  const handleDeleteAccount = (id: string) => {
-    removeProviderAccount(id);
-    setAccounts(getProviderAccounts());
+  const handleDeleteAccount = async (id: string) => {
+    await removeProviderAccount(id);
+    const updated = await fetchProviderAccounts();
+    setAccounts(updated);
+    if (updated.length === 0) setStep('select-method');
   };
 
   const handleSelectAccount = (account: ProviderAccount) => {
@@ -182,9 +209,17 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: Provid
     onProviderReady(account);
   };
 
-  // ── Shared input style ───────────────────────────────────
+  // ── Shared styles ────────────────────────────────────────
   const inputClass = "w-full px-4 py-3 rounded-xl bg-card border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm";
   const btnPrimary = "w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2";
+
+  if (loadingAccounts) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -199,7 +234,7 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: Provid
           {/* ── Account List ─────────────────────────────── */}
           {step === 'account-list' && (
             <motion.div key="account-list" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4">
-              <h2 className="text-lg font-semibold text-foreground text-center">Your Accounts</h2>
+              <h2 className="text-lg font-semibold text-foreground text-center">Your Playlists</h2>
 
               <div className="space-y-2">
                 {accounts.map(acc => (
@@ -225,7 +260,7 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: Provid
 
               <button onClick={() => { resetForms(); setStep('select-method'); }} className="w-full py-3 rounded-xl border border-dashed border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all flex items-center justify-center gap-2 text-sm">
                 <Plus className="w-4 h-4" />
-                Add New Provider
+                Add New Playlist
               </button>
             </motion.div>
           )}
@@ -236,10 +271,10 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: Provid
               {accounts.length > 0 && (
                 <button onClick={() => setStep('account-list')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2">
                   <ArrowLeft className="w-4 h-4" />
-                  Back to accounts
+                  Back to playlists
                 </button>
               )}
-              <h2 className="text-lg font-semibold text-foreground text-center">Add Provider</h2>
+              <h2 className="text-lg font-semibold text-foreground text-center">Add Playlist</h2>
               <p className="text-muted-foreground text-sm text-center">Choose how to connect</p>
 
               {[

@@ -5,9 +5,9 @@ import {
   getActiveAccount,
   getProviderAccounts,
   setActiveAccountId,
-  migrateFromLegacyProviders,
-  hasAnyAccounts,
   clearActiveAccount,
+  clearProviderCache,
+  fetchProviderAccounts,
 } from '@/lib/providers/storage';
 import { useProviderContent } from '@/hooks/useProviderContent';
 import { isLoggedIn, clearAppSession } from '@/lib/appSession';
@@ -31,9 +31,6 @@ import { TMDBDetailModal } from '@/components/TMDBDetailModal';
 import { MobileBrowseScreen } from '@/components/MobileBrowseScreen';
 import { TMDBItem } from '@/hooks/useTMDB';
 import universeLogo from '@/assets/universe-tv-logo.png';
-
-// Run legacy migration once on module load
-migrateFromLegacyProviders();
 
 // Adapt NormalizedChannel to Channel for backward compat
 const toChannel = (nc: NormalizedChannel): Channel => ({
@@ -64,6 +61,7 @@ const Index = () => {
   // Provider state
   const [activeAccount, setActiveAccount] = useState<ProviderAccount | null>(() => getActiveAccount());
   const [showProviderSetup, setShowProviderSetup] = useState(false);
+  const [cachedAccounts, setCachedAccounts] = useState<ProviderAccount[]>(() => getProviderAccounts());
 
   // Content from active provider
   const { channels: rawChannels, loading, error, refresh } = useProviderContent(activeAccount);
@@ -78,6 +76,21 @@ const Index = () => {
 
   const nav = useAppNavigation();
 
+  // Fetch accounts from DB once authenticated
+  useEffect(() => {
+    if (authenticated) {
+      fetchProviderAccounts().then(accounts => {
+        setCachedAccounts(accounts);
+        // If we had an active account, refresh it from DB data
+        const activeId = activeAccount?.id;
+        if (activeId) {
+          const fresh = accounts.find(a => a.id === activeId);
+          if (fresh) setActiveAccount(fresh);
+        }
+      }).catch(() => {});
+    }
+  }, [authenticated]);
+
   const handleIntroComplete = useCallback(() => {
     setShowIntro(false);
   }, []);
@@ -90,6 +103,7 @@ const Index = () => {
   const handleProviderReady = useCallback((account: ProviderAccount) => {
     setActiveAccount(account);
     setShowProviderSetup(false);
+    setCachedAccounts(getProviderAccounts());
   }, []);
 
   const handleSwitchProvider = useCallback(() => {
@@ -98,10 +112,12 @@ const Index = () => {
 
   const handleSignOut = useCallback(() => {
     clearAppSession();
+    clearProviderCache();
     clearActiveAccount();
     setActiveAccount(null);
     setAuthenticated(false);
     setShowProviderSetup(false);
+    setCachedAccounts([]);
   }, []);
 
   // Count channels by type
@@ -231,7 +247,7 @@ const Index = () => {
     return (
       <ProviderSetup
         onProviderReady={handleProviderReady}
-        existingAccounts={getProviderAccounts()}
+        existingAccounts={cachedAccounts}
       />
     );
   }
