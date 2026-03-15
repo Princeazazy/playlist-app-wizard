@@ -396,14 +396,15 @@ export const useResilientPlayback = ({
         const hls = new Hls({
           enableWorker: true,
           lowLatencyMode: !isVOD,
-          maxBufferLength: isVOD ? 45 : 20,
-          maxMaxBufferLength: isVOD ? 90 : 45,
+          maxBufferLength: isVOD ? 45 : 15,
+          maxMaxBufferLength: isVOD ? 90 : 30,
           manifestLoadingMaxRetry: 2,
-          levelLoadingMaxRetry: 3,
-          fragLoadingMaxRetry: 4,
-          manifestLoadingRetryDelay: 500,
-          levelLoadingRetryDelay: 1000,
-          fragLoadingRetryDelay: 1000,
+          levelLoadingMaxRetry: 2,
+          fragLoadingMaxRetry: 3,
+          manifestLoadingRetryDelay: 300,
+          levelLoadingRetryDelay: 500,
+          fragLoadingRetryDelay: 500,
+          startFragPrefetch: true,
         });
 
         hlsRef.current = hls;
