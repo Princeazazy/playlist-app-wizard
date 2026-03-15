@@ -1040,7 +1040,7 @@ export const MiMediaGrid = ({
                     if (logo) break;
                   }
                   if (logo) {
-                    return <img src={logo} alt={group.name} className="w-full h-full object-cover scale-150" />;
+                    return <img src={logo} alt={group.name} className="w-full h-full object-contain p-1 scale-150" />;
                   }
                   if (group.firstLogo) {
                     return (
