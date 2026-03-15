@@ -1,62 +1,148 @@
 // ═══════════════════════════════════════════════════════════════
-// Provider Account Storage — Save / Load / Switch / Delete
+// Provider Account Storage — Cloud-backed per-user storage
+// with localStorage cache for fast startup
 // ═══════════════════════════════════════════════════════════════
 
 import { ProviderAccount, ProviderConfig } from './types';
+import { supabase } from '@/integrations/supabase/client';
+import { getAppSession } from '@/lib/appSession';
 
-const ACCOUNTS_KEY = 'iptv-provider-accounts';
+const LOCAL_CACHE_KEY = 'iptv-provider-accounts-cache';
 const ACTIVE_ACCOUNT_KEY = 'iptv-active-account-id';
 
-// ── Account CRUD ────────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────
 
-export const getProviderAccounts = (): ProviderAccount[] => {
+function getAuthHeaders(): Record<string, string> {
+  const session = getAppSession();
+  if (!session) return {};
+  return {
+    'x-session-token': session.token,
+    'x-session-user-id': session.user.id,
+  };
+}
+
+async function invokeAuth(action: string, params: Record<string, unknown> = {}) {
+  const session = getAppSession();
+  const headers = getAuthHeaders();
+
+  const { data, error } = await supabase.functions.invoke('app-auth', {
+    body: { action, ...params },
+    ...(Object.keys(headers).length > 0 ? { headers } : {}),
+  });
+
+  if (error) throw new Error(error.message);
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+// ── Local Cache (fast reads) ────────────────────────────────
+
+function getCachedAccounts(): ProviderAccount[] {
   try {
-    const raw = localStorage.getItem(ACCOUNTS_KEY);
+    const raw = localStorage.getItem(LOCAL_CACHE_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return JSON.parse(raw);
   } catch {
     return [];
   }
-};
+}
 
-export const saveProviderAccounts = (accounts: ProviderAccount[]): void => {
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-};
+function setCachedAccounts(accounts: ProviderAccount[]) {
+  localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(accounts));
+}
 
-export const addProviderAccount = (account: ProviderAccount): void => {
-  const accounts = getProviderAccounts();
-  // Replace if same ID exists
-  const idx = accounts.findIndex(a => a.id === account.id);
-  if (idx >= 0) {
-    accounts[idx] = account;
-  } else {
-    accounts.push(account);
+function clearCache() {
+  localStorage.removeItem(LOCAL_CACHE_KEY);
+  localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
+}
+
+// ── Map DB row to ProviderAccount ───────────────────────────
+
+function dbRowToAccount(row: any): ProviderAccount {
+  return {
+    id: row.id,
+    name: row.name,
+    config: row.config as ProviderConfig,
+    createdAt: new Date(row.created_at).getTime(),
+    lastUsedAt: new Date(row.last_used_at).getTime(),
+    providerName: row.provider_name || undefined,
+    providerLogo: row.provider_logo || undefined,
+    accountInfo: row.account_info || undefined,
+    settings: row.settings || undefined,
+  };
+}
+
+// ── Public API ──────────────────────────────────────────────
+
+/** Fetch providers from DB and update cache */
+export async function fetchProviderAccounts(): Promise<ProviderAccount[]> {
+  try {
+    const data = await invokeAuth('list_providers');
+    const accounts = (data.providers || []).map(dbRowToAccount);
+    setCachedAccounts(accounts);
+    return accounts;
+  } catch (err) {
+    console.warn('Failed to fetch providers from cloud, using cache:', err);
+    return getCachedAccounts();
   }
-  saveProviderAccounts(accounts);
-};
+}
 
-export const updateProviderAccount = (id: string, updates: Partial<ProviderAccount>): void => {
-  const accounts = getProviderAccounts();
-  const idx = accounts.findIndex(a => a.id === id);
-  if (idx >= 0) {
-    accounts[idx] = { ...accounts[idx], ...updates, id };
-    saveProviderAccounts(accounts);
+/** Get cached accounts synchronously (for initial render) */
+export const getProviderAccounts = (): ProviderAccount[] => getCachedAccounts();
+
+/** Add a provider to DB and cache */
+export async function addProviderAccount(account: {
+  name: string;
+  config: ProviderConfig;
+  accountInfo?: any;
+  providerName?: string;
+  providerLogo?: string;
+  settings?: any;
+}): Promise<ProviderAccount> {
+  const data = await invokeAuth('add_provider', {
+    name: account.name,
+    provider_type: account.config.type,
+    config: account.config,
+    account_info: account.accountInfo || null,
+    provider_name: account.providerName || null,
+    provider_logo: account.providerLogo || null,
+    settings: account.settings || null,
+  });
+
+  const newAccount = dbRowToAccount(data.provider);
+
+  // Update cache
+  const cached = getCachedAccounts();
+  cached.push(newAccount);
+  setCachedAccounts(cached);
+
+  return newAccount;
+}
+
+/** Remove a provider from DB and cache */
+export async function removeProviderAccount(id: string): Promise<void> {
+  try {
+    await invokeAuth('delete_provider', { provider_id: id });
+  } catch (err) {
+    console.warn('Failed to delete provider from cloud:', err);
   }
-};
 
-export const removeProviderAccount = (id: string): void => {
-  const accounts = getProviderAccounts().filter(a => a.id !== id);
-  saveProviderAccounts(accounts);
-  // If we removed the active account, clear it
+  const cached = getCachedAccounts().filter(a => a.id !== id);
+  setCachedAccounts(cached);
+
   if (getActiveAccountId() === id) {
     clearActiveAccount();
   }
-};
+}
 
-export const getProviderAccount = (id: string): ProviderAccount | null => {
-  return getProviderAccounts().find(a => a.id === id) || null;
-};
+/** Touch a provider (update last_used_at) */
+export async function touchProvider(id: string): Promise<void> {
+  try {
+    await invokeAuth('touch_provider', { provider_id: id });
+  } catch {
+    // non-critical
+  }
+}
 
 // ── Active Account ──────────────────────────────────────────
 
@@ -66,8 +152,7 @@ export const getActiveAccountId = (): string | null => {
 
 export const setActiveAccountId = (id: string): void => {
   localStorage.setItem(ACTIVE_ACCOUNT_KEY, id);
-  // Update lastUsedAt
-  updateProviderAccount(id, { lastUsedAt: Date.now() });
+  touchProvider(id); // fire-and-forget
 };
 
 export const clearActiveAccount = (): void => {
@@ -77,15 +162,20 @@ export const clearActiveAccount = (): void => {
 export const getActiveAccount = (): ProviderAccount | null => {
   const id = getActiveAccountId();
   if (!id) return null;
-  return getProviderAccount(id);
+  return getCachedAccounts().find(a => a.id === id) || null;
 };
 
 // ── Helpers ─────────────────────────────────────────────────
+
+export const hasAnyAccounts = (): boolean => {
+  return getCachedAccounts().length > 0;
+};
 
 export const generateAccountId = (): string => {
   return `provider-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
+/** @deprecated use addProviderAccount instead */
 export const createProviderAccount = (
   name: string,
   config: ProviderConfig,
@@ -101,49 +191,29 @@ export const createProviderAccount = (
   };
 };
 
-export const hasAnyAccounts = (): boolean => {
-  return getProviderAccounts().length > 0;
+export const saveProviderAccounts = (accounts: ProviderAccount[]): void => {
+  setCachedAccounts(accounts);
 };
 
-// ── Migration from old system ───────────────────────────────
-
-export const migrateFromLegacyProviders = (): void => {
-  const MIGRATED_KEY = 'iptv-provider-migrated-v1';
-  if (localStorage.getItem(MIGRATED_KEY)) return;
-
-  // Check for old multi-playlist sources
-  try {
-    const oldSources = localStorage.getItem('mi-player-multi-playlists');
-    if (oldSources) {
-      const sources = JSON.parse(oldSources);
-      if (Array.isArray(sources) && sources.length > 0) {
-        const accounts = getProviderAccounts();
-        for (const src of sources) {
-          if (!src.url) continue;
-          // Check if already migrated
-          const exists = accounts.some(a =>
-            a.config.type === 'm3u' && (a.config as any).m3uUrl === src.url
-          );
-          if (exists) continue;
-
-          const account = createProviderAccount(
-            src.name || 'Migrated Playlist',
-            { type: 'm3u', m3uUrl: src.url }
-          );
-          accounts.push(account);
-        }
-        if (accounts.length > 0) {
-          saveProviderAccounts(accounts);
-          // Set first as active
-          if (!getActiveAccountId()) {
-            setActiveAccountId(accounts[0].id);
-          }
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('Migration from legacy playlists failed:', e);
+export const updateProviderAccount = (id: string, updates: Partial<ProviderAccount>): void => {
+  const accounts = getCachedAccounts();
+  const idx = accounts.findIndex(a => a.id === id);
+  if (idx >= 0) {
+    accounts[idx] = { ...accounts[idx], ...updates, id };
+    setCachedAccounts(accounts);
   }
+};
 
-  localStorage.setItem(MIGRATED_KEY, '1');
+export const getProviderAccount = (id: string): ProviderAccount | null => {
+  return getCachedAccounts().find(a => a.id === id) || null;
+};
+
+/** Clear all local caches on sign out */
+export const clearProviderCache = (): void => {
+  clearCache();
+};
+
+// ── Migration (no-op now, providers come from DB) ───────────
+export const migrateFromLegacyProviders = (): void => {
+  // Legacy migration is no longer needed since providers are stored per-user in the cloud
 };
