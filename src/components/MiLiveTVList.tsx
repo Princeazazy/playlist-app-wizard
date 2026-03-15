@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, memo, useCallback } from 'react';
 import { LiveMatchesTicker } from './LiveMatchesTicker';
-import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Calendar, Heart, Loader2, Mic, MicOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Calendar, Heart, Loader2, Mic, MicOff, Trophy } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
 import { useIsMobile } from '@/hooks/use-mobile';
