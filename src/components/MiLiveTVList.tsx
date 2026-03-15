@@ -887,35 +887,36 @@ export const MiLiveTVList = ({
           </div>
         </div>
 
-        {/* Channel Rows with Live Preview */}
+        {/* Main Content Area */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 py-2 mi-scrollbar" onScroll={onScroll}>
-          {/* Live Matches Ticker for Sports */}
-          {category === 'sports' && (
-            <div className="mb-4">
-              <LiveMatchesTicker sportsChannels={channels} onChannelSelect={onChannelSelect} />
-            </div>
-          )}
-            {visibleChannels.map((channel, index) => (
-              <LivePreviewChannelTile
-                key={channel.id}
-                channel={channel}
-                isActive={currentChannel?.id === channel.id}
-                isFocused={focusedIndex === index}
-                isFavorite={favorites.has(channel.id)}
-                resolvedLogo={getLogoForChannel(channel.name, channel.logo)}
-                onClick={() => onChannelSelect(channel)}
-                onToggleFavorite={() => onToggleFavorite(channel.id)}
-                onHover={setHoveredChannel}
-              />
-            ))}
+          {/* Match Center view (sports only) */}
+          {category === 'sports' && selectedGroup === '__match_center__' ? (
+            <LiveMatchesTicker sportsChannels={channels} onChannelSelect={onChannelSelect} />
+          ) : (
+            <>
+              {visibleChannels.map((channel, index) => (
+                <LivePreviewChannelTile
+                  key={channel.id}
+                  channel={channel}
+                  isActive={currentChannel?.id === channel.id}
+                  isFocused={focusedIndex === index}
+                  isFavorite={favorites.has(channel.id)}
+                  resolvedLogo={getLogoForChannel(channel.name, channel.logo)}
+                  onClick={() => onChannelSelect(channel)}
+                  onToggleFavorite={() => onToggleFavorite(channel.id)}
+                  onHover={setHoveredChannel}
+                />
+              ))}
 
-          {hasMore && <div className="py-4 text-center text-muted-foreground text-sm">Loading more…</div>}
-          
-          {filteredChannels.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-64">
-              <p className="text-muted-foreground text-lg">No channels found</p>
-              <p className="text-muted-foreground/60 text-sm mt-2">Try adjusting your search or filters</p>
-            </div>
+              {hasMore && <div className="py-4 text-center text-muted-foreground text-sm">Loading more…</div>}
+              
+              {filteredChannels.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-64">
+                  <p className="text-muted-foreground text-lg">No channels found</p>
+                  <p className="text-muted-foreground/60 text-sm mt-2">Try adjusting your search or filters</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
