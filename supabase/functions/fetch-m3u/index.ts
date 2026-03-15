@@ -722,14 +722,13 @@ Deno.serve(async (req) => {
     const isGetM3U = isXtreamGetM3UUrl(url);
     const preferredLiveExtension = getPreferredLiveExtensionFromUrl(url);
 
-    // Use Xtream API when:
-    // 1. We have valid credentials AND
-    // 2. Either forceXtreamApi is set, OR (preferXtreamApi is set AND it's not a get.php URL)
-    // forceXtreamApi bypasses the get.php safety check - useful when we know Xtream API works
-    const canUseXtreamApi = !!xtreamCreds && (forceXtreamApi || (preferXtreamApi && !isGetM3U));
+    // Use Xtream API when we have valid credentials AND preferXtreamApi is set.
+    // The Xtream API is much faster (parallel category fetches) vs streaming M3U parsing.
+    // For get.php URLs, still use Xtream API — the JSON endpoints are more reliable.
+    const canUseXtreamApi = !!xtreamCreds && (forceXtreamApi || preferXtreamApi);
 
-    if (xtreamCreds && preferXtreamApi && isGetM3U && !forceXtreamApi) {
-      console.log('Xtream get.php detected; forcing streaming M3U parsing (override preferXtreamApi). Use forceXtreamApi=true to override.');
+    if (xtreamCreds && preferXtreamApi && isGetM3U) {
+      console.log('Xtream get.php detected; using Xtream API for faster parallel fetching.');
     }
 
     if (canUseXtreamApi) {
