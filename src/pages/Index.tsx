@@ -208,7 +208,9 @@ const Index = () => {
   }, [nav, filteredChannelsByCategory]);
 
   const handleReload = useCallback(() => {
+    // Refresh content in-place without leaving the current screen
     refresh();
+    // Stay on current screen (don't navigate away)
   }, [refresh]);
 
   const handleHomeChannelSelect = useCallback((channel: Channel) => {
