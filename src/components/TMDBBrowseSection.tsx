@@ -448,7 +448,6 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
   }, [channels, ramadanShows]);
 
   const arabicMovies = useMemo(() => {
-    const containsArabicText = (text: string) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
     
     const movieChannels = channels.filter(ch => ch.type === 'movies');
     const arabicContent = movieChannels.filter(ch => {
