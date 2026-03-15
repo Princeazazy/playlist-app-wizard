@@ -294,8 +294,8 @@ async function fetchXtreamLiveByCategory(
   const categoryEntries = Array.from(categoryMap.entries());
   const categoryIds = categoryEntries.map(([id]) => id);
 
-  // Fetch categories in sequential batches of 5 to preserve order
-  const batchSize = 5;
+  // Fetch in sequential batches of 10 for faster parallel fetching
+  const batchSize = 10;
   for (let i = 0; i < categoryIds.length && items.length < limit; i += batchSize) {
     const batch = categoryIds.slice(i, i + batchSize);
     
