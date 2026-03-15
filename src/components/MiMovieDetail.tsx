@@ -68,6 +68,8 @@ export const MiMovieDetail = ({
   useEffect(() => {
     let cancelled = false;
 
+    setProviderPlot('');
+
     const fetchProviderSynopsis = async () => {
       try {
         const { data, error } = await supabase.functions.invoke('fetch-vod-info', {
