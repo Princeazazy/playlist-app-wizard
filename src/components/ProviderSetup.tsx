@@ -26,7 +26,7 @@ interface ProviderSetupProps {
 
 type SetupStep = 'select-method' | 'xtream-form' | 'm3u-form' | 'access-code-form' | 'account-list';
 
-export const ProviderSetup = ({ onProviderReady, existingAccounts = [] }: ProviderSetupProps) => {
+export const ProviderSetup = ({ onProviderReady, existingAccounts = [], onSignOut }: ProviderSetupProps) => {
   const [step, setStep] = useState<SetupStep>(existingAccounts.length > 0 ? 'account-list' : 'select-method');
   const [accounts, setAccounts] = useState<ProviderAccount[]>(existingAccounts);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
