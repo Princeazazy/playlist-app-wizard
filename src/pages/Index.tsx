@@ -57,6 +57,25 @@ const toChannel = (nc: NormalizedChannel): Channel => ({
 const Index = () => {
   const [showIntro, setShowIntro] = useState(true);
   const [authenticated, setAuthenticated] = useState(() => isLoggedIn());
+  const [sessionValidated, setSessionValidated] = useState(false);
+
+  // Validate session on mount — clear stale sessions
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      setSessionValidated(true);
+      return;
+    }
+    // Quick validation: try to list providers; if it fails with auth error, clear session
+    fetchProviderAccounts()
+      .then(() => setSessionValidated(true))
+      .catch(() => {
+        clearAppSession();
+        clearProviderCache();
+        clearActiveAccount();
+        setAuthenticated(false);
+        setSessionValidated(true);
+      });
+  }, []);
 
   // Provider state
   const [activeAccount, setActiveAccount] = useState<ProviderAccount | null>(() => getActiveAccount());
