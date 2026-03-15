@@ -522,9 +522,6 @@ async function fetchXtreamSeries(
                 _baseUrl: baseUrl,
                 _username: username,
                 _password: password,
-                _baseUrl: baseUrl,
-                _username: username,
-                _password: password,
               });
             }
             
