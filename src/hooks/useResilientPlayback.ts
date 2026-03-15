@@ -28,7 +28,7 @@ interface UseResilientPlaybackResult {
   retryPlayback: () => void;
 }
 
-const RETRY_BACKOFF_MS = [800, 1500, 2500, 4500, 7000, 10000] as const;
+const RETRY_BACKOFF_MS = [500, 1000, 2000, 3500, 5000, 8000] as const;
 
 const isLikelyHlsUrl = (url: string): boolean => (
   /\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url)
