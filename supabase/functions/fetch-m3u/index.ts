@@ -613,8 +613,6 @@ async function fetchXtreamSeriesByCategory(
           director: stream.director || '',
           genre: stream.genre || '',
           backdrop_path: stream.backdrop_path || [],
-          tmdb_id: stream.tmdb_id || '',
-          last_modified: stream.last_modified || '',
           _baseUrl: baseUrl,
           _username: username,
           _password: password,
