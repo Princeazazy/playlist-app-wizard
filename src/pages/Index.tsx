@@ -308,7 +308,7 @@ const Index = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <div className="flex items-center justify-center mb-6">
-            <img src={universeLogo} alt="Universe TV" className="h-20 w-auto opacity-50" />
+            <ChromaKeyVideo src={logoVideo} className="h-28 mx-auto" />
           </div>
           <p className="text-destructive mb-2 font-semibold text-lg">Failed to load channels</p>
           <p className="text-muted-foreground text-sm mb-4">{error}</p>
