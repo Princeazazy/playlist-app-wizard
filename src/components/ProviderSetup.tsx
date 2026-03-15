@@ -228,7 +228,7 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [], onSignOu
         {/* Logo */}
         <div className="flex flex-col items-center justify-center text-center gap-1">
           <ChromaKeyVideo src={logoVideo} className="h-28 mx-auto" />
-          <p className="text-muted-foreground text-sm">Your Universal IPTV Player</p>
+          <p className="text-muted-foreground text-sm">Universe TV Player</p>
         </div>
 
         <AnimatePresence mode="wait">
