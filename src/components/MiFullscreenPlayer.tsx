@@ -170,6 +170,8 @@ export const MiFullscreenPlayer = ({
     isVOD,
     forceMuted: !isNativeOrWebView(),
     maxReconnectCycles: 6,
+    startupTimeoutMs: 9000,
+    stalledThresholdMs: 12000,
     logPrefix: 'FullscreenPlayer',
     onManifestParsed: applyHlsSubtitleTracks,
     onSubtitleTracksUpdated: applyHlsSubtitleTracks,
@@ -188,7 +190,14 @@ export const MiFullscreenPlayer = ({
       return;
     }
 
-    if (playbackState === 'buffering' || playbackState === 'connecting' || playbackState === 'reconnecting' || playbackState === 'failed') {
+    if (playbackState === 'connecting' || playbackState === 'buffering' || playbackState === 'reconnecting') {
+      // Clear stale fatal message while recovery is in progress so Retry feels responsive.
+      setError(null);
+      setIsPlaying(false);
+      return;
+    }
+
+    if (playbackState === 'failed') {
       setIsPlaying(false);
     }
   }, [playbackError, playbackState]);

@@ -46,8 +46,8 @@ export const useResilientPlayback = ({
   isVOD = false,
   forceMuted = !Capacitor.isNativePlatform(),
   maxReconnectCycles = 5,
-  startupTimeoutMs = 6000,
-  stalledThresholdMs = 8000,
+  startupTimeoutMs = 9000,
+  stalledThresholdMs = 12000,
   logPrefix = 'Playback',
   onManifestParsed,
   onSubtitleTracksUpdated,
@@ -105,6 +105,10 @@ export const useResilientPlayback = ({
     }
 
     if (rawUrl.startsWith('http://')) {
+      // Mixed-content-safe fallback order: try upgraded HTTPS first, then proxy.
+      // Some providers support HTTPS even when playlist URLs are published as HTTP.
+      const upgradedHttps = rawUrl.replace(/^http:\/\//i, 'https://');
+      add(upgradedHttps);
       add(proxyUrl);
       return candidates;
     }
@@ -152,6 +156,10 @@ export const useResilientPlayback = ({
   }, [channel.url, buildPlayableCandidates]);
 
   const retryPlayback = useCallback(() => {
+    // Immediate UI reset so retry action feels responsive.
+    setError(null);
+    setRetryCount(0);
+    setPlaybackState('connecting');
     setManualRetryNonce((value) => value + 1);
   }, []);
 
