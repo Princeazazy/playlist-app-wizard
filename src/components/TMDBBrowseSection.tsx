@@ -12,6 +12,18 @@ interface TMDBBrowseSectionProps {
 }
 
 const ITEMS_PER_PAGE = 6;
+const MIN_ITEMS_TO_SHOW_ROW = 3;
+
+const containsArabicText = (text: string) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+
+const getFilledPageItems = <T,>(items: T[], currentPage: number, pageSize: number): T[] => {
+  if (items.length === 0) return [];
+
+  const maxItems = items.length < pageSize ? items.length : pageSize;
+  const start = currentPage * pageSize;
+
+  return Array.from({ length: maxItems }, (_, index) => items[(start + index) % items.length]);
+};
 
 // Lightweight card - NO framer-motion, pure CSS transitions
 const MediaCard = ({ item, onClick }: { item: TMDBItem; onClick?: () => void }) => (
