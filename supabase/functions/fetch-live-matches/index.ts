@@ -10,26 +10,23 @@ interface Match {
   awayLogo: string;
   time: string;
   score: string;
-  status: string; // 'live' | 'upcoming' | 'finished'
+  status: string; // 'live' | 'halftime' | 'upcoming' | 'finished' | 'not_started'
   statusText: string;
   channels: string[];
+  commentator: string;
   league: string;
-  date: string; // YYYY-MM-DD
-  dayLabel: string; // 'yesterday' | 'today' | 'tomorrow'
+  date: string;
+  dayLabel: string;
 }
 
 function parseMatches(html: string, dayLabel: string): Match[] {
   const matches: Match[] = [];
-  
-  // Normalize whitespace for easier regex matching
   const normalizedHtml = html.replace(/\n\s*/g, ' ');
-  
-  // Split by AY_Match divs
   const matchBlocks = normalizedHtml.split('<div class="AY_Match');
-  
+
   for (let i = 1; i < matchBlocks.length; i++) {
     const block = matchBlocks[i];
-    
+
     try {
       // Determine status from CSS class
       let status = 'upcoming';
@@ -37,65 +34,78 @@ function parseMatches(html: string, dayLabel: string): Match[] {
         status = 'live';
       } else if (block.startsWith(' finished')) {
         status = 'finished';
+      } else if (block.startsWith(' not-started')) {
+        status = 'not_started';
+      } else if (block.startsWith(' comming-soon')) {
+        status = 'upcoming';
       }
-      
+
       // Extract team names
       const tmNameMatches = [...block.matchAll(/<div class="TM_Name">(.*?)<\/div>/g)];
       if (tmNameMatches.length < 2) continue;
-      
+
       const homeTeam = tmNameMatches[0][1].trim();
       const awayTeam = tmNameMatches[1][1].trim();
-      
-      // Extract team logos - match any domain's img src or data-src
+
+      // Extract team logos - match img src or data-src
       const logoMatches = [...block.matchAll(/(?:data-src|src)="(https?:\/\/[^"]+\/wp-content\/uploads\/[^"]+)"/g)];
       const homeLogo = logoMatches.length > 0 ? logoMatches[0][1] : '';
       const awayLogo = logoMatches.length > 1 ? logoMatches[1][1] : '';
-      
+
       // Extract time
       const timeMatch = block.match(/MT_Time[^>]*>(.*?)<\/span>/);
       const time = timeMatch ? timeMatch[1].trim() : '';
-      
+
       // Extract score
       const goalMatches = [...block.matchAll(/RS-goals[^>]*>(.*?)<\/span>/g)];
-      const score = goalMatches.length >= 2 
-        ? `${goalMatches[0][1]}-${goalMatches[1][1]}` 
+      const score = goalMatches.length >= 2
+        ? `${goalMatches[0][1].trim()}-${goalMatches[1][1].trim()}`
         : '0-0';
-      
+
       // Extract status text
       const statMatch = block.match(/MT_Stat[^>]*>(.*?)<\/div>/);
       const statusText = statMatch ? statMatch[1].trim() : '';
-      
-      // Fallback status from text if CSS class didn't catch it
-      if (status === 'upcoming') {
-        if (statusText.includes('جارية')) {
-          status = 'live';
-        } else if (statusText.includes('انتهت')) {
-          status = 'finished';
-        }
+
+      // Refine status from Arabic text
+      if (statusText.includes('جارية')) {
+        status = 'live';
+      } else if (statusText.includes('انتهت')) {
+        status = 'finished';
+      } else if (statusText.includes('الشوط الأول') || statusText.includes('شوط أول')) {
+        status = 'live';
+      } else if (statusText.includes('استراحة') || statusText.includes('نصف')) {
+        status = 'halftime';
+      } else if (statusText.includes('لم تبدأ')) {
+        status = 'not_started';
+      } else if (statusText.includes('بعد قليل')) {
+        status = 'upcoming';
       }
-      
-      // Extract date from the match link title attribute (بتاريخ YYYY-MM-DD)
+
+      // Extract date from match link
       const dateMatch = block.match(/بتاريخ\s+(\d{4}-\d{2}-\d{2})/);
       const date = dateMatch ? dateMatch[1] : '';
-      
-      // Extract channels and league from MT_Info
+
+      // Extract channels, commentator, and league from MT_Info
       const infoMatch = block.match(/<div class="MT_Info"><ul>(.*?)<\/ul><\/div>/);
       const channels: string[] = [];
+      let commentator = '';
       let league = '';
-      
+
       if (infoMatch) {
         const liMatches = [...infoMatch[1].matchAll(/<li><span>(.*?)<\/span><\/li>/g)];
+        // Pattern: channel, commentator, league
         if (liMatches.length > 0) {
           const ch = liMatches[0][1].trim();
-          if (ch && ch !== 'غير معروف') {
-            channels.push(ch);
-          }
+          if (ch && ch !== 'غير معروف') channels.push(ch);
+        }
+        if (liMatches.length > 1) {
+          commentator = liMatches[1][1].trim();
         }
         if (liMatches.length > 2) {
           league = liMatches[2][1].trim();
         }
       }
-      
+
       matches.push({
         homeTeam,
         awayTeam,
@@ -106,6 +116,7 @@ function parseMatches(html: string, dayLabel: string): Match[] {
         status,
         statusText,
         channels,
+        commentator,
         league,
         date,
         dayLabel,
@@ -114,7 +125,7 @@ function parseMatches(html: string, dayLabel: string): Match[] {
       console.error('Error parsing match block:', e);
     }
   }
-  
+
   return matches;
 }
 
@@ -140,10 +151,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Fetching live matches from yalla-shoot-live-online...');
-    
-    const baseUrl = 'https://www.yalla-shoot-live-online.com';
-    
+    console.log('Fetching live matches from yalla-shotos.live...');
+
+    const baseUrl = 'https://www.yalla-shotos.live';
+
     // Fetch all three day pages in parallel
     const [yesterdayHtml, todayHtml, tomorrowHtml] = await Promise.all([
       fetchPage(`${baseUrl}/matches-yesterday/`).catch(e => { console.warn('Yesterday fetch failed:', e.message); return ''; }),
@@ -155,9 +166,9 @@ Deno.serve(async (req) => {
     const todayMatches = todayHtml ? parseMatches(todayHtml, 'today') : [];
     const tomorrowMatches = tomorrowHtml ? parseMatches(tomorrowHtml, 'tomorrow') : [];
 
-    // Combine: today first (most relevant), then tomorrow, then yesterday
+    // Combine: today first, then tomorrow, then yesterday
     const allMatches = [...todayMatches, ...tomorrowMatches, ...yesterdayMatches];
-    
+
     console.log(`Parsed ${allMatches.length} matches (yesterday: ${yesterdayMatches.length}, today: ${todayMatches.length}, tomorrow: ${tomorrowMatches.length})`);
 
     return new Response(
