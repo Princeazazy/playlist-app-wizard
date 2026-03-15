@@ -7,6 +7,7 @@ import { getStoredPlaylistUrl } from '@/lib/playlistStorage';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTMDB, TMDBDetailedItem } from '@/hooks/useTMDB';
 import { WeatherIcon } from './shared/WeatherIcon';
+import { ProviderConfig } from '@/lib/providers/types';
 
 interface Episode {
   id: string;
@@ -55,6 +56,7 @@ interface MiSeriesDetailProps {
   ) => void;
   onToggleFavorite: () => void;
   isFavorite: boolean;
+  providerConfig?: ProviderConfig;
 }
 
 export const MiSeriesDetail = ({
@@ -63,6 +65,7 @@ export const MiSeriesDetail = ({
   onPlayEpisode,
   onToggleFavorite,
   isFavorite,
+  providerConfig,
 }: MiSeriesDetailProps) => {
   const [time, setTime] = useState(new Date());
   const weather = useWeather();

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, User, Shield, ListVideo, Trash2, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Check, X, Upload, FileVideo, Download, Loader2, Pencil, Users, Plus, ShieldOff, UserX, UserCheck, LogOut } from 'lucide-react';
+import { ChevronLeft, User, Shield, ListVideo, Trash2, Cloud, Sun, CloudRain, Snowflake, CloudLightning, Check, X, Upload, FileVideo, Download, Loader2, Pencil, Users, Plus, ShieldOff, UserX, UserCheck, LogOut, Wifi, ArrowRightLeft } from 'lucide-react';
 import { getProfileName, setProfileName, getProfileInitial } from '@/lib/profileStorage';
 import { getAppSession, clearAppSession } from '@/lib/appSession';
 import { toast } from 'sonner';
@@ -26,6 +26,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
+import { ProviderAccount } from '@/lib/providers/types';
 
 const WeatherIcon = ({ icon }: { icon: string }) => {
   switch (icon) {
@@ -41,9 +42,11 @@ interface MiSettingsPageProps {
   onBack: () => void;
   onPlaylistChange?: () => void;
   onSignOut?: () => void;
+  onSwitchProvider?: () => void;
+  activeProvider?: ProviderAccount | null;
 }
 
-export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut }: MiSettingsPageProps) => {
+export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut, onSwitchProvider, activeProvider }: MiSettingsPageProps) => {
   const [time, setTime] = useState(new Date());
   const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
   const [showParentalDialog, setShowParentalDialog] = useState(false);
@@ -427,6 +430,29 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut }: MiSettin
               </div>
             </div>
 
+            {/* Active Provider Info */}
+            {activeProvider && (
+              <div className="mt-4 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                <div className="flex items-center gap-2 text-sm">
+                  <Wifi className="w-4 h-4 text-primary" />
+                  <span className="text-muted-foreground">Provider:</span>
+                  <span className="text-foreground font-medium">{activeProvider.name}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 capitalize">{activeProvider.config.type === 'xtream' ? 'Xtream Codes' : activeProvider.config.type === 'm3u' ? 'M3U Playlist' : 'Access Code'}</p>
+              </div>
+            )}
+
+            {/* Switch Provider */}
+            {onSwitchProvider && (
+              <button
+                onClick={onSwitchProvider}
+                className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium"
+              >
+                <ArrowRightLeft className="w-5 h-5" />
+                Switch Provider
+              </button>
+            )}
+
             {/* Sign Out */}
             <button
               onClick={() => {
@@ -434,7 +460,7 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut }: MiSettin
                 if (onSignOut) onSignOut();
                 else window.location.reload();
               }}
-              className="mt-6 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors font-medium"
+              className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors font-medium"
             >
               <LogOut className="w-5 h-5" />
               Sign Out

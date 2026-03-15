@@ -660,6 +660,43 @@ Deno.serve(async (req) => {
       );
     }
 
+    // rawFetch mode: proxy any URL and return its JSON response as-is
+    // Used for Xtream authentication (player_api.php) from the browser
+    const rawFetch = (body as Record<string, unknown>)?.rawFetch === true;
+    if (rawFetch) {
+      try {
+        const res = await fetch(url, {
+          headers: getStbHeaders(0),
+          redirect: 'follow',
+        });
+        if (!res.ok) {
+          return new Response(
+            JSON.stringify({ error: `Upstream returned ${res.status}` }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        const text = await res.text();
+        try {
+          const json = JSON.parse(text);
+          return new Response(
+            JSON.stringify({ rawResponse: json }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } catch {
+          return new Response(
+            JSON.stringify({ rawResponse: text }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Unknown error';
+        return new Response(
+          JSON.stringify({ error: msg }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Enforce stricter limits to prevent timeout
     const safeMaxReturnPerType =
       typeof maxReturnPerType === 'number' && Number.isFinite(maxReturnPerType) && maxReturnPerType > 0
