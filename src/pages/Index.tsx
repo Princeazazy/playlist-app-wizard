@@ -96,16 +96,23 @@ const Index = () => {
 
   const nav = useAppNavigation();
 
-  // Fetch accounts from DB once authenticated
+  // Fetch accounts from DB once authenticated & restore active account
   useEffect(() => {
     if (authenticated) {
       fetchProviderAccounts().then(accounts => {
         setCachedAccounts(accounts);
-        // If we had an active account, refresh it from DB data
-        const activeId = activeAccount?.id;
-        if (activeId) {
-          const fresh = accounts.find(a => a.id === activeId);
-          if (fresh) setActiveAccount(fresh);
+        // Restore active account from stored ID (survives app restarts)
+        const storedId = activeAccount?.id || localStorage.getItem('iptv-active-account-id');
+        if (storedId) {
+          const fresh = accounts.find(a => a.id === storedId);
+          if (fresh) {
+            setActiveAccount(fresh);
+            setActiveAccountId(fresh.id);
+          }
+        } else if (!activeAccount && accounts.length === 1) {
+          // Auto-select if only one account exists
+          setActiveAccount(accounts[0]);
+          setActiveAccountId(accounts[0].id);
         }
       }).catch(() => {});
     }
