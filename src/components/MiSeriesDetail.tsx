@@ -131,6 +131,8 @@ export const MiSeriesDetail = ({
           body: {
             playlistUrl,
             seriesId: item.series_id,
+            seriesName: item.name,
+            fallbackPlot: item.plot || '',
           },
         });
 

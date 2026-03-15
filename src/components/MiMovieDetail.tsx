@@ -3,6 +3,7 @@ import { ChevronLeft, Play, Star, Clock, Globe, Calendar, User, Search, Film, X 
 import { Channel } from '@/hooks/useIPTV';
 import { useWeather } from '@/hooks/useWeather';
 import { useTMDB, TMDBDetailedItem } from '@/hooks/useTMDB';
+import { supabase } from '@/integrations/supabase/client';
 import { WeatherIcon } from './shared/WeatherIcon';
 
 interface MiMovieDetailProps {
@@ -24,6 +25,7 @@ export const MiMovieDetail = ({
   const [tmdbData, setTmdbData] = useState<TMDBDetailedItem | null>(null);
   const [isLoadingTMDB, setIsLoadingTMDB] = useState(true);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [providerPlot, setProviderPlot] = useState('');
   const weather = useWeather();
   const { search, getDetails } = useTMDB();
 
@@ -63,8 +65,39 @@ export const MiMovieDetail = ({
 
     fetchTMDBData();
   }, [item.name, search, getDetails]);
+  useEffect(() => {
+    let cancelled = false;
 
-  // Use TMDB data if available, otherwise fall back to item data
+    setProviderPlot('');
+
+    const fetchProviderSynopsis = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('fetch-vod-info', {
+          body: {
+            streamUrl: item.url,
+            mediaTitle: item.name,
+            mediaType: 'movie',
+          },
+        });
+
+        if (cancelled || error) return;
+
+        const fallbackPlot = typeof data?.plot === 'string' ? data.plot.trim() : '';
+        if (fallbackPlot) {
+          setProviderPlot(fallbackPlot);
+        }
+      } catch (err) {
+        console.warn('Provider synopsis fallback failed:', err);
+      }
+    };
+
+    fetchProviderSynopsis();
+    return () => {
+      cancelled = true;
+    };
+  }, [item.url, item.name]);
+
+  // Use TMDB data if available, otherwise fall back to provider plot, then playlist item data
   const metadata = {
     genre: tmdbData?.genres?.map(g => g.name).join(', ') || item.genre || 'Unknown',
     rating: tmdbData?.rating?.toFixed(1) || item.rating || 'N/A',
@@ -72,7 +105,7 @@ export const MiMovieDetail = ({
     languages: 'EN',
     director: item.director || 'Unknown',
     ageRating: '+13',
-    plot: tmdbData?.overview || item.plot || 'No description available.',
+    plot: tmdbData?.overview || providerPlot || item.plot || 'No description available.',
     year: tmdbData?.year || item.year || 'Unknown',
   };
 
