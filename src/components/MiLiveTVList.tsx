@@ -339,30 +339,192 @@ export const MiLiveTVList = ({
     return () => cancelAnimationFrame(id);
   }, []);
 
+  // Sports-specific channel categorization by analyzing channel names
+  const categorizeSportsChannel = useCallback((ch: Channel): string => {
+    const name = (ch.name || '').toLowerCase();
+    const group = (ch.group || '').toLowerCase();
+
+    // beIN Sports
+    if (/bein/i.test(name) || /bein/i.test(group)) return 'beIN Sports';
+    // SSC (Saudi Sports Company)
+    if (/\bssc\b/i.test(name)) return 'Saudi Arabia';
+    // Abu Dhabi Sports
+    if (/abu\s*dhabi/i.test(name)) return 'UAE';
+    // Dubai Sports
+    if (/dubai/i.test(name)) return 'UAE';
+    // ON Sport (Egypt)
+    if (/\bon\s*sport/i.test(name) || /أون\s*سبورت/i.test(name)) return 'Egypt';
+    // Nile Sport (Egypt)
+    if (/nile/i.test(name)) return 'Egypt';
+    // Al Kass (Qatar)
+    if (/alkass|al\s*kass|الكاس/i.test(name)) return 'Qatar';
+    // KSA Sports
+    if (/ksa/i.test(name)) return 'Saudi Arabia';
+    // Shahid
+    if (/shahid|شاهد/i.test(name) || /shahid/i.test(group)) return 'Shahid';
+    // MBC
+    if (/\bmbc\b/i.test(name) || /\bmbc\b/i.test(group)) return 'MBC';
+    // OSN
+    if (/\bosn\b/i.test(name) || /\bosn\b/i.test(group)) return 'OSN';
+    // Rotana
+    if (/rotana/i.test(name)) return 'Rotana';
+    // StarzPlay
+    if (/starz/i.test(name)) return 'StarzPlay';
+    // DAZN
+    if (/dazn/i.test(name)) return 'DAZN';
+    // Sky Sports
+    if (/sky\s*sport/i.test(name)) return 'Sky Sports';
+    // ESPN
+    if (/espn/i.test(name)) return 'ESPN';
+    // Fox Sports
+    if (/fox\s*sport/i.test(name)) return 'Fox Sports';
+    // Eurosport
+    if (/eurosport/i.test(name)) return 'Eurosport';
+    // BT Sport
+    if (/bt\s*sport/i.test(name)) return 'BT Sport';
+    // PPV
+    if (/ppv/i.test(name) || /ppv/i.test(group)) return 'PPV';
+
+    // Try Arabic country keywords in name
+    if (/مصر|egypt|egyptian/i.test(name)) return 'Egypt';
+    if (/سعود|saudi|riyadh/i.test(name)) return 'Saudi Arabia';
+    if (/امارات|إمارات|emarat/i.test(name)) return 'UAE';
+    if (/قطر|qatar/i.test(name)) return 'Qatar';
+    if (/كويت|kuwait/i.test(name)) return 'Kuwait';
+    if (/بحرين|bahrain/i.test(name)) return 'Bahrain';
+    if (/عمان|oman/i.test(name)) return 'Oman';
+    if (/اردن|أردن|jordan/i.test(name)) return 'Jordan';
+    if (/لبنان|lebanon/i.test(name)) return 'Lebanon';
+    if (/عراق|iraq/i.test(name)) return 'Iraq';
+    if (/مغرب|morocco/i.test(name)) return 'Morocco';
+    if (/تونس|tunisia/i.test(name)) return 'Tunisia';
+    if (/جزائر|algeria/i.test(name)) return 'Algeria';
+    if (/ليبيا|libya/i.test(name)) return 'Libya';
+    if (/سودان|sudan/i.test(name)) return 'Sudan';
+    if (/سوري|syria/i.test(name)) return 'Syria';
+    if (/فلسطين|palest/i.test(name)) return 'Palestine';
+    if (/يمن|yemen/i.test(name)) return 'Yemen';
+
+    // Try group-based country detection
+    if (/egypt|مصر/i.test(group)) return 'Egypt';
+    if (/saudi|سعود/i.test(group)) return 'Saudi Arabia';
+    if (/uae|امارات|إمارات/i.test(group)) return 'UAE';
+    if (/qatar|قطر/i.test(group)) return 'Qatar';
+    if (/kuwait|كويت/i.test(group)) return 'Kuwait';
+    if (/jordan|اردن/i.test(group)) return 'Jordan';
+    if (/iraq|عراق/i.test(group)) return 'Iraq';
+    if (/morocco|مغرب/i.test(group)) return 'Morocco';
+    if (/tunisia|تونس/i.test(group)) return 'Tunisia';
+    if (/algeria|جزائر/i.test(group)) return 'Algeria';
+
+    // Fallback: use normalized group
+    return normalizeGroupName(ch.group || 'Other') || 'Other';
+  }, []);
+
+  // Sports-specific logo/flag for categories
+  const SPORTS_GROUP_META: Record<string, { flagUrl: string; priority: number; isService?: boolean }> = {
+    'Egypt': { flagUrl: 'https://flagcdn.com/w80/eg.png', priority: 1 },
+    'Saudi Arabia': { flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 2 },
+    'UAE': { flagUrl: 'https://flagcdn.com/w80/ae.png', priority: 3 },
+    'Qatar': { flagUrl: 'https://flagcdn.com/w80/qa.png', priority: 4 },
+    'Kuwait': { flagUrl: 'https://flagcdn.com/w80/kw.png', priority: 5 },
+    'Bahrain': { flagUrl: 'https://flagcdn.com/w80/bh.png', priority: 6 },
+    'Oman': { flagUrl: 'https://flagcdn.com/w80/om.png', priority: 7 },
+    'Jordan': { flagUrl: 'https://flagcdn.com/w80/jo.png', priority: 8 },
+    'Lebanon': { flagUrl: 'https://flagcdn.com/w80/lb.png', priority: 9 },
+    'Iraq': { flagUrl: 'https://flagcdn.com/w80/iq.png', priority: 10 },
+    'Palestine': { flagUrl: 'https://flagcdn.com/w80/ps.png', priority: 11 },
+    'Morocco': { flagUrl: 'https://flagcdn.com/w80/ma.png', priority: 12 },
+    'Tunisia': { flagUrl: 'https://flagcdn.com/w80/tn.png', priority: 13 },
+    'Algeria': { flagUrl: 'https://flagcdn.com/w80/dz.png', priority: 14 },
+    'Libya': { flagUrl: 'https://flagcdn.com/w80/ly.png', priority: 15 },
+    'Sudan': { flagUrl: 'https://flagcdn.com/w80/sd.png', priority: 16 },
+    'Syria': { flagUrl: 'https://flagcdn.com/w80/sy.png', priority: 17 },
+    'Yemen': { flagUrl: 'https://flagcdn.com/w80/ye.png', priority: 18 },
+    'beIN Sports': { flagUrl: '/images/bein-logo.png', priority: 20, isService: true },
+    'Shahid': { flagUrl: '/images/shahid-logo.png?v=2', priority: 21, isService: true },
+    'MBC': { flagUrl: '/images/mbc-logo.png', priority: 22, isService: true },
+    'OSN': { flagUrl: '/images/osn-logo.png', priority: 23, isService: true },
+    'Rotana': { flagUrl: '/images/rotana-logo.png', priority: 24, isService: true },
+    'Sky Sports': { flagUrl: '', priority: 30, isService: true },
+    'ESPN': { flagUrl: '', priority: 31, isService: true },
+    'DAZN': { flagUrl: '', priority: 32, isService: true },
+    'Fox Sports': { flagUrl: '', priority: 33, isService: true },
+    'Eurosport': { flagUrl: '', priority: 34, isService: true },
+    'BT Sport': { flagUrl: '', priority: 35, isService: true },
+    'StarzPlay': { flagUrl: '', priority: 36, isService: true },
+    'PPV': { flagUrl: '', priority: 37, isService: true },
+  };
+
+  // Build a mapping from channel id → sports group name (only for sports mode)
+  const sportsChannelGroupMap = useMemo(() => {
+    if (category !== 'sports') return new Map<string, string>();
+    const map = new Map<string, string>();
+    for (const ch of channels) {
+      map.set(ch.id, categorizeSportsChannel(ch));
+    }
+    return map;
+  }, [channels, category, categorizeSportsChannel]);
+
   // Build groups with first channel logo AND normalized group map in a single pass
   const { groupsWithLogos, normalizedGroupMap } = useMemo(() => {
     const groupData = new Map<string, { count: number; firstLogo?: string; originalNames: string[] }>();
     const normMap = new Map<string, string[]>();
-    for (const ch of channels) {
-      const group = ch.group || 'Uncategorized';
-      const normalizedKey = normalizeGroupName(group);
-      const existing = groupData.get(normalizedKey);
-      if (!existing) {
-        groupData.set(normalizedKey, { count: 1, firstLogo: ch.logo, originalNames: [group] });
-        normMap.set(normalizedKey, [group]);
-      } else {
-        existing.count++;
-        if (!existing.originalNames.includes(group)) {
-          existing.originalNames.push(group);
-          const normList = normMap.get(normalizedKey)!;
-          if (!normList.includes(group)) normList.push(group);
+
+    if (category === 'sports') {
+      // Sports mode: use smart categorization
+      for (const ch of channels) {
+        const sportsGroup = sportsChannelGroupMap.get(ch.id) || 'Other';
+        const existing = groupData.get(sportsGroup);
+        if (!existing) {
+          groupData.set(sportsGroup, { count: 1, firstLogo: ch.logo, originalNames: [sportsGroup] });
+          normMap.set(sportsGroup, [sportsGroup]);
+        } else {
+          existing.count++;
+        }
+      }
+    } else {
+      for (const ch of channels) {
+        const group = ch.group || 'Uncategorized';
+        const normalizedKey = normalizeGroupName(group);
+        const existing = groupData.get(normalizedKey);
+        if (!existing) {
+          groupData.set(normalizedKey, { count: 1, firstLogo: ch.logo, originalNames: [group] });
+          normMap.set(normalizedKey, [group]);
+        } else {
+          existing.count++;
+          if (!existing.originalNames.includes(group)) {
+            existing.originalNames.push(group);
+            const normList = normMap.get(normalizedKey)!;
+            if (!normList.includes(group)) normList.push(group);
+          }
         }
       }
     }
     return { groupsWithLogos: groupData, normalizedGroupMap: normMap };
-  }, [channels]);
+  }, [channels, category, sportsChannelGroupMap]);
 
-  const groups = useMemo(() => mergeAndSortGroups(groupsWithLogos), [groupsWithLogos]);
+  const groups = useMemo(() => {
+    if (category === 'sports') {
+      // Sort sports groups by priority
+      const entries = Array.from(groupsWithLogos.entries())
+        .filter(([_, data]) => data.count >= 1)
+        .map(([name, data]) => {
+          const meta = SPORTS_GROUP_META[name];
+          return {
+            name,
+            displayName: name,
+            count: data.count,
+            firstLogo: meta?.flagUrl || data.firstLogo,
+            originalNames: data.originalNames,
+            priority: meta?.priority ?? 999,
+          };
+        })
+        .sort((a, b) => a.priority - b.priority);
+      return entries;
+    }
+    return mergeAndSortGroups(groupsWithLogos);
+  }, [groupsWithLogos, category]);
 
   // Auto-select first group when groups load and no group is selected
   useEffect(() => {
@@ -380,8 +542,14 @@ export const MiLiveTVList = ({
       // When searching, ignore group filter and search ALL channels
       let matchesGroup = hasSearchQuery || selectedGroup === 'all';
       if (!matchesGroup) {
-        const originalNames = normalizedGroupMap.get(selectedGroup) || [];
-        matchesGroup = originalNames.includes(channel.group || 'Uncategorized');
+        if (category === 'sports') {
+          // Sports mode: match by smart categorization
+          const chSportsGroup = sportsChannelGroupMap.get(channel.id) || 'Other';
+          matchesGroup = chSportsGroup === selectedGroup;
+        } else {
+          const originalNames = normalizedGroupMap.get(selectedGroup) || [];
+          matchesGroup = originalNames.includes(channel.group || 'Uncategorized');
+        }
       }
       
       const matchesFavorites = !localShowFavoritesOnly || favorites.has(channel.id);
@@ -398,7 +566,7 @@ export const MiLiveTVList = ({
     }
 
     return filtered;
-  }, [channels, effectiveSearchQuery, selectedGroup, localShowFavoritesOnly, favorites, sortBy]);
+  }, [channels, effectiveSearchQuery, selectedGroup, localShowFavoritesOnly, favorites, sortBy, category, sportsChannelGroupMap, normalizedGroupMap]);
 
   const { visibleItems: visibleChannels, onScroll, ensureIndexVisible, hasMore } = useProgressiveList(filteredChannels, { initial: 40, step: 60 });
 
@@ -439,6 +607,13 @@ export const MiLiveTVList = ({
 
   // Get logo for groups - use country flag for countries, first channel logo for streaming services and others
   const getGroupLogo = (group: { name: string; displayName: string; firstLogo?: string; originalNames: string[] }): string | null => {
+    // Sports mode: use sports-specific meta
+    if (category === 'sports') {
+      const meta = SPORTS_GROUP_META[group.name];
+      if (meta?.flagUrl) return meta.flagUrl;
+      return group.firstLogo || null;
+    }
+
     const countryInfo = getCountryInfo(group.displayName);
     
     // For streaming services, use explicit flagUrl if set (e.g., MBC logo), otherwise first channel logo
@@ -468,6 +643,10 @@ export const MiLiveTVList = ({
 
   // Check if a group is a streaming service (for logo styling)
   const isStreamingServiceGroup = (group: { displayName: string }): boolean => {
+    if (category === 'sports') {
+      const meta = SPORTS_GROUP_META[group.displayName];
+      return !!meta?.isService;
+    }
     const countryInfo = getCountryInfo(group.displayName);
     return !!countryInfo?.isStreamingService;
   };
