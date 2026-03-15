@@ -197,8 +197,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
   }
 }
 
-// Fetch and process Xtream Codes live streams - IPTV Smarters compatible
-// IPTV Smarters fetches ALL streams, so we do the same unless a limit is explicitly set
+// Fetch and process Xtream Codes live streams — bulk first, per-category fallback
 async function fetchXtreamLive(
   baseUrl: string,
   username: string,
@@ -207,42 +206,87 @@ async function fetchXtreamLive(
   liveExtension: 'm3u8' | 'ts' = 'm3u8'
 ): Promise<XtreamFetchResult> {
   try {
+    // Step 1: Fetch categories for name mapping
     const catUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_live_categories`;
     console.log('Fetching Xtream live categories from:', catUrl);
-    const categoriesRes = await fetchWithTimeout(
-      catUrl,
-      { headers: getStbHeaders(0) },
-      10000
-    );
-    
-    console.log(`Live categories response: status=${categoriesRes.status}, content-type=${categoriesRes.headers.get('content-type')}, content-length=${categoriesRes.headers.get('content-length')}`);
+    const categoriesRes = await fetchWithTimeout(catUrl, { headers: getStbHeaders(0) }, 15000);
     
     if (!categoriesRes.ok) {
-      const errorBody = await categoriesRes.text();
-      console.error('Failed to fetch live categories:', categoriesRes.status, errorBody.substring(0, 500));
+      console.error('Failed to fetch live categories:', categoriesRes.status);
       return { items: [], total: 0 };
     }
     
     const rawText = await categoriesRes.text();
-    console.log(`Live categories raw response (${rawText.length} chars): ${rawText.substring(0, 300)}`);
-    
     let categories: any;
-    try {
-      categories = JSON.parse(rawText);
-    } catch {
-      console.error('Failed to parse live categories JSON');
-      return { items: [], total: 0 };
-    }
+    try { categories = JSON.parse(rawText); } catch { return { items: [], total: 0 }; }
+    
     const limitedCategories = Array.isArray(categories) ? categories.slice(0, MAX_CATEGORIES_PER_TYPE) : [];
-    console.log(`Found ${categories?.length || 0} live categories, using ${limitedCategories.length}`);
+    console.log(`Found ${categories?.length || 0} live categories`);
 
     const categoryMap = new Map<string, string>();
     for (const cat of limitedCategories) {
-      const id = String(cat.category_id);
-      categoryMap.set(id, cat.category_name);
+      categoryMap.set(String(cat.category_id), cat.category_name);
     }
 
     const effectiveLimit = limit > 0 ? Math.min(limit, XTREAM_MAX_ITEMS_PER_RESPONSE) : XTREAM_MAX_ITEMS_PER_RESPONSE;
+
+    // Step 2: Try BULK fetch (single request for ALL live streams)
+    try {
+      const bulkUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_live_streams`;
+      console.log('Trying bulk live streams fetch...');
+      const bulkRes = await fetchWithTimeout(bulkUrl, { headers: getStbHeaders(0) }, 30000);
+      
+      if (bulkRes.ok) {
+        const bulkText = await bulkRes.text();
+        if (bulkText.length <= XTREAM_MAX_JSON_BYTES) {
+          const streams = JSON.parse(bulkText);
+          if (Array.isArray(streams) && streams.length > 0) {
+            console.log(`Bulk live fetch returned ${streams.length} streams`);
+            const items: any[] = [];
+            const seenStreamIds = new Set<string>();
+            
+            for (const stream of streams) {
+              if (items.length >= effectiveLimit) break;
+              const streamId = String(stream.stream_id);
+              if (seenStreamIds.has(streamId)) continue;
+              seenStreamIds.add(streamId);
+              
+              const catId = String(stream.category_id || '');
+              const categoryName = categoryMap.get(catId) || 'Uncategorized';
+              const categoryLower = categoryName.toLowerCase();
+              const isSports = categoryLower.includes('sport') || 
+                (categoryLower.includes('bein') && categoryLower.includes('sport')) || 
+                categoryLower.includes('espn') ||
+                categoryLower.includes('fox sport') ||
+                categoryLower.includes('sky sport');
+              
+              items.push({
+                name: stream.name || 'Unknown Channel',
+                url: `${baseUrl}/live/${username}/${password}/${stream.stream_id}.${liveExtension}`,
+                logo: fixLogoUrl(stream.stream_icon || ''),
+                group: categoryName,
+                type: isSports ? 'sports' : 'live',
+                stream_id: streamId,
+                epg_channel_id: stream.epg_channel_id || '',
+                num: stream.num,
+                tv_archive: stream.tv_archive || 0,
+                category_id: catId,
+              });
+            }
+            
+            console.log(`Collected ${items.length} live items via bulk (limit ${effectiveLimit})`);
+            return { items, total: streams.length };
+          }
+        } else {
+          console.log(`Bulk live response too large (${bulkText.length} bytes), falling back to per-category`);
+        }
+      }
+    } catch (bulkErr) {
+      console.warn('Bulk live fetch failed, falling back to per-category:', bulkErr);
+    }
+
+    // Step 3: Fallback to per-category fetching
+    console.log('Falling back to per-category live fetch...');
     return await fetchXtreamLiveByCategory(baseUrl, username, password, categoryMap, effectiveLimit, liveExtension);
   } catch (err) {
     console.error('Error fetching Xtream live streams:', err);
@@ -250,116 +294,7 @@ async function fetchXtreamLive(
   }
 }
 
-// Priority sort: Arabic/year-based categories first to ensure they're fetched before hitting limits
-function prioritizeCategories(entries: [string, string][]): [string, string][] {
-  return entries.sort(([, nameA], [, nameB]) => {
-    const a = nameA.toLowerCase();
-    const b = nameB.toLowerCase();
-    const scoreA = getCategoryPriority(a);
-    const scoreB = getCategoryPriority(b);
-    return scoreA - scoreB;
-  });
-}
-
-function getCategoryPriority(name: string): number {
-  // Highest priority: Arabic 2026 content
-  if ((name.includes('ar ') || name.includes('arabic') || name.includes('عرب')) && name.includes('2026')) return 0;
-  // Ramadan
-  if (name.includes('ramadan') || name.includes('رمضان')) return 1;
-  // Arabic 2025
-  if ((name.includes('ar ') || name.includes('arabic') || name.includes('عرب')) && name.includes('2025')) return 2;
-  // Any other Arabic
-  if (name.includes('ar ') || name.includes('arabic') || name.includes('عرب')) return 3;
-  // English/Foreign year-based categories (ensure they load before generic content)
-  if ((name.includes('english') || name.includes('foreign') || name.includes('en ') || name.includes('اجنبي') || name.includes('أجنبي')) && /20\d{2}/.test(name)) return 3.5;
-  // Year-based categories
-  if (/20\d{2}/.test(name)) return 4;
-  // Everything else
-  return 5;
-}
-
-// Fallback: fetch live streams category by category if bulk fetch fails
-async function fetchXtreamLiveByCategory(
-  baseUrl: string,
-  username: string,
-  password: string,
-  categoryMap: Map<string, string>,
-  limit: number,
-  liveExtension: 'm3u8' | 'ts' = 'm3u8'
-): Promise<XtreamFetchResult> {
-  const items: any[] = [];
-  const seenStreamIds = new Set<string>();
-  let total = 0;
-  // Keep original provider order - no priority sorting
-  const categoryEntries = Array.from(categoryMap.entries());
-  const categoryIds = categoryEntries.map(([id]) => id);
-
-  // Fetch in sequential batches of 10 for faster parallel fetching
-  const batchSize = 10;
-  for (let i = 0; i < categoryIds.length && items.length < limit; i += batchSize) {
-    const batch = categoryIds.slice(i, i + batchSize);
-    
-    const batchResults = await Promise.allSettled(
-      batch.map(async (categoryId) => {
-        const categoryName = categoryMap.get(categoryId) || 'Uncategorized';
-        const url = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_live_streams&category_id=${encodeURIComponent(categoryId)}`;
-
-        try {
-          const res = await fetchWithTimeout(url, { headers: getStbHeaders(1) }, CATEGORY_FETCH_TIMEOUT);
-          if (!res.ok) return { categoryId, categoryName, streams: [] };
-
-          const streams = await res.json().catch(() => null);
-          return { categoryId, categoryName, streams: Array.isArray(streams) ? streams : [] };
-        } catch {
-          return { categoryId, categoryName, streams: [] };
-        }
-      })
-    );
-
-    for (const result of batchResults) {
-      if (result.status !== 'fulfilled') continue;
-      const { categoryId, categoryName, streams } = result.value;
-      
-      total += streams.length;
-
-      for (const stream of streams) {
-        if (items.length >= limit) break;
-
-        const streamId = String(stream.stream_id);
-        if (seenStreamIds.has(streamId)) continue;
-        seenStreamIds.add(streamId);
-
-        const streamUrl = `${baseUrl}/live/${username}/${password}/${stream.stream_id}.${liveExtension}`;
-        const categoryLower = categoryName.toLowerCase();
-        // Only classify as sports based on CATEGORY name, not channel name
-        // This prevents regular channels like "beIN Drama" from being misclassified
-        const isSports = categoryLower.includes('sport') || 
-          (categoryLower.includes('bein') && categoryLower.includes('sport')) || 
-          categoryLower.includes('espn') ||
-          categoryLower.includes('fox sport') ||
-          categoryLower.includes('sky sport');
-
-        items.push({
-          name: stream.name || 'Unknown Channel',
-          url: streamUrl,
-          logo: fixLogoUrl(stream.stream_icon || ''),
-          group: categoryName,
-          type: isSports ? 'sports' : 'live',
-          stream_id: streamId,
-          epg_channel_id: stream.epg_channel_id || '',
-          num: stream.num,
-          tv_archive: stream.tv_archive || 0,
-          category_id: categoryId,
-        });
-      }
-    }
-  }
-
-  console.log(`Collected ${items.length} live items (limit ${limit})`);
-  return { items, total };
-}
-
-// Fetch Xtream Codes VOD (movies) - IPTV Smarters compatible
+// Fetch Xtream Codes VOD (movies) — bulk first, per-category fallback
 async function fetchXtreamMovies(
   baseUrl: string,
   username: string,
@@ -371,7 +306,7 @@ async function fetchXtreamMovies(
     const categoriesRes = await fetchWithTimeout(
       `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_vod_categories`,
       { headers: getStbHeaders(2) },
-      6000
+      15000
     );
 
     if (!categoriesRes.ok) {
@@ -381,7 +316,7 @@ async function fetchXtreamMovies(
 
     const categories = await categoriesRes.json();
     const limitedCategories = Array.isArray(categories) ? categories.slice(0, MAX_CATEGORIES_PER_TYPE) : [];
-    console.log(`Found ${categories?.length || 0} VOD categories, using ${limitedCategories.length}`);
+    console.log(`Found ${categories?.length || 0} VOD categories`);
 
     const categoryMap = new Map<string, string>();
     for (const cat of limitedCategories) {
@@ -389,8 +324,63 @@ async function fetchXtreamMovies(
     }
 
     const effectiveLimit = limit > 0 ? Math.min(limit, XTREAM_MAX_ITEMS_PER_RESPONSE) : XTREAM_MAX_ITEMS_PER_RESPONSE;
-    const result = await fetchXtreamVodByCategory(baseUrl, username, password, categoryMap, effectiveLimit);
-    return result;
+
+    // Try BULK fetch first
+    try {
+      const bulkUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_vod_streams`;
+      console.log('Trying bulk VOD fetch...');
+      const bulkRes = await fetchWithTimeout(bulkUrl, { headers: getStbHeaders(2) }, 30000);
+      
+      if (bulkRes.ok) {
+        const bulkText = await bulkRes.text();
+        if (bulkText.length <= XTREAM_MAX_JSON_BYTES) {
+          const streams = JSON.parse(bulkText);
+          if (Array.isArray(streams) && streams.length > 0) {
+            console.log(`Bulk VOD fetch returned ${streams.length} streams`);
+            const items: any[] = [];
+            const seenStreamIds = new Set<string>();
+            
+            for (const stream of streams) {
+              if (items.length >= effectiveLimit) break;
+              const streamId = String(stream.stream_id);
+              if (seenStreamIds.has(streamId)) continue;
+              seenStreamIds.add(streamId);
+              
+              const catId = String(stream.category_id || '');
+              const categoryName = categoryMap.get(catId) || 'Uncategorized';
+              const ext = stream.container_extension || 'mp4';
+              
+              items.push({
+                name: stream.name || 'Unknown Movie',
+                url: `${baseUrl}/movie/${username}/${password}/${stream.stream_id}.${ext}`,
+                logo: fixLogoUrl(stream.stream_icon || ''),
+                group: categoryName,
+                type: 'movies' as const,
+                stream_id: streamId,
+                category_id: catId,
+                rating: stream.rating || '',
+                year: stream.year || '',
+                plot: stream.plot || '',
+                genre: stream.genre || '',
+                duration: stream.duration || '',
+                container_extension: ext,
+              });
+            }
+            
+            console.log(`Collected ${items.length} movie items via bulk (limit ${effectiveLimit})`);
+            return { items, total: streams.length };
+          }
+        } else {
+          console.log(`Bulk VOD response too large (${bulkText.length} bytes), falling back to per-category`);
+        }
+      }
+    } catch (bulkErr) {
+      console.warn('Bulk VOD fetch failed, falling back to per-category:', bulkErr);
+    }
+
+    // Fallback to per-category
+    console.log('Falling back to per-category VOD fetch...');
+    return await fetchXtreamVodByCategory(baseUrl, username, password, categoryMap, effectiveLimit);
   } catch (err) {
     console.error('Error fetching Xtream VOD:', err);
     return { items: [], total: 0 };
@@ -407,10 +397,8 @@ async function fetchXtreamVodByCategory(
   const items: any[] = [];
   const seenStreamIds = new Set<string>();
   let total = 0;
-  // Keep original provider order - no priority sorting
   const categoryEntries = Array.from(categoryMap.entries());
 
-  // Fetch in sequential batches of 10 for faster parallel fetching
   const batchSize = 10;
   for (let i = 0; i < categoryEntries.length && items.length < limit; i += batchSize) {
     const batch = categoryEntries.slice(i, i + batchSize);
@@ -481,7 +469,7 @@ async function fetchXtreamSeries(
     const categoriesRes = await fetchWithTimeout(
       `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_series_categories`,
       { headers: getStbHeaders(4) },
-      6000
+      15000
     );
 
     if (!categoriesRes.ok) {
@@ -491,7 +479,7 @@ async function fetchXtreamSeries(
 
     const categories = await categoriesRes.json();
     const limitedCategories = Array.isArray(categories) ? categories.slice(0, MAX_CATEGORIES_PER_TYPE) : [];
-    console.log(`Found ${categories?.length || 0} series categories, using ${limitedCategories.length}`);
+    console.log(`Found ${categories?.length || 0} series categories`);
 
     const categoryMap = new Map<string, string>();
     for (const cat of limitedCategories) {
@@ -499,8 +487,69 @@ async function fetchXtreamSeries(
     }
 
     const effectiveLimit = limit > 0 ? Math.min(limit, XTREAM_MAX_ITEMS_PER_RESPONSE) : XTREAM_MAX_ITEMS_PER_RESPONSE;
-    const result = await fetchXtreamSeriesByCategory(baseUrl, username, password, categoryMap, effectiveLimit);
-    return result;
+
+    // Try BULK fetch first
+    try {
+      const bulkUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_series`;
+      console.log('Trying bulk series fetch...');
+      const bulkRes = await fetchWithTimeout(bulkUrl, { headers: getStbHeaders(4) }, 30000);
+      
+      if (bulkRes.ok) {
+        const bulkText = await bulkRes.text();
+        if (bulkText.length <= XTREAM_MAX_JSON_BYTES) {
+          const streams = JSON.parse(bulkText);
+          if (Array.isArray(streams) && streams.length > 0) {
+            console.log(`Bulk series fetch returned ${streams.length} streams`);
+            const items: any[] = [];
+            const seenSeriesIds = new Set<string>();
+            
+            for (const stream of streams) {
+              if (items.length >= effectiveLimit) break;
+              const seriesId = String(stream.series_id);
+              if (seenSeriesIds.has(seriesId)) continue;
+              seenSeriesIds.add(seriesId);
+              
+              const catId = String(stream.category_id || '');
+              const categoryName = categoryMap.get(catId) || 'Uncategorized';
+              
+              items.push({
+                name: stream.name || 'Unknown Series',
+                url: '',
+                logo: fixLogoUrl(stream.cover || ''),
+                group: categoryName,
+                type: 'series' as const,
+                series_id: seriesId,
+                category_id: catId,
+                rating: stream.rating || '',
+                rating_5based: stream.rating_5based || 0,
+                year: stream.releaseDate || stream.year || '',
+                plot: stream.plot || '',
+                cast: stream.cast || '',
+                director: stream.director || '',
+                genre: stream.genre || '',
+                backdrop_path: stream.backdrop_path || [],
+                tmdb_id: stream.tmdb_id || '',
+                last_modified: stream.last_modified || '',
+                _baseUrl: baseUrl,
+                _username: username,
+                _password: password,
+              });
+            }
+            
+            console.log(`Collected ${items.length} series items via bulk (limit ${effectiveLimit})`);
+            return { items, total: streams.length };
+          }
+        } else {
+          console.log(`Bulk series response too large (${bulkText.length} bytes), falling back to per-category`);
+        }
+      }
+    } catch (bulkErr) {
+      console.warn('Bulk series fetch failed, falling back to per-category:', bulkErr);
+    }
+
+    // Fallback to per-category
+    console.log('Falling back to per-category series fetch...');
+    return await fetchXtreamSeriesByCategory(baseUrl, username, password, categoryMap, effectiveLimit);
   } catch (err) {
     console.error('Error fetching Xtream series:', err);
     return { items: [], total: 0 };
