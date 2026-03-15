@@ -115,7 +115,8 @@ const Index = () => {
           setActiveAccount(accounts[0]);
           setActiveAccountId(accounts[0].id);
         }
-      }).catch(() => {});
+        setAccountsLoaded(true);
+      }).catch(() => { setAccountsLoaded(true); });
     }
   }, [authenticated]);
 
