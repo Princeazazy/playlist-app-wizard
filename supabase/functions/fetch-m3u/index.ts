@@ -172,7 +172,7 @@ function getPreferredLiveExtensionFromUrl(url: string): 'm3u8' | 'ts' {
 type XtreamFetchResult = { items: any[]; total: number; tooLarge?: boolean };
 
 const XTREAM_MAX_JSON_BYTES = 40 * 1024 * 1024; // 40MB safety cap per API response
-const XTREAM_MAX_ITEMS_PER_RESPONSE = 50000; // Raised to capture full Arabia TV catalog
+const XTREAM_MAX_ITEMS_PER_RESPONSE = 100000; // Allow full large catalogs without truncation
 const CATEGORY_FETCH_TIMEOUT = 12000; // 12s timeout per category fetch
 const MAX_CATEGORIES_PER_TYPE = 500; // Reasonable category cap
 
