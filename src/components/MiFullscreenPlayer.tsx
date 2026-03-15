@@ -190,7 +190,14 @@ export const MiFullscreenPlayer = ({
       return;
     }
 
-    if (playbackState === 'buffering' || playbackState === 'connecting' || playbackState === 'reconnecting' || playbackState === 'failed') {
+    if (playbackState === 'connecting' || playbackState === 'buffering' || playbackState === 'reconnecting') {
+      // Clear stale fatal message while recovery is in progress so Retry feels responsive.
+      setError(null);
+      setIsPlaying(false);
+      return;
+    }
+
+    if (playbackState === 'failed') {
       setIsPlaying(false);
     }
   }, [playbackError, playbackState]);

@@ -51,6 +51,8 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
     channel,
     forceMuted: !isNativeOrWebView(),
     maxReconnectCycles: 5,
+    startupTimeoutMs: 9000,
+    stalledThresholdMs: 12000,
     logPrefix: 'MiniPlayer',
   });
 
