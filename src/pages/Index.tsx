@@ -282,14 +282,23 @@ const Index = () => {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
-  // 4. Provider setup — show if no active account or user requested it
-  if (!activeAccount || showProviderSetup) {
+  // 4. Provider setup — only show if user explicitly requested it, or no account after loading
+  if (showProviderSetup || (!activeAccount && accountsLoaded)) {
     return (
       <ProviderSetup
         onProviderReady={handleProviderReady}
         existingAccounts={cachedAccounts}
         onSignOut={handleSignOut}
       />
+    );
+  }
+
+  // 4b. Still loading accounts — show spinner
+  if (!activeAccount && !accountsLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
     );
   }
 
