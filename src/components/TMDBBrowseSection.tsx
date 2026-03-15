@@ -12,6 +12,18 @@ interface TMDBBrowseSectionProps {
 }
 
 const ITEMS_PER_PAGE = 6;
+const MIN_ITEMS_TO_SHOW_ROW = 3;
+
+const containsArabicText = (text: string) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+
+const getFilledPageItems = <T,>(items: T[], currentPage: number, pageSize: number): T[] => {
+  if (items.length === 0) return [];
+
+  const maxItems = items.length < pageSize ? items.length : pageSize;
+  const start = currentPage * pageSize;
+
+  return Array.from({ length: maxItems }, (_, index) => items[(start + index) % items.length]);
+};
 
 // Lightweight card - NO framer-motion, pure CSS transitions
 const MediaCard = ({ item, onClick }: { item: TMDBItem; onClick?: () => void }) => (
@@ -161,28 +173,61 @@ const CategoryRow = ({
   onSelectItem?: (item: TMDBItem) => void;
   loading?: boolean;
 }) => {
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+
+  const visibleItems = getFilledPageItems(items, currentPage, ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    if (items.length <= ITEMS_PER_PAGE || isPaused) return;
+
+    const interval = setInterval(() => {
+      setCurrentPage((prev) => (prev + 1) % totalPages);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [items.length, totalPages, isPaused]);
+
   return (
-    <div className="space-y-3">
+    <div 
+      className="space-y-3"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <Icon className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         </div>
+
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
       
       {loading ? (
         <div className="flex items-center justify-center h-[200px]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      ) : items.length > 0 ? (
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {items.map((item) => (
-            <div key={`${item.id}-${item.mediaType}`} className="flex-shrink-0 w-[calc((100%-60px)/6)] min-w-[140px]">
-              <MediaCard
-                item={item}
-                onClick={() => onSelectItem?.(item)}
-              />
-            </div>
+      ) : items.length >= MIN_ITEMS_TO_SHOW_ROW ? (
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 transition-opacity duration-300">
+          {visibleItems.map((item, index) => (
+            <MediaCard
+              key={`${item.id}-${item.mediaType}-${currentPage}-${index}`}
+              item={item}
+              onClick={() => onSelectItem?.(item)}
+            />
           ))}
         </div>
       ) : (
@@ -205,28 +250,60 @@ const PlaylistRow = ({
   channels: Channel[]; 
   onChannelSelect?: (channel: Channel) => void;
 }) => {
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const totalPages = Math.ceil(channels.length / ITEMS_PER_PAGE);
   const { getPosterForChannel } = useTMDBPosters(channels);
 
-  if (channels.length === 0) return null;
+  const visibleItems = getFilledPageItems(channels, currentPage, ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    if (channels.length <= ITEMS_PER_PAGE || isPaused) return;
+
+    const interval = setInterval(() => {
+      setCurrentPage((prev) => (prev + 1) % totalPages);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [channels.length, totalPages, isPaused]);
+
+  if (channels.length < MIN_ITEMS_TO_SHOW_ROW) return null;
 
   return (
-    <div className="space-y-3">
+    <div 
+      className="space-y-3"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <Icon className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
       
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-        {channels.map((channel) => (
-          <div key={channel.id} className="flex-shrink-0 w-[calc((100%-60px)/6)] min-w-[140px]">
-            <PlaylistCard
-              channel={channel}
-              tmdbPoster={getPosterForChannel(channel.name)}
-              onClick={() => onChannelSelect?.(channel)}
-            />
-          </div>
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 transition-opacity duration-300">
+        {visibleItems.map((channel, index) => (
+          <PlaylistCard
+            key={`${channel.id}-${currentPage}-${index}`}
+            channel={channel}
+            tmdbPoster={getPosterForChannel(channel.name)}
+            onClick={() => onChannelSelect?.(channel)}
+          />
         ))}
       </div>
     </div>
@@ -325,31 +402,52 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
     
     const arabicContent = channels.filter(ch => {
       if (ch.type !== 'series') return false;
-      // Skip if already in Ramadan row
-      if (ramadanNames.has(ch.name.trim().toLowerCase())) return false;
+
+      const name = ch.name || '';
+      const nameLower = name.toLowerCase();
       const group = ch.group || '';
       const groupLower = group.toLowerCase();
+
+      // Skip if already in Ramadan row
+      if (ramadanNames.has(name.trim().toLowerCase())) return false;
+
       // Skip Ramadan groups
       if (group.includes('رمضان') || groupLower.includes('ramadan')) return false;
-      // Broad Arabic detection
-      const isArabic = /عرب|مسلسلات|مصر|خليج|سعود|لبنان|سوري|arabic|^ar[\s|:\-]/i.test(group);
-      return isArabic && !isSportsContent(ch);
+
+      // Must be Arabic-tagged group
+      const isArabicGroup = /عرب|مسلسلات|مصر|خليج|سعود|لبنان|سوري|arabic|^ar[\s|:\-]/i.test(group);
+      if (!isArabicGroup) return false;
+
+      // Remove obvious non-Arabic/subbed entries
+      if (/\bsubs?\b|subbed|subtitle|vostfr|english|eng\b|foreign/i.test(nameLower)) return false;
+
+      // Exclude sports and kids/cartoon content
+      if (isSportsContent(ch)) return false;
+      if (/cartoon|كرتون|رسوم|animat|kids|children|disney|pixar|cuphead/i.test(`${nameLower} ${groupLower}`)) return false;
+
+      // STRICT: Title itself must contain Arabic script to avoid English titles in Arabic groups
+      const cleanedName = name.replace(/^\s*[A-Z]{2,4}\s*[:\-|]\s*/i, '').replace(/^\s*subs?\s*[:\-|]?\s*/i, '').trim();
+      if (!containsArabicText(cleanedName)) return false;
+
+      return true;
     });
-    return arabicContent.sort((a, b) => {
-      const groupA = a.group || '';
-      const groupB = b.group || '';
-      const scoreMap = (g: string) => {
-        if (g.includes('2026')) return 3;
-        if (g.includes('تعرض حاليا') || g.toLowerCase().includes('now showing')) return 2;
-        if (g.includes('2025')) return 1;
-        return 0;
-      };
-      return scoreMap(groupB) - scoreMap(groupA);
-    }).slice(0, 30);
-  }, [channels]);
+
+    return arabicContent
+      .sort((a, b) => {
+        const groupA = a.group || '';
+        const groupB = b.group || '';
+        const scoreMap = (g: string) => {
+          if (g.includes('2026')) return 3;
+          if (g.includes('تعرض حاليا') || g.toLowerCase().includes('now showing')) return 2;
+          if (g.includes('2025')) return 1;
+          return 0;
+        };
+        return scoreMap(groupB) - scoreMap(groupA);
+      })
+      .slice(0, 30);
+  }, [channels, ramadanShows]);
 
   const arabicMovies = useMemo(() => {
-    const containsArabicText = (text: string) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
     
     const movieChannels = channels.filter(ch => ch.type === 'movies');
     const arabicContent = movieChannels.filter(ch => {
