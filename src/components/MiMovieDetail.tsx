@@ -25,6 +25,7 @@ export const MiMovieDetail = ({
   const [tmdbData, setTmdbData] = useState<TMDBDetailedItem | null>(null);
   const [isLoadingTMDB, setIsLoadingTMDB] = useState(true);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [providerPlot, setProviderPlot] = useState('');
   const weather = useWeather();
   const { search, getDetails } = useTMDB();
 
