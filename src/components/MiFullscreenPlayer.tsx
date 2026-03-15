@@ -170,6 +170,8 @@ export const MiFullscreenPlayer = ({
     isVOD,
     forceMuted: !isNativeOrWebView(),
     maxReconnectCycles: 6,
+    startupTimeoutMs: 9000,
+    stalledThresholdMs: 12000,
     logPrefix: 'FullscreenPlayer',
     onManifestParsed: applyHlsSubtitleTracks,
     onSubtitleTracksUpdated: applyHlsSubtitleTracks,
