@@ -80,7 +80,8 @@ const PlaylistCard = ({ channel, onClick, tmdbPoster }: { channel: Channel; onCl
   const cleanName = (name: string) => name.replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
   const yearMatch = channel.name.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? yearMatch[0] : null;
-  const posterUrl = tmdbPoster || channel.logo;
+  // PRIORITY: Provider's original artwork first, TMDB as fallback only
+  const posterUrl = channel.logo || tmdbPoster;
 
   // Detect language/type badge from group name
   const getBadge = () => {
