@@ -111,7 +111,7 @@ export const ChromaKeyVideo = ({ src, className = '' }: ChromaKeyVideoProps) => 
   }, []);
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative flex items-center justify-center ${className}`}>
       <video
         ref={videoRef}
         src={src}
@@ -121,7 +121,7 @@ export const ChromaKeyVideo = ({ src, className = '' }: ChromaKeyVideoProps) => 
         playsInline
         className="absolute opacity-0 pointer-events-none w-0 h-0"
       />
-      <canvas ref={canvasRef} className="h-full w-auto" />
+      <canvas ref={canvasRef} className="h-full w-auto mx-auto" />
     </div>
   );
 };
