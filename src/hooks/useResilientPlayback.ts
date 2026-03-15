@@ -93,7 +93,7 @@ export const useResilientPlayback = ({
       }
     })();
 
-    const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su');
+    const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su') || hostname.endsWith('business-cloud-neo.ru');
 
     if (channel.isLocal) {
       if (rawUrl.startsWith('http://')) add(proxyUrl);
