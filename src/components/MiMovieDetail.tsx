@@ -65,6 +65,35 @@ export const MiMovieDetail = ({
 
     fetchTMDBData();
   }, [item.name, search, getDetails]);
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchProviderSynopsis = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('fetch-vod-info', {
+          body: {
+            streamUrl: item.url,
+            mediaTitle: item.name,
+            mediaType: 'movie',
+          },
+        });
+
+        if (cancelled || error) return;
+
+        const fallbackPlot = typeof data?.plot === 'string' ? data.plot.trim() : '';
+        if (fallbackPlot) {
+          setProviderPlot(fallbackPlot);
+        }
+      } catch (err) {
+        console.warn('Provider synopsis fallback failed:', err);
+      }
+    };
+
+    fetchProviderSynopsis();
+    return () => {
+      cancelled = true;
+    };
+  }, [item.url, item.name]);
 
   // Use TMDB data if available, otherwise fall back to provider plot, then playlist item data
   const metadata = {
