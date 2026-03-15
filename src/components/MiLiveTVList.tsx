@@ -719,6 +719,32 @@ export const MiLiveTVList = ({
 
         {/* Category List */}
         <div className="flex-1 overflow-y-auto px-2 space-y-1 mi-scrollbar">
+          {/* Match Center tab - Sports only */}
+          {category === 'sports' && (
+            <button
+              onClick={() => handleGroupSelect('__match_center__')}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                selectedGroup === '__match_center__'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
+              }`}
+            >
+              <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                <Trophy className="w-5 h-5 text-primary" />
+              </div>
+              {(!sidebarCollapsed || isMobile) && (
+                <div className="flex-1 text-left min-w-0">
+                  <p className={`text-sm truncate ${selectedGroup === '__match_center__' ? 'font-semibold' : ''}`}>
+                    Match Center
+                  </p>
+                  {selectedGroup === '__match_center__' && (
+                    <p className="text-xs text-muted-foreground">Scores & Schedule</p>
+                  )}
+                </div>
+              )}
+            </button>
+          )}
+
           {groups.map((group) => (
             <button
               key={group.name}
