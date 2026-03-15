@@ -3,6 +3,7 @@ import { ChevronLeft, Play, Star, Clock, Globe, Calendar, User, Search, Film, X 
 import { Channel } from '@/hooks/useIPTV';
 import { useWeather } from '@/hooks/useWeather';
 import { useTMDB, TMDBDetailedItem } from '@/hooks/useTMDB';
+import { supabase } from '@/integrations/supabase/client';
 import { WeatherIcon } from './shared/WeatherIcon';
 
 interface MiMovieDetailProps {
