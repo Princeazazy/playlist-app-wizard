@@ -205,11 +205,18 @@ async function searchTMDBTitleArtwork(
       const best = results
         .map((r: any) => {
           const title = String(r.title || r.name || "");
+          const originalTitle = String(r.original_title || r.original_name || "");
           const date = String(r.release_date || r.first_air_date || "");
           const candidateYear = date.slice(0, 4) || undefined;
-          const score = scoreTitleMatch(term, title, year, candidateYear);
+          // Score against both primary and original titles, take the best
+          const primaryScore = scoreTitleMatch(term, title, year, candidateYear);
+          const originalScore = originalTitle !== title 
+            ? scoreTitleMatch(term, originalTitle, year, candidateYear) 
+            : 0;
+          const score = Math.max(primaryScore, originalScore);
           return { ...r, score };
         })
+        .filter((r: any) => r.score >= 30) // Minimum threshold to avoid wild mismatches
         .sort((a: any, b: any) => b.score - a.score)[0];
 
       if (best?.poster_path) return `${TMDB_IMAGE_BASE}/w500${best.poster_path}`;
