@@ -469,7 +469,7 @@ async function fetchXtreamSeries(
     const categoriesRes = await fetchWithTimeout(
       `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_series_categories`,
       { headers: getStbHeaders(4) },
-      6000
+      15000
     );
 
     if (!categoriesRes.ok) {
@@ -479,7 +479,7 @@ async function fetchXtreamSeries(
 
     const categories = await categoriesRes.json();
     const limitedCategories = Array.isArray(categories) ? categories.slice(0, MAX_CATEGORIES_PER_TYPE) : [];
-    console.log(`Found ${categories?.length || 0} series categories, using ${limitedCategories.length}`);
+    console.log(`Found ${categories?.length || 0} series categories`);
 
     const categoryMap = new Map<string, string>();
     for (const cat of limitedCategories) {
@@ -487,8 +487,69 @@ async function fetchXtreamSeries(
     }
 
     const effectiveLimit = limit > 0 ? Math.min(limit, XTREAM_MAX_ITEMS_PER_RESPONSE) : XTREAM_MAX_ITEMS_PER_RESPONSE;
-    const result = await fetchXtreamSeriesByCategory(baseUrl, username, password, categoryMap, effectiveLimit);
-    return result;
+
+    // Try BULK fetch first
+    try {
+      const bulkUrl = `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_series`;
+      console.log('Trying bulk series fetch...');
+      const bulkRes = await fetchWithTimeout(bulkUrl, { headers: getStbHeaders(4) }, 30000);
+      
+      if (bulkRes.ok) {
+        const bulkText = await bulkRes.text();
+        if (bulkText.length <= XTREAM_MAX_JSON_BYTES) {
+          const streams = JSON.parse(bulkText);
+          if (Array.isArray(streams) && streams.length > 0) {
+            console.log(`Bulk series fetch returned ${streams.length} streams`);
+            const items: any[] = [];
+            const seenSeriesIds = new Set<string>();
+            
+            for (const stream of streams) {
+              if (items.length >= effectiveLimit) break;
+              const seriesId = String(stream.series_id);
+              if (seenSeriesIds.has(seriesId)) continue;
+              seenSeriesIds.add(seriesId);
+              
+              const catId = String(stream.category_id || '');
+              const categoryName = categoryMap.get(catId) || 'Uncategorized';
+              
+              items.push({
+                name: stream.name || 'Unknown Series',
+                url: '',
+                logo: fixLogoUrl(stream.cover || ''),
+                group: categoryName,
+                type: 'series' as const,
+                series_id: seriesId,
+                category_id: catId,
+                rating: stream.rating || '',
+                rating_5based: stream.rating_5based || 0,
+                year: stream.releaseDate || stream.year || '',
+                plot: stream.plot || '',
+                cast: stream.cast || '',
+                director: stream.director || '',
+                genre: stream.genre || '',
+                backdrop_path: stream.backdrop_path || [],
+                tmdb_id: stream.tmdb_id || '',
+                last_modified: stream.last_modified || '',
+                _baseUrl: baseUrl,
+                _username: username,
+                _password: password,
+              });
+            }
+            
+            console.log(`Collected ${items.length} series items via bulk (limit ${effectiveLimit})`);
+            return { items, total: streams.length };
+          }
+        } else {
+          console.log(`Bulk series response too large (${bulkText.length} bytes), falling back to per-category`);
+        }
+      }
+    } catch (bulkErr) {
+      console.warn('Bulk series fetch failed, falling back to per-category:', bulkErr);
+    }
+
+    // Fallback to per-category
+    console.log('Falling back to per-category series fetch...');
+    return await fetchXtreamSeriesByCategory(baseUrl, username, password, categoryMap, effectiveLimit);
   } catch (err) {
     console.error('Error fetching Xtream series:', err);
     return { items: [], total: 0 };
