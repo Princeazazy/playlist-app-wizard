@@ -427,23 +427,57 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
   }, [channels]);
 
   const arabicMovies = useMemo(() => {
+    const containsArabicText = (text: string) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+    
     const movieChannels = channels.filter(ch => ch.type === 'movies');
     const arabicContent = movieChannels.filter(ch => {
       const group = ch.group || '';
-      const nameLower = ch.name.toLowerCase();
-      // Broad Arabic detection
+      const name = ch.name;
+      const nameLower = name.toLowerCase();
+      
+      // Group must be Arabic-tagged
       const isArabicGroup = /عرب|أفلام|مصر|خليج|arabic|^ar[\s|:\-]/i.test(group);
-      const isExcluded = nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere') || ch.name.includes('جرس إنذار');
-      return isArabicGroup && !isSportsContent(ch) && !isExcluded;
+      if (!isArabicGroup) return false;
+      
+      // Exclude known bad content
+      const isExcluded = nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere') || name.includes('جرس إنذار');
+      if (isExcluded) return false;
+      
+      // Exclude sports/wrestling
+      if (isSportsContent(ch)) return false;
+      
+      // Exclude cartoons/animated content
+      if (/cartoon|كرتون|رسوم|animat|cuphead|مغامرات كوكو|disney|pixar|dreamworks/i.test(nameLower + ' ' + group.toLowerCase())) return false;
+      
+      // STRICT: The movie name itself must contain Arabic text OR be from a specific Arab country group
+      // This prevents English movies tagged in Arabic groups from appearing
+      const hasArabicInName = containsArabicText(name);
+      const isCountrySpecificGroup = /مصر|egypt|خليج|gulf|مغرب|morocco|جزائر|algeria|سعود|saudi|لبنان|leban|سوري|syria|عراق|iraq|تونس|tunis/i.test(group);
+      
+      if (!hasArabicInName && !isCountrySpecificGroup) {
+        // Pure English/Latin name in a generic "Arabic" group — likely not Arabic content
+        // Allow only if the cleaned name is very short (likely transliterated)
+        const cleanedName = name.replace(/^\s*[A-Z]{2,3}\s*[:\-|]\s*/i, '').trim();
+        if (cleanedName.length > 3 && !/[:\-|]/.test(cleanedName)) return false;
+      }
+      
+      // Exclude content older than 2010
+      const yearMatch = (ch.year || group).match(/\b(19|20)\d{2}\b/);
+      if (yearMatch) {
+        const y = parseInt(yearMatch[0]);
+        if (y < 2010) return false;
+      }
+      
+      return true;
     });
-    // Sort by actual year (from metadata), then by group year, newest first
+    
+    // Sort newest first
     return arabicContent.sort((a, b) => {
       const getYear = (ch: Channel) => {
         if (ch.year) {
           const y = parseInt(ch.year);
           if (!isNaN(y)) return y;
         }
-        // Fallback: extract from group name
         const match = ch.group?.match(/20\d{2}/);
         return match ? parseInt(match[0]) : 2000;
       };

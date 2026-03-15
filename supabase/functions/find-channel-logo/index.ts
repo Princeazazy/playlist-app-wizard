@@ -146,17 +146,25 @@ function scoreTitleMatch(query: string, candidateTitle: string, requestedYear?: 
 
   let score = 0;
   if (q === c) score += 100;
-  if (c.includes(q) || q.includes(c)) score += 60;
+  else if (c.includes(q) || q.includes(c)) score += 60;
 
   const qWords = q.split(/\s+/).filter(Boolean);
   const cWords = c.split(/\s+/).filter(Boolean);
   const overlap = qWords.filter((w) => cWords.includes(w)).length;
   if (qWords.length > 0) score += (overlap / qWords.length) * 40;
 
+  // Year matching is critical — wrong year = likely wrong content
   if (requestedYear && candidateYear) {
-    if (requestedYear === candidateYear) score += 25;
-    else score -= 10;
+    if (requestedYear === candidateYear) score += 30;
+    else {
+      const diff = Math.abs(parseInt(requestedYear) - parseInt(candidateYear));
+      if (diff <= 1) score -= 5; // Adjacent year, minor penalty
+      else score -= 30; // Wrong era, heavy penalty
+    }
   }
+
+  // Also check original_title match for Arabic content
+  // (handled by caller passing both primary and original title)
 
   return score;
 }
