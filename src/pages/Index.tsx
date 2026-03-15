@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { NormalizedChannel, ProviderAccount } from '@/lib/providers/types';
 import {

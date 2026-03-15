@@ -21,6 +21,7 @@ import { authenticateXtream, validateM3UUrl } from '@/lib/providers/providerServ
 interface ProviderSetupProps {
   onProviderReady: (account: ProviderAccount) => void;
   existingAccounts?: ProviderAccount[];
+  onSignOut?: () => void;
 }
 
 type SetupStep = 'select-method' | 'xtream-form' | 'm3u-form' | 'access-code-form' | 'account-list';
