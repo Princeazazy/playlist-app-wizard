@@ -35,9 +35,17 @@ function toHttps(url: string): string {
 
 function cleanSearchName(name: string): string {
   return name
-    .replace(/^\s*[A-Z]{2,3}\s*[:\-|]\s*\|?\s*/i, "")
+    // Strip country/provider prefixes like "KH:", "EG:", "AR |", "MA:", etc.
+    .replace(/^\s*[A-Z]{2,4}\s*[:\-|]\s*\|?\s*/i, "")
     .replace(/^\s*[A-Z]{2}\s+(MOV|SER|SERIES|MOVIES?)\s*[:\-|]?\s*/i, "")
+    // Strip quality/codec tags
     .replace(/\b(HD|SD|FHD|UHD|4K|1080P|720P|480P|HEVC|X264|X265|WEB[- ]?DL|WEBRIP|BLURAY|BRRIP|CAM|TS)\b/gi, "")
+    // Strip "multi sub", "dubbed", "subbed" etc.
+    .replace(/\b(multi\s*sub|dubbed|subbed|vostfr|vf|vo)\b/gi, "")
+    // Strip trailing episode/season markers like "S01", "E12", "الحلقة 5"
+    .replace(/\b[sS]\d{1,2}[eE]\d{1,2}\b/g, "")
+    .replace(/\bS\d{1,2}\b$/i, "")
+    .replace(/الحلقة\s*\d+/g, "")
     .replace(/[_|]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -138,17 +146,25 @@ function scoreTitleMatch(query: string, candidateTitle: string, requestedYear?: 
 
   let score = 0;
   if (q === c) score += 100;
-  if (c.includes(q) || q.includes(c)) score += 60;
+  else if (c.includes(q) || q.includes(c)) score += 60;
 
   const qWords = q.split(/\s+/).filter(Boolean);
   const cWords = c.split(/\s+/).filter(Boolean);
   const overlap = qWords.filter((w) => cWords.includes(w)).length;
   if (qWords.length > 0) score += (overlap / qWords.length) * 40;
 
+  // Year matching is critical — wrong year = likely wrong content
   if (requestedYear && candidateYear) {
-    if (requestedYear === candidateYear) score += 25;
-    else score -= 10;
+    if (requestedYear === candidateYear) score += 30;
+    else {
+      const diff = Math.abs(parseInt(requestedYear) - parseInt(candidateYear));
+      if (diff <= 1) score -= 5; // Adjacent year, minor penalty
+      else score -= 30; // Wrong era, heavy penalty
+    }
   }
+
+  // Also check original_title match for Arabic content
+  // (handled by caller passing both primary and original title)
 
   return score;
 }
@@ -189,11 +205,18 @@ async function searchTMDBTitleArtwork(
       const best = results
         .map((r: any) => {
           const title = String(r.title || r.name || "");
+          const originalTitle = String(r.original_title || r.original_name || "");
           const date = String(r.release_date || r.first_air_date || "");
           const candidateYear = date.slice(0, 4) || undefined;
-          const score = scoreTitleMatch(term, title, year, candidateYear);
+          // Score against both primary and original titles, take the best
+          const primaryScore = scoreTitleMatch(term, title, year, candidateYear);
+          const originalScore = originalTitle !== title 
+            ? scoreTitleMatch(term, originalTitle, year, candidateYear) 
+            : 0;
+          const score = Math.max(primaryScore, originalScore);
           return { ...r, score };
         })
+        .filter((r: any) => r.score >= 30) // Minimum threshold to avoid wild mismatches
         .sort((a: any, b: any) => b.score - a.score)[0];
 
       if (best?.poster_path) return `${TMDB_IMAGE_BASE}/w500${best.poster_path}`;

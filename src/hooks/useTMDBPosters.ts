@@ -171,7 +171,9 @@ export const useTMDBPosters = (channels: PosterLookupItem[], mediaTypeHint?: Med
 
   const getPosterForChannel = useCallback(
     (channelName: string, existingLogo?: string): string | undefined => {
-      return existingLogo || posterMap[channelName];
+      // Provider's original artwork is always preferred over TMDB lookups
+      if (existingLogo) return existingLogo;
+      return posterMap[channelName];
     },
     [posterMap],
   );
