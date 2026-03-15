@@ -137,8 +137,12 @@ const Index = () => {
   }, []);
 
   const handleSwitchProvider = useCallback(() => {
+    // Force provider chooser to open even when current provider is in a broken/error state
+    clearActiveAccount();
+    setActiveAccount(null);
     setShowProviderSetup(true);
-  }, []);
+    nav.setCurrentScreen('home');
+  }, [nav]);
 
   const handleSignOut = useCallback(() => {
     clearAppSession();
