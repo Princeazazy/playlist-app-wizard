@@ -132,7 +132,7 @@ export function useProviderContent(account: ProviderAccount | null) {
 
     fetchContent();
     return () => { cancelled = true; };
-  }, [account?.id, account?.config, refreshKey, cacheKey]);
+  }, [account?.id, refreshKey, cacheKey]);
 
   const refresh = useCallback(async () => {
     console.log('[Provider] Refreshing...');
