@@ -47,6 +47,56 @@ export type Database = {
         }
         Relationships: []
       }
+      user_providers: {
+        Row: {
+          account_info: Json | null
+          config: Json
+          created_at: string
+          id: string
+          last_used_at: string
+          name: string
+          provider_logo: string | null
+          provider_name: string | null
+          provider_type: string
+          settings: Json | null
+          user_id: string
+        }
+        Insert: {
+          account_info?: Json | null
+          config?: Json
+          created_at?: string
+          id?: string
+          last_used_at?: string
+          name?: string
+          provider_logo?: string | null
+          provider_name?: string | null
+          provider_type: string
+          settings?: Json | null
+          user_id: string
+        }
+        Update: {
+          account_info?: Json | null
+          config?: Json
+          created_at?: string
+          id?: string
+          last_used_at?: string
+          name?: string
+          provider_logo?: string | null
+          provider_name?: string | null
+          provider_type?: string
+          settings?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_providers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
