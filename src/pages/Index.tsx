@@ -479,7 +479,7 @@ const Index = () => {
 
   return (
     <>
-      {/* Background music removed */}
+      <BackgroundMusic src="/audio/background-music.mp4" autoPlay={true} defaultVolume={0.25} />
       {renderScreen()}
 
       {nav.showMiniPlayer && nav.currentChannel && nav.currentScreen !== 'home' && (
