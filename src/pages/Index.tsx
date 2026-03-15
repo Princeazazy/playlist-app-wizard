@@ -82,6 +82,7 @@ const Index = () => {
   const [activeAccount, setActiveAccount] = useState<ProviderAccount | null>(() => getActiveAccount());
   const [showProviderSetup, setShowProviderSetup] = useState(false);
   const [cachedAccounts, setCachedAccounts] = useState<ProviderAccount[]>(() => getProviderAccounts());
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
 
   // Content from active provider
   const { channels: rawChannels, loading, error, refresh } = useProviderContent(activeAccount);
@@ -96,18 +97,26 @@ const Index = () => {
 
   const nav = useAppNavigation();
 
-  // Fetch accounts from DB once authenticated
+  // Fetch accounts from DB once authenticated & restore active account
   useEffect(() => {
     if (authenticated) {
       fetchProviderAccounts().then(accounts => {
         setCachedAccounts(accounts);
-        // If we had an active account, refresh it from DB data
-        const activeId = activeAccount?.id;
-        if (activeId) {
-          const fresh = accounts.find(a => a.id === activeId);
-          if (fresh) setActiveAccount(fresh);
+        // Restore active account from stored ID (survives app restarts)
+        const storedId = activeAccount?.id || localStorage.getItem('iptv-active-account-id');
+        if (storedId) {
+          const fresh = accounts.find(a => a.id === storedId);
+          if (fresh) {
+            setActiveAccount(fresh);
+            setActiveAccountId(fresh.id);
+          }
+        } else if (!activeAccount && accounts.length === 1) {
+          // Auto-select if only one account exists
+          setActiveAccount(accounts[0]);
+          setActiveAccountId(accounts[0].id);
         }
-      }).catch(() => {});
+        setAccountsLoaded(true);
+      }).catch(() => { setAccountsLoaded(true); });
     }
   }, [authenticated]);
 
@@ -180,7 +189,7 @@ const Index = () => {
 
   // Auto-refresh every 30 min
   useEffect(() => {
-    const interval = setInterval(() => refresh(), 30 * 60 * 1000);
+    const interval = setInterval(() => refresh(), 2 * 60 * 60 * 1000);
     return () => clearInterval(interval);
   }, [refresh]);
 
@@ -201,7 +210,9 @@ const Index = () => {
   }, [nav, filteredChannelsByCategory]);
 
   const handleReload = useCallback(() => {
+    // Refresh content in-place without leaving the current screen
     refresh();
+    // Stay on current screen (don't navigate away)
   }, [refresh]);
 
   const handleHomeChannelSelect = useCallback((channel: Channel) => {
@@ -271,14 +282,23 @@ const Index = () => {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
-  // 4. Provider setup — show if no active account or user requested it
-  if (!activeAccount || showProviderSetup) {
+  // 4. Provider setup — only show if user explicitly requested it, or no account after loading
+  if (showProviderSetup || (!activeAccount && accountsLoaded)) {
     return (
       <ProviderSetup
         onProviderReady={handleProviderReady}
         existingAccounts={cachedAccounts}
         onSignOut={handleSignOut}
       />
+    );
+  }
+
+  // 4b. Still loading accounts — show spinner
+  if (!activeAccount && !accountsLoaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
     );
   }
 
