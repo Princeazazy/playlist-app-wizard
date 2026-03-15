@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Tv, Radio, Trophy, Clock, Loader2, CalendarDays } from 'lucide-react';
+import { Tv, Radio, Trophy, Clock, Loader2, CalendarDays, RefreshCw, Mic2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Channel } from '@/hooks/useIPTV';
 
@@ -14,6 +14,7 @@ interface Match {
   status: string;
   statusText: string;
   channels: string[];
+  commentator: string;
   league: string;
   date: string;
   dayLabel?: string;
@@ -24,20 +25,38 @@ interface LiveMatchesTickerProps {
   onChannelSelect: (channel: Channel) => void;
 }
 
+type DayTab = 'yesterday' | 'today' | 'tomorrow';
+
+const DAY_LABELS: Record<DayTab, string> = {
+  yesterday: "Yesterday's Matches",
+  today: "Today's Matches",
+  tomorrow: "Tomorrow's Matches",
+};
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: boolean }> = {
+  live: { label: 'LIVE', color: 'bg-red-500', pulse: true },
+  halftime: { label: 'HT', color: 'bg-amber-500' },
+  finished: { label: 'FT', color: 'bg-muted' },
+  upcoming: { label: 'SOON', color: 'bg-primary/60' },
+  not_started: { label: 'NS', color: 'bg-muted/60' },
+};
+
 export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatchesTickerProps) => {
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 4;
-  const totalPages = Math.ceil(matches.length / itemsPerPage);
+  const [activeDay, setActiveDay] = useState<DayTab>('today');
+  const [selectedLeague, setSelectedLeague] = useState<string>('all');
+  const [lastFetched, setLastFetched] = useState<string>('');
 
   const fetchMatches = useCallback(async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase.functions.invoke('fetch-live-matches');
       if (error) throw error;
       if (data?.matches) {
-        setMatches(data.matches);
+        setAllMatches(data.matches);
+        setLastFetched(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       }
     } catch (err) {
       console.error('Failed to fetch live matches:', err);
@@ -48,24 +67,42 @@ export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatch
 
   useEffect(() => {
     fetchMatches();
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchMatches, 5 * 60 * 1000);
+    const interval = setInterval(fetchMatches, 3 * 60 * 1000); // 3 min refresh
     return () => clearInterval(interval);
   }, [fetchMatches]);
 
-  // Auto-scroll pages
-  useEffect(() => {
-    if (totalPages <= 1 || selectedMatch) return;
-    const interval = setInterval(() => {
-      setCurrentPage(prev => (prev + 1) % totalPages);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [totalPages, selectedMatch]);
+  // Filter by day
+  const dayMatches = useMemo(() =>
+    allMatches.filter(m => m.dayLabel === activeDay),
+    [allMatches, activeDay]
+  );
 
-  // Find matching sports channels for a given broadcast channel name
+  // Extract unique leagues for current day
+  const leagues = useMemo(() => {
+    const set = new Set(dayMatches.map(m => m.league).filter(Boolean));
+    return ['all', ...Array.from(set).sort()];
+  }, [dayMatches]);
+
+  // Filter by league
+  const filteredMatches = useMemo(() =>
+    selectedLeague === 'all' ? dayMatches : dayMatches.filter(m => m.league === selectedLeague),
+    [dayMatches, selectedLeague]
+  );
+
+  // Count by status for the badge
+  const liveCount = useMemo(() => dayMatches.filter(m => m.status === 'live' || m.status === 'halftime').length, [dayMatches]);
+
+  // Day tab counts
+  const dayCounts = useMemo(() => ({
+    yesterday: allMatches.filter(m => m.dayLabel === 'yesterday').length,
+    today: allMatches.filter(m => m.dayLabel === 'today').length,
+    tomorrow: allMatches.filter(m => m.dayLabel === 'tomorrow').length,
+  }), [allMatches]);
+
+  // Find matching sports channels
   const findMatchingChannels = useCallback((channelNames: string[]): Channel[] => {
     if (!channelNames.length) return [];
-    
+
     const matched: Channel[] = [];
     const seen = new Set<string>();
     for (const chName of channelNames) {
@@ -83,24 +120,38 @@ export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatch
   const channelFuzzyMatch = (broadcastName: string, channelName: string): boolean => {
     const b = broadcastName.toLowerCase().trim();
     const c = channelName.toLowerCase().trim();
-    
-    // beIN Sports with specific number
+
+    // Arabic → English mappings for common channels
+    const arabicToEnglish: Record<string, RegExp> = {
+      'بي إن سبورت': /bein\s*sport/i,
+      'بي ان سبورت': /bein\s*sport/i,
+      'ام بي سي أكشن': /mbc\s*action/i,
+      'ام بي سي اكشن': /mbc\s*action/i,
+      'أبوظبي الرياضية': /abu\s*dhabi\s*sport/i,
+      'دبي الرياضية': /dubai\s*sport/i,
+      'الكاس': /alkass|al\s*kass/i,
+    };
+
+    // Check Arabic name mappings
+    for (const [arabic, engRegex] of Object.entries(arabicToEnglish)) {
+      if (b.includes(arabic)) {
+        // Extract number from Arabic name
+        const numMatch = b.match(/(\d+)/);
+        if (numMatch) {
+          const cNum = c.match(new RegExp(engRegex.source + '\\s*(?:hd\\s*)?(\\d+)', 'i'));
+          if (cNum && cNum[1] === numMatch[1]) return true;
+        } else {
+          if (engRegex.test(c)) return true;
+        }
+      }
+    }
+
+    // beIN Sports with number
     const beinMatch = b.match(/bein\s*sports?\s*(?:hd\s*)?(\d+)/i);
     const cBeinMatch = c.match(/bein\s*sports?\s*(\d+)/i);
     if (beinMatch && cBeinMatch && beinMatch[1] === cBeinMatch[1]) return true;
-    
-    // beIN Sports without number (generic) - only match generic bein channels
     if (/^bein\s*sports?\s*(?:hd)?$/i.test(b.trim()) && /bein\s*sport/i.test(c)) return true;
-    
-    // On Sport / أون سبورت with number
-    const onSportNum = b.match(/(?:أون\s*سبورت|on\s*sport)\s*(\d+)/);
-    if (onSportNum) {
-      const cOnSport = c.match(/on\s*sport\s*(\d+)/i);
-      if (cOnSport && cOnSport[1] === onSportNum[1]) return true;
-      return false;
-    }
-    if ((b.includes('أون سبورت') || /^on\s*sport$/i.test(b)) && /on\s*sport/i.test(c)) return true;
-    
+
     // SSC with number
     const sscNum = b.match(/ssc\s*(\d+)/i);
     if (sscNum) {
@@ -108,132 +159,137 @@ export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatch
       if (cSsc && cSsc[1] === sscNum[1]) return true;
       return false;
     }
-    
-    // Shahid VIP
+
+    // On Sport
+    const onSportNum = b.match(/(?:أون\s*سبورت|on\s*sport)\s*(\d+)/);
+    if (onSportNum) {
+      const cOnSport = c.match(/on\s*sport\s*(\d+)/i);
+      if (cOnSport && cOnSport[1] === onSportNum[1]) return true;
+      return false;
+    }
+    if ((b.includes('أون سبورت') || /^on\s*sport$/i.test(b)) && /on\s*sport/i.test(c)) return true;
+
+    // Shahid
     if ((b.includes('شاهد') || b.includes('shahid')) && (c.includes('shahid') || c.includes('شاهد'))) return true;
-    
-    // Starzplay
+
+    // StarzPlay
     if (b.includes('starzplay') && c.includes('starz')) return true;
-    
+
     // MBC Action
     if (b.includes('mbc action') && c.includes('mbc') && c.includes('action')) return true;
-    
-    // Abu Dhabi Sports
+
+    // Abu Dhabi
     if ((b.includes('أبوظبي') || b.includes('abu dhabi')) && b.includes('sport') && c.includes('abu') && c.includes('dhabi')) return true;
-    
+
     // Dubai Sport
     if ((b.includes('دبي') || b.includes('dubai')) && b.includes('sport') && c.includes('dubai') && c.includes('sport')) return true;
-    
+
     return false;
   };
 
-  const visibleMatches = matches.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
-  );
-
-  // Compute the date label for the current page's matches
-  const currentDateLabel = useMemo(() => {
-    if (visibleMatches.length === 0) return '';
-    
-    // Use dayLabel from the API if available
-    const dayLabel = visibleMatches[0].dayLabel;
-    if (dayLabel === 'yesterday') return "Yesterday's Matches";
-    if (dayLabel === 'today') return "Today's Matches";
-    if (dayLabel === 'tomorrow') return "Tomorrow's Matches";
-    
-    // Fallback to date-based detection
-    const matchDate = visibleMatches[0].date;
-    if (!matchDate) return "Today's Matches";
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const [y, m, d] = matchDate.split('-').map(Number);
-    const mDate = new Date(y, m - 1, d);
-    mDate.setHours(0, 0, 0, 0);
-    
-    if (mDate.getTime() === today.getTime()) return "Today's Matches";
-    if (mDate.getTime() === tomorrow.getTime()) return "Tomorrow's Matches";
-    if (mDate.getTime() === yesterday.getTime()) return "Yesterday's Matches";
-    return `Matches — ${matchDate}`;
-  }, [visibleMatches]);
-
-  if (loading) {
+  if (loading && allMatches.length === 0) {
     return (
-      <div className="p-4 flex items-center justify-center gap-2 text-muted-foreground">
+      <div className="p-6 flex items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin" />
-        <span>Loading live matches...</span>
+        <span>Loading matches...</span>
       </div>
     );
   }
 
-  if (matches.length === 0) return null;
+  if (allMatches.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between px-2">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
           <Trophy className="w-5 h-5 text-primary" />
-          <AnimatePresence mode="wait">
-            <motion.h3 
-              key={currentDateLabel}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25 }}
-              className="text-lg font-bold text-foreground"
-            >
-              {currentDateLabel}
-            </motion.h3>
-          </AnimatePresence>
-          <span className="text-xs text-muted-foreground">({matches.length})</span>
+          <h3 className="text-lg font-bold text-foreground">Match Center</h3>
+          {liveCount > 0 && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              {liveCount} Live
+            </span>
+          )}
         </div>
-        {totalPages > 1 && (
-          <div className="flex items-center gap-1">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => { setCurrentPage(i); setSelectedMatch(null); }}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Match Cards */}
-      <div className="relative overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPage}
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -60 }}
-            transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-2"
+        <div className="flex items-center gap-2">
+          {lastFetched && (
+            <span className="text-[10px] text-muted-foreground">Updated {lastFetched}</span>
+          )}
+          <button
+            onClick={fetchMatches}
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-card border border-border/30 hover:bg-primary/10 transition-colors"
+            disabled={loading}
           >
-            {visibleMatches.map((match, idx) => (
-              <MatchCard
-                key={`${match.homeTeam}-${match.awayTeam}-${currentPage}-${idx}`}
-                match={match}
-                isSelected={selectedMatch === match}
-                onSelect={() => setSelectedMatch(selectedMatch === match ? null : match)}
-              />
-            ))}
-          </motion.div>
-        </AnimatePresence>
+            <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
-      {/* Expanded Channel List when a match is selected */}
+      {/* Day Tabs */}
+      <div className="flex gap-1 p-1 rounded-xl bg-card border border-border/30">
+        {(['yesterday', 'today', 'tomorrow'] as DayTab[]).map(day => (
+          <button
+            key={day}
+            onClick={() => { setActiveDay(day); setSelectedLeague('all'); setSelectedMatch(null); }}
+            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+              activeDay === day
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+            }`}
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            {day === 'yesterday' ? 'Yesterday' : day === 'today' ? 'Today' : 'Tomorrow'}
+            {dayCounts[day] > 0 && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                activeDay === day ? 'bg-primary-foreground/20' : 'bg-muted'
+              }`}>
+                {dayCounts[day]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* League Filter */}
+      {leagues.length > 2 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+          {leagues.map(league => (
+            <button
+              key={league}
+              onClick={() => { setSelectedLeague(league); setSelectedMatch(null); }}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                selectedLeague === league
+                  ? 'bg-primary/20 text-primary border border-primary/30'
+                  : 'bg-card border border-border/20 text-muted-foreground hover:text-foreground hover:border-border/50'
+              }`}
+            >
+              {league === 'all' ? '🏆 All Leagues' : league}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Matches Grid */}
+      {filteredMatches.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {filteredMatches.map((match, idx) => (
+            <MatchCard
+              key={`${match.homeTeam}-${match.awayTeam}-${idx}`}
+              match={match}
+              isSelected={selectedMatch === match}
+              onSelect={() => setSelectedMatch(selectedMatch === match ? null : match)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-10 text-muted-foreground gap-2">
+          <CalendarDays className="w-8 h-8" />
+          <span className="text-sm">No matches scheduled</span>
+        </div>
+      )}
+
+      {/* Expanded Channel List */}
       <AnimatePresence>
         {selectedMatch && (
           <motion.div
@@ -255,36 +311,44 @@ export const LiveMatchesTicker = ({ sportsChannels, onChannelSelect }: LiveMatch
   );
 };
 
-const MatchCard = ({ match, isSelected, onSelect }: { 
-  match: Match; 
-  isSelected: boolean; 
+const StatusBadge = ({ status }: { status: string }) => {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.upcoming;
+  return (
+    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full ${config.color}/20`}>
+      {config.pulse && <span className={`w-1.5 h-1.5 rounded-full ${config.color} animate-pulse`} />}
+      <span className={`text-[10px] font-bold ${
+        status === 'live' ? 'text-red-400' :
+        status === 'halftime' ? 'text-amber-400' :
+        status === 'finished' ? 'text-muted-foreground' :
+        'text-muted-foreground'
+      }`}>{config.label}</span>
+    </div>
+  );
+};
+
+const MatchCard = ({ match, isSelected, onSelect }: {
+  match: Match;
+  isSelected: boolean;
   onSelect: () => void;
 }) => {
-  const isLive = match.status === 'live';
-  
+  const isLive = match.status === 'live' || match.status === 'halftime';
+
   return (
-    <motion.div
+    <div
       onClick={onSelect}
-      whileTap={{ scale: 0.97 }}
       className={`
         relative p-3 rounded-xl cursor-pointer transition-all border
-        ${isSelected 
-          ? 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/10' 
-          : 'bg-card/80 border-border/30 hover:border-border/60 hover:bg-card'}
+        ${isSelected
+          ? 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/10'
+          : isLive
+            ? 'bg-card/80 border-red-500/20 hover:border-red-500/40'
+            : 'bg-card/80 border-border/30 hover:border-border/60 hover:bg-card'}
       `}
     >
-      {/* Status indicator */}
-      {isLive && (
-        <div className="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/20">
-          <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-[10px] font-bold text-red-400">LIVE</span>
-        </div>
-      )}
-      {match.status === 'finished' && (
-        <div className="absolute top-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-muted/60">
-          <span className="text-[10px] font-bold text-muted-foreground">FT</span>
-        </div>
-      )}
+      {/* Status badge */}
+      <div className="absolute top-1.5 right-1.5">
+        <StatusBadge status={match.status} />
+      </div>
 
       {/* League */}
       <p className="text-[10px] text-muted-foreground truncate mb-2 pr-12">{match.league}</p>
@@ -302,9 +366,16 @@ const MatchCard = ({ match, isSelected, onSelect }: {
           <p className="text-[10px] text-foreground text-center truncate w-full">{match.homeTeam}</p>
         </div>
 
-        <div className="flex flex-col items-center gap-0.5 px-1">
-          <span className="text-sm font-bold text-foreground">{match.score}</span>
+        <div className="flex flex-col items-center gap-0.5 px-2">
+          <span className={`text-lg font-bold ${isLive ? 'text-red-400' : 'text-foreground'}`}>
+            {match.score}
+          </span>
           <span className="text-[9px] text-muted-foreground">{match.time}</span>
+          {match.statusText && (
+            <span className={`text-[8px] ${isLive ? 'text-red-400' : 'text-muted-foreground'}`}>
+              {match.statusText}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
@@ -319,14 +390,22 @@ const MatchCard = ({ match, isSelected, onSelect }: {
         </div>
       </div>
 
-      {/* Channel badges */}
-      {match.channels.length > 0 && (
-        <div className="mt-2 flex items-center gap-1 justify-center">
-          <Tv className="w-3 h-3 text-primary/60" />
-          <span className="text-[9px] text-primary/80 truncate">{match.channels[0]}</span>
-        </div>
-      )}
-    </motion.div>
+      {/* Bottom info: channel + commentator */}
+      <div className="mt-2 flex items-center justify-between gap-1">
+        {match.channels.length > 0 && (
+          <div className="flex items-center gap-1 min-w-0">
+            <Tv className="w-3 h-3 text-primary/60 flex-shrink-0" />
+            <span className="text-[9px] text-primary/80 truncate">{match.channels[0]}</span>
+          </div>
+        )}
+        {match.commentator && (
+          <div className="flex items-center gap-1 min-w-0">
+            <Mic2 className="w-2.5 h-2.5 text-muted-foreground/50 flex-shrink-0" />
+            <span className="text-[8px] text-muted-foreground truncate">{match.commentator}</span>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -342,7 +421,7 @@ const MatchChannelList = ({ match, matchedChannels, onChannelSelect }: {
         <span className="text-sm font-semibold text-foreground">
           {match.homeTeam} vs {match.awayTeam}
         </span>
-        <span className="text-xs text-muted-foreground">— Broadcasting Channels</span>
+        <span className="text-xs text-muted-foreground">— Watch On</span>
       </div>
 
       {matchedChannels.length > 0 ? (
@@ -366,7 +445,7 @@ const MatchChannelList = ({ match, matchedChannels, onChannelSelect }: {
         <div className="text-xs text-muted-foreground flex items-center gap-1.5 py-2">
           <Clock className="w-3.5 h-3.5" />
           <span>
-            {match.channels.length > 0 
+            {match.channels.length > 0
               ? `Listed on: ${match.channels.join(', ')} — No matching channels found in your playlist`
               : 'Broadcasting channels not yet announced'}
           </span>
