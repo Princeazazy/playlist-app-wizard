@@ -1040,14 +1040,14 @@ export const MiMediaGrid = ({
                     if (logo) break;
                   }
                   if (logo) {
-                    return <img src={logo} alt={group.name} className="w-full h-full object-cover scale-150" />;
+                    return <img src={logo} alt={group.name} className="w-full h-full object-contain p-1 scale-150" />;
                   }
                   if (group.firstLogo) {
                     return (
                       <img 
                         src={group.firstLogo} 
                         alt={group.name} 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain p-1"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
                           e.currentTarget.parentElement!.innerHTML = `<span class="text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
