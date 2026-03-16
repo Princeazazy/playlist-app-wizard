@@ -731,7 +731,7 @@ export const MiLiveTVList = ({
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
-              <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden flex-shrink-0">
                 <Trophy className="w-5 h-5 text-primary" />
               </div>
               {(!sidebarCollapsed || isMobile) && (
