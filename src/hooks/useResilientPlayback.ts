@@ -32,7 +32,6 @@ const RETRY_BACKOFF_MS = [200, 500, 1000, 2000] as const;
 
 const isLikelyHlsUrl = (url: string): boolean => {
   if (/\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url)) return true;
-  // Detect proxy-wrapped HLS: stream-proxy?url=<encoded .m3u8 URL>
   try {
     const parsed = new URL(url);
     const inner = parsed.searchParams.get('url');
@@ -42,6 +41,15 @@ const isLikelyHlsUrl = (url: string): boolean => {
     }
   } catch { /* not a valid URL, skip */ }
   return false;
+};
+
+const isProxyWrappedUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname.includes('/functions/v1/stream-proxy') && parsed.searchParams.has('url');
+  } catch {
+    return false;
+  }
 };
 
 const isTsLikeUrl = (url: string): boolean => (
