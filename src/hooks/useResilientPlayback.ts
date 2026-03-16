@@ -322,9 +322,10 @@ export const useResilientPlayback = ({
         candidateIndex,
         candidateCount: sourceCandidates.length,
         isHls,
+        sourceUrl: channel.url.slice(0, 200),
+        finalPlaybackUrl: candidateUrl.slice(0, 200),
         protocol: candidateUrl.startsWith('https://') ? 'HTTPS' : candidateUrl.startsWith('http://') ? 'HTTP' : 'proxy',
         isProxy: candidateUrl.includes('stream-proxy'),
-        candidate: candidateUrl.slice(0, 200),
       });
 
       let switchedCandidate = false;
@@ -332,12 +333,15 @@ export const useResilientPlayback = ({
       let mediaRecoveries = 0;
       let lastTime = 0;
       let stallSince = Date.now();
+      const candidateStartedAt = performance.now();
+      let firstFrameLogged = false;
 
       const moveNext = (reason: string, details?: Record<string, unknown>) => {
         if (canceled || switchedCandidate) return;
         switchedCandidate = true;
+        lastFailureReason = reason;
         clearTimers();
-        log('switch_candidate', { reason, ...details });
+        log('switch_candidate', { reason, ...details, bufferedSeconds: getBufferedSeconds(video) });
         window.setTimeout(() => startCandidate(reason), 0);
       };
 
@@ -346,11 +350,15 @@ export const useResilientPlayback = ({
         stallSince = Date.now();
         setPlaybackState('playing');
         setError(null);
-        // Ensure audio is unmuted when playing starts
         if (!forceMuted && video.muted) {
           video.muted = false;
         }
-        log('playing', { currentTime: video.currentTime, muted: video.muted });
+        log('playing', {
+          currentTime: video.currentTime,
+          muted: video.muted,
+          bufferedSeconds: getBufferedSeconds(video),
+          startupMs: Math.round(performance.now() - candidateStartedAt),
+        });
       };
 
       const onWaiting = () => {
