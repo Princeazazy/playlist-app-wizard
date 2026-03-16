@@ -107,7 +107,71 @@ export const MiSeriesDetail = ({
     fetchTMDBData();
   }, [item.name, tmdbSearch, getDetails]);
 
-  // Fetch series info with seasons/episodes
+  // Parse Xtream credentials from playlist URL
+  const parseXtreamCredentials = (url: string): { baseUrl: string; username: string; password: string } | null => {
+    try {
+      const urlObj = new URL(url);
+      const username = urlObj.searchParams.get('username');
+      const password = urlObj.searchParams.get('password');
+      if (username && password) {
+        return { baseUrl: `${urlObj.protocol}//${urlObj.host}`, username, password };
+      }
+      return null;
+    } catch { return null; }
+  };
+
+  // Build episode structures from raw API response
+  const buildSeriesInfo = (rawData: any, creds: { baseUrl: string; username: string; password: string }, seriesName: string, fallbackPlot: string): SeriesInfo => {
+    const info = rawData?.info || {};
+    const result: SeriesInfo = {
+      info: {
+        name: info.name || seriesName || '',
+        cover: info.cover || '',
+        plot: info.plot || fallbackPlot || '',
+        cast: info.cast || '',
+        director: info.director || '',
+        genre: info.genre || '',
+        releaseDate: info.releaseDate || info.releasedate || '',
+        rating: info.rating || '',
+        backdrop_path: Array.isArray(info.backdrop_path) ? info.backdrop_path : [],
+      },
+      seasons: [],
+    };
+
+    if (rawData?.episodes && typeof rawData.episodes === 'object') {
+      const sortedSeasonNums = Object.keys(rawData.episodes)
+        .map(Number)
+        .filter(n => !isNaN(n))
+        .sort((a, b) => a - b);
+
+      for (const seasonNum of sortedSeasonNums) {
+        const rawEps = rawData.episodes[String(seasonNum)];
+        if (!Array.isArray(rawEps)) continue;
+        const episodes: Episode[] = rawEps.map((ep: any) => {
+          const ext = ep.container_extension || 'mp4';
+          return {
+            id: String(ep.id),
+            episode_num: ep.episode_num || 0,
+            title: ep.title || `Episode ${ep.episode_num}`,
+            container_extension: ext,
+            info: {
+              duration: ep.info?.duration || '',
+              plot: ep.info?.plot || '',
+              releaseDate: ep.info?.releasedate || ep.info?.air_date || '',
+              rating: ep.info?.rating || '',
+              movie_image: ep.info?.movie_image || '',
+            },
+            url: `${creds.baseUrl}/series/${creds.username}/${creds.password}/${ep.id}.${ext}`,
+          };
+        }).sort((a: Episode, b: Episode) => a.episode_num - b.episode_num);
+
+        result.seasons.push({ season_number: seasonNum, name: `Season ${seasonNum}`, episodes });
+      }
+    }
+    return result;
+  };
+
+  // Fetch series info with seasons/episodes — try DIRECT client-side first, fall back to edge function
   useEffect(() => {
     const fetchSeriesInfo = async () => {
       if (!item.series_id) {
@@ -127,33 +191,61 @@ export const MiSeriesDetail = ({
           return;
         }
 
-        const { data, error: fnError } = await supabase.functions.invoke('fetch-series-info', {
-          body: {
-            playlistUrl,
-            seriesId: item.series_id,
-            seriesName: item.name,
-            fallbackPlot: item.plot || '',
-          },
-        });
+        const creds = parseXtreamCredentials(playlistUrl);
+        let resolved = false;
 
-        if (fnError) {
-          console.error('Error fetching series info:', fnError);
-          setError('Failed to load series information');
-          setLoading(false);
-          return;
+        // === Attempt 1: Direct client-side fetch (user's IP is whitelisted by provider) ===
+        if (creds) {
+          const apiUrl = `${creds.baseUrl}/player_api.php?username=${creds.username}&password=${creds.password}&action=get_series_info&series_id=${item.series_id}`;
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 12000);
+            const res = await fetch(apiUrl, { signal: controller.signal });
+            clearTimeout(timeout);
+            if (res.ok) {
+              const rawData = await res.json();
+              if (rawData && typeof rawData === 'object' && !Array.isArray(rawData) && Object.keys(rawData).length > 0) {
+                const info = buildSeriesInfo(rawData, creds, item.name, item.plot || '');
+                setSeriesInfo(info);
+                if (info.seasons.length > 0) {
+                  setSelectedSeason(info.seasons[0].season_number);
+                }
+                resolved = true;
+              }
+            }
+          } catch (directErr) {
+            console.warn('[SeriesDetail] Direct fetch failed, falling back to edge function:', directErr);
+          }
         }
 
-        if (data?.error) {
-          setError(data.error);
-          setLoading(false);
-          return;
-        }
+        // === Attempt 2: Edge function fallback (in case direct fetch is CORS-blocked) ===
+        if (!resolved) {
+          const { data, error: fnError } = await supabase.functions.invoke('fetch-series-info', {
+            body: {
+              playlistUrl,
+              seriesId: item.series_id,
+              seriesName: item.name,
+              fallbackPlot: item.plot || '',
+            },
+          });
 
-        setSeriesInfo(data);
-        
-        // Auto-select first season
-        if (data?.seasons?.length > 0) {
-          setSelectedSeason(data.seasons[0].season_number);
+          if (fnError) {
+            console.error('Error fetching series info:', fnError);
+            setError('Failed to load series information');
+            setLoading(false);
+            return;
+          }
+
+          if (data?.error) {
+            setError(data.error);
+            setLoading(false);
+            return;
+          }
+
+          setSeriesInfo(data);
+          if (data?.seasons?.length > 0) {
+            setSelectedSeason(data.seasons[0].season_number);
+          }
         }
       } catch (err) {
         console.error('Error:', err);
