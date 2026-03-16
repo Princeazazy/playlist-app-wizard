@@ -862,13 +862,20 @@ Deno.serve(async (req) => {
       console.log('Falling back to Xtream API (category-by-category)...');
       const { baseUrl, username, password } = xtreamCreds;
       const limit = safeMaxReturnPerType;
+      const emptyResult: XtreamFetchResult = { items: [], total: 0 };
 
-      // Parallelize type fetches to cut total wall time on blocked-M3U fallbacks
       const [liveResult, moviesResult, seriesResult] = await Promise.all([
-        fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension),
-        fetchXtreamMovies(baseUrl, username, password, limit),
-        fetchXtreamSeries(baseUrl, username, password, limit),
+        typesToFetch.has('live') ? fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension) : Promise.resolve(emptyResult),
+        typesToFetch.has('movies') ? fetchXtreamMovies(baseUrl, username, password, limit) : Promise.resolve(emptyResult),
+        typesToFetch.has('series') ? fetchXtreamSeries(baseUrl, username, password, limit) : Promise.resolve(emptyResult),
       ]);
+
+      // Strip internal fields from series
+      for (const item of seriesResult.items) {
+        delete item._baseUrl;
+        delete item._username;
+        delete item._password;
+      }
 
       const returnedChannels = [
         ...liveResult.items,
