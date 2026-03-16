@@ -574,6 +574,7 @@ export const MiFullscreenPlayer = ({
         className="w-full h-full object-contain"
         autoPlay
         playsInline
+        muted
         crossOrigin="anonymous"
       />
 
