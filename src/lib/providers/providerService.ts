@@ -334,19 +334,24 @@ export function buildStreamUrl(channel: NormalizedChannel, config: ProviderConfi
   }
 
   const NON_WEB = /^(mkv|avi|wmv|flv|mov|divx|rmvb|3gp)$/i;
+  const shouldPreferM3u8 = isNativeOrWebView() && !Capacitor.isNativePlatform();
+  const liveExtension = shouldPreferM3u8 ? 'm3u8' : 'ts';
 
-  if (config.type === 'xtream' && channel.streamId) {
-    const serverUrl = (config as XtreamConfig).serverUrl.replace(/\/+$/, '');
-    const rawExt = channel.containerExtension || 'ts';
+  if ((config.type === 'xtream' || config.type === 'access_code') && channel.streamId) {
+    const serverUrl = config.serverUrl.replace(/\/+$/, '');
+    const rawExt = channel.containerExtension || liveExtension;
     if (channel.type === 'movies') {
       const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
-      return normalizePlaybackUrl(`${serverUrl}/movie/${config.username}/${config.password}/${channel.streamId}.${ext}`, config);
+      const credential = config.type === 'xtream' ? config : { username: config.accessCode, password: config.accessCode };
+      return normalizePlaybackUrl(`${serverUrl}/movie/${credential.username}/${credential.password}/${channel.streamId}.${ext}`, config);
     }
     if (channel.type === 'series') {
       const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
-      return normalizePlaybackUrl(`${serverUrl}/series/${config.username}/${config.password}/${channel.streamId}.${ext}`, config);
+      const credential = config.type === 'xtream' ? config : { username: config.accessCode, password: config.accessCode };
+      return normalizePlaybackUrl(`${serverUrl}/series/${credential.username}/${credential.password}/${channel.streamId}.${ext}`, config);
     }
-    return normalizePlaybackUrl(`${serverUrl}/live/${config.username}/${config.password}/${channel.streamId}.ts`, config);
+    const credential = config.type === 'xtream' ? config : { username: config.accessCode, password: config.accessCode };
+    return normalizePlaybackUrl(`${serverUrl}/live/${credential.username}/${credential.password}/${channel.streamId}.${liveExtension}`, config);
   }
 
   return normalizePlaybackUrl(channel.url, config);
