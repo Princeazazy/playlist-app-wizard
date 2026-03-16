@@ -212,11 +212,7 @@ export async function fetchProviderContent(
     }
 
     const normalized = normalizeChannels(allChannels, providerId);
-    // Rewrite URLs to VPN domain if configured
-    if (config.type === 'm3u' && config.vpnUrl) {
-      return rewriteUrlsToVpn(normalized, m3uUrl, config.vpnUrl);
-    }
-    return normalized;
+    return applyPlaybackUrlPreferences(normalized, config);
   }
 
   // Non-Xtream: single M3U call
