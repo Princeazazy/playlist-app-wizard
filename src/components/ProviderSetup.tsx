@@ -354,6 +354,7 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [], onSignOu
 
               <div className="space-y-3">
                 <input placeholder="M3U / M3U8 URL" value={m3uUrl} onChange={e => setM3uUrl(e.target.value)} className={inputClass} />
+                <input placeholder="VPN / Backup URL (optional)" value={m3uVpnUrl} onChange={e => setM3uVpnUrl(e.target.value)} className={inputClass} />
                 <input placeholder="EPG URL (optional)" value={m3uEpg} onChange={e => setM3uEpg(e.target.value)} className={inputClass} />
                 <input placeholder="Playlist name (optional)" value={m3uName} onChange={e => setM3uName(e.target.value)} className={inputClass} />
               </div>
