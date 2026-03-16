@@ -78,44 +78,37 @@ export const useResilientPlayback = ({
     if (Capacitor.isNativePlatform()) return [rawUrl];
 
     const candidates: string[] = [];
-    const proxyUrl = streamProxyUrl ? `${streamProxyUrl}?url=${encodeURIComponent(rawUrl)}` : rawUrl;
+    // Always build proxy URL from the ORIGINAL rawUrl (may be http://)
+    const proxyUrl = streamProxyUrl ? `${streamProxyUrl}?url=${encodeURIComponent(rawUrl)}` : '';
 
     const add = (value: string) => {
       if (!value) return;
       if (!candidates.includes(value)) candidates.push(value);
     };
 
-    const hostname = (() => {
-      try {
-        return new URL(rawUrl).hostname.toLowerCase();
-      } catch {
-        return '';
-      }
-    })();
-
-    const isProxyChallengedHost = hostname.endsWith('business-cdn-neo.su') || hostname.endsWith('business-cloud-neo.ru');
-
     if (channel.isLocal) {
       if (rawUrl.startsWith('http://')) add(proxyUrl);
       else {
         add(rawUrl);
-        add(proxyUrl);
+        if (proxyUrl) add(proxyUrl);
       }
       return candidates;
     }
 
     if (rawUrl.startsWith('http://')) {
-      // Mixed-content-safe fallback order: try upgraded HTTPS first, then proxy.
-      // Some providers support HTTPS even when playlist URLs are published as HTTP.
-      const upgradedHttps = rawUrl.replace(/^http:\/\//i, 'https://');
-      add(upgradedHttps);
-      add(proxyUrl);
+      // 1. Try direct HTTP first — modern browsers auto-upgrade media to HTTPS
+      add(rawUrl);
+      // 2. Explicit HTTPS upgrade in case browser doesn't auto-upgrade
+      add(rawUrl.replace(/^http:\/\//i, 'https://'));
+      // 3. Proxy fallback (always include)
+      if (proxyUrl) add(proxyUrl);
       return candidates;
     }
 
     if (rawUrl.startsWith('https://')) {
       add(rawUrl);
-      if (!isProxyChallengedHost) add(proxyUrl);
+      // Always include proxy as fallback — don't exclude any hosts
+      if (proxyUrl) add(proxyUrl);
       return candidates;
     }
 
