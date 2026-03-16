@@ -364,15 +364,15 @@ export const useResilientPlayback = ({
       const onWaiting = () => {
         if (canceled) return;
         setPlaybackState('buffering');
-        log('buffering', { readyState: video.readyState });
+        log('buffering', { readyState: video.readyState, bufferedSeconds: getBufferedSeconds(video) });
       };
 
       const onStalled = () => {
         if (canceled) return;
         setPlaybackState('buffering');
-        log('stalled', { reason: 'video_stalled_event' });
+        log('stalled', { reason: 'video_stalled_event', bufferedSeconds: getBufferedSeconds(video) });
 
-        if (hlsRef.current && networkRecoveries < 2) {
+        if (hlsRef.current && networkRecoveries < 1) {
           networkRecoveries += 1;
           setPlaybackState('reconnecting');
           try {
@@ -390,13 +390,37 @@ export const useResilientPlayback = ({
 
       const onVideoError = () => {
         if (canceled) return;
-        moveNext('video_error_event', { mediaErrorCode: video.error?.code });
+        moveNext('video_error_event', { mediaErrorCode: video.error?.code, mediaErrorMessage: video.error?.message });
+      };
+
+      const onLoadedMetadata = () => {
+        log('loaded_metadata', {
+          duration: Number.isFinite(video.duration) ? video.duration : null,
+          videoWidth: video.videoWidth,
+          videoHeight: video.videoHeight,
+        });
+      };
+
+      const onCanPlay = () => {
+        log('canplay', {
+          startupMs: Math.round(performance.now() - candidateStartedAt),
+          bufferedSeconds: getBufferedSeconds(video),
+          readyState: video.readyState,
+        });
       };
 
       const onTimeUpdate = () => {
         if (video.currentTime > lastTime + 0.05) {
           lastTime = video.currentTime;
           stallSince = Date.now();
+          if (!firstFrameLogged) {
+            firstFrameLogged = true;
+            log('first_frame', {
+              startupMs: Math.round(performance.now() - candidateStartedAt),
+              bufferedSeconds: getBufferedSeconds(video),
+              currentTime: video.currentTime,
+            });
+          }
         }
       };
 
@@ -404,6 +428,8 @@ export const useResilientPlayback = ({
       video.addEventListener('waiting', onWaiting);
       video.addEventListener('stalled', onStalled);
       video.addEventListener('error', onVideoError);
+      video.addEventListener('loadedmetadata', onLoadedMetadata);
+      video.addEventListener('canplay', onCanPlay);
       video.addEventListener('timeupdate', onTimeUpdate);
 
       detachVideoListeners = () => {
@@ -411,6 +437,8 @@ export const useResilientPlayback = ({
         video.removeEventListener('waiting', onWaiting);
         video.removeEventListener('stalled', onStalled);
         video.removeEventListener('error', onVideoError);
+        video.removeEventListener('loadedmetadata', onLoadedMetadata);
+        video.removeEventListener('canplay', onCanPlay);
         video.removeEventListener('timeupdate', onTimeUpdate);
       };
 
