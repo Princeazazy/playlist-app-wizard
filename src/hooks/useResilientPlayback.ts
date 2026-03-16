@@ -463,9 +463,10 @@ export const useResilientPlayback = ({
           reason: 'progress_not_advancing',
           stalledFor,
           currentTime: video.currentTime,
+          bufferedSeconds: getBufferedSeconds(video),
         });
 
-        if (hlsRef.current && networkRecoveries < 2) {
+        if (hlsRef.current && networkRecoveries < 1) {
           networkRecoveries += 1;
           try {
             hlsRef.current.startLoad(-1);
@@ -478,7 +479,7 @@ export const useResilientPlayback = ({
         }
 
         moveNext('progress_stalled');
-      }, 3000);
+      }, 2000);
 
       const startPlayback = async () => {
         try {
