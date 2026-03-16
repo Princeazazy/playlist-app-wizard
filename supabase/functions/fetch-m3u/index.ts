@@ -294,6 +294,80 @@ async function fetchXtreamLive(
   }
 }
 
+
+async function fetchXtreamLiveByCategory(
+  baseUrl: string,
+  username: string,
+  password: string,
+  categoryMap: Map<string, string>,
+  limit: number,
+  liveExtension: 'm3u8' | 'ts' = 'm3u8'
+): Promise<XtreamFetchResult> {
+  const items: any[] = [];
+  const seenStreamIds = new Set<string>();
+  let total = 0;
+  const categoryEntries = Array.from(categoryMap.entries());
+
+  const batchSize = 10;
+  for (let i = 0; i < categoryEntries.length && items.length < limit; i += batchSize) {
+    const batch = categoryEntries.slice(i, i + batchSize);
+
+    const batchResults = await Promise.allSettled(
+      batch.map(async ([categoryId, categoryName]) => {
+        try {
+          const res = await fetchWithTimeout(
+            `${baseUrl}/player_api.php?username=${username}&password=${password}&action=get_live_streams&category_id=${encodeURIComponent(categoryId)}`,
+            { headers: getStbHeaders(1) },
+            CATEGORY_FETCH_TIMEOUT
+          );
+          if (!res.ok) return { categoryId, categoryName, streams: [] };
+
+          const streams = await res.json().catch(() => null);
+          return { categoryId, categoryName, streams: Array.isArray(streams) ? streams : [] };
+        } catch {
+          return { categoryId, categoryName, streams: [] };
+        }
+      })
+    );
+
+    for (const result of batchResults) {
+      if (result.status !== 'fulfilled') continue;
+      const { categoryId, categoryName, streams } = result.value;
+
+      total += streams.length;
+      const categoryLower = categoryName.toLowerCase();
+      const isSportsCategory = categoryLower.includes('sport') ||
+        (categoryLower.includes('bein') && categoryLower.includes('sport')) ||
+        categoryLower.includes('espn') ||
+        categoryLower.includes('fox sport') ||
+        categoryLower.includes('sky sport');
+
+      for (const stream of streams) {
+        if (items.length >= limit) break;
+        const streamId = String(stream.stream_id);
+        if (!streamId || seenStreamIds.has(streamId)) continue;
+        seenStreamIds.add(streamId);
+
+        items.push({
+          name: stream.name || 'Unknown Channel',
+          url: `${baseUrl}/live/${username}/${password}/${streamId}.${liveExtension}`,
+          logo: fixLogoUrl(stream.stream_icon || ''),
+          group: categoryMap.get(String(stream.category_id || categoryId)) || categoryName || 'Uncategorized',
+          type: isSportsCategory ? 'sports' : 'live',
+          stream_id: streamId,
+          epg_channel_id: stream.epg_channel_id || '',
+          num: stream.num,
+          tv_archive: stream.tv_archive || 0,
+          category_id: String(stream.category_id || categoryId),
+        });
+      }
+    }
+  }
+
+  console.log(`Collected ${items.length} live items via category fallback (limit ${limit})`);
+  return { items, total };
+}
+
 // Fetch Xtream Codes VOD (movies) — bulk first, per-category fallback
 async function fetchXtreamMovies(
   baseUrl: string,

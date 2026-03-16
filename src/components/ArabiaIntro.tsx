@@ -48,9 +48,10 @@ export const ArabiaIntro = ({ onComplete }: ArabiaIntroProps) => {
     <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center overflow-hidden">
       <video
         ref={videoRef}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover bg-black"
         playsInline
         preload="auto"
+        poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
       >
         <source src={introVideo} type="video/mp4" />
       </video>
