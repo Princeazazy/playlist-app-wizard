@@ -1030,7 +1030,7 @@ export const MiMediaGrid = ({
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-black/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-black/20 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {(() => {
                   const rawNames: string[] = (group as any).rawNames || [group.name];
                   // Try all raw names to find the best logo match
