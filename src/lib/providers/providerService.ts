@@ -207,7 +207,12 @@ export async function fetchProviderContent(
       throw new Error(`Failed to fetch content: ${errors.join('; ')}`);
     }
 
-    return normalizeChannels(allChannels, providerId);
+    const normalized = normalizeChannels(allChannels, providerId);
+    // Rewrite URLs to VPN domain if configured
+    if (config.type === 'm3u' && config.vpnUrl) {
+      return rewriteUrlsToVpn(normalized, m3uUrl, config.vpnUrl);
+    }
+    return normalized;
   }
 
   // Non-Xtream: single M3U call
@@ -229,7 +234,49 @@ export async function fetchProviderContent(
     return [];
   }
 
-  return normalizeChannels(data.channels, providerId);
+  const normalized = normalizeChannels(data.channels, providerId);
+  if (config.type === 'm3u' && config.vpnUrl) {
+    return rewriteUrlsToVpn(normalized, m3uUrl, config.vpnUrl);
+  }
+  return normalized;
+}
+
+/** Rewrite all channel URLs to use the VPN/backup server domain for faster playback */
+function rewriteUrlsToVpn(channels: NormalizedChannel[], primaryUrl: string, vpnUrl: string): NormalizedChannel[] {
+  try {
+    const primaryBase = extractServerBase(primaryUrl);
+    const vpnBase = extractServerBase(vpnUrl);
+    if (!primaryBase || !vpnBase || primaryBase === vpnBase) return channels;
+
+    console.log(`[ProviderService] Rewriting URLs: ${primaryBase} → ${vpnBase}`);
+    let rewritten = 0;
+
+    const result = channels.map(ch => {
+      if (ch.url && ch.url.includes(primaryBase)) {
+        rewritten++;
+        return { ...ch, url: ch.url.replace(primaryBase, vpnBase) };
+      }
+      return ch;
+    });
+
+    console.log(`[ProviderService] Rewrote ${rewritten}/${channels.length} URLs to VPN domain`);
+    return result;
+  } catch (e) {
+    console.warn('[ProviderService] VPN URL rewrite failed, using original URLs:', e);
+    return channels;
+  }
+}
+
+/** Extract protocol://host:port from a URL */
+function extractServerBase(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    // Try regex for non-standard URLs
+    const match = url.match(/^(https?:\/\/[^\/\?]+)/i);
+    return match ? match[1] : null;
+  }
 }
 
 /** Normalize raw channel data into our common model */
