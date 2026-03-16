@@ -435,7 +435,9 @@ async function fetchXtreamVodByCategory(
         if (seenStreamIds.has(streamId)) continue;
         seenStreamIds.add(streamId);
 
-        const ext = stream.container_extension || 'mp4';
+        const rawExt = stream.container_extension || 'mp4';
+        const NON_WEB = /^(mkv|avi|wmv|flv|mov|divx|rmvb|3gp)$/i;
+        const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
         items.push({
           name: stream.name || 'Unknown Movie',
           url: `${baseUrl}/movie/${username}/${password}/${stream.stream_id}.${ext}`,
