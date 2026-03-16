@@ -301,7 +301,7 @@ export const MiSeriesDetail = ({
 
     setLoading(false);
     setFetchMethod('done');
-  }, [item.series_id, item.name, item.plot, getPlaylistUrl]);
+  }, [item.series_id, item.name, item.plot, getPlaylistUrl, providerConfig]);
 
   useEffect(() => {
     fetchSeriesData();
