@@ -192,7 +192,7 @@ const Index = () => {
     refresh();
   }, [refresh]);
 
-  // Auto-refresh every 30 min
+  // Auto-refresh every 2 hours
   useEffect(() => {
     const interval = setInterval(() => refresh(), 2 * 60 * 60 * 1000);
     return () => clearInterval(interval);
