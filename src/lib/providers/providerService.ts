@@ -321,7 +321,7 @@ export async function fetchSeriesInfo(
     const serverUrl = config.serverUrl.replace(/\/+$/, '');
     playlistUrl = `${serverUrl}/get.php?username=${encodeURIComponent(config.username)}&password=${encodeURIComponent(config.password)}&type=m3u_plus&output=ts`;
   } else if (config.type === 'm3u') {
-    playlistUrl = config.m3uUrl;
+    playlistUrl = config.vpnUrl || config.m3uUrl;
   } else {
     return null;
   }

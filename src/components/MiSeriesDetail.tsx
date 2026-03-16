@@ -186,7 +186,7 @@ export const MiSeriesDetail = ({
         const serverUrl = providerConfig.serverUrl.replace(/\/+$/, '');
         return `${serverUrl}/get.php?username=${encodeURIComponent(providerConfig.username)}&password=${encodeURIComponent(providerConfig.password)}&type=m3u_plus&output=ts`;
       }
-      if (providerConfig.type === 'm3u') return providerConfig.m3uUrl;
+      if (providerConfig.type === 'm3u') return providerConfig.vpnUrl || providerConfig.m3uUrl;
       if (providerConfig.type === 'access_code') {
         const serverUrl = providerConfig.serverUrl.replace(/\/+$/, '');
         return `${serverUrl}/get.php?username=${encodeURIComponent(providerConfig.accessCode)}&password=${encodeURIComponent(providerConfig.accessCode)}&type=m3u_plus&output=ts`;

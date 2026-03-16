@@ -169,9 +169,9 @@ export const MiFullscreenPlayer = ({
     channel,
     isVOD,
     forceMuted: false,
-    maxReconnectCycles: 6,
-    startupTimeoutMs: 9000,
-    stalledThresholdMs: 12000,
+    maxReconnectCycles: isVOD ? 2 : 1,
+    startupTimeoutMs: isVOD ? 5000 : 3500,
+    stalledThresholdMs: isVOD ? 8000 : 6000,
     logPrefix: 'FullscreenPlayer',
     onManifestParsed: applyHlsSubtitleTracks,
     onSubtitleTracksUpdated: applyHlsSubtitleTracks,
@@ -574,6 +574,7 @@ export const MiFullscreenPlayer = ({
         className="w-full h-full object-contain"
         autoPlay
         playsInline
+        muted
         crossOrigin="anonymous"
       />
 

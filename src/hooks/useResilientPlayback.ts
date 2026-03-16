@@ -66,6 +66,22 @@ const swapExtension = (url: string, newExt: string): string => {
 
 const getRetryDelay = (cycle: number) => RETRY_BACKOFF_MS[Math.min(Math.max(cycle - 1, 0), RETRY_BACKOFF_MS.length - 1)];
 
+const getBufferedSeconds = (video: HTMLVideoElement): number => {
+  try {
+    const currentTime = video.currentTime || 0;
+    for (let i = 0; i < video.buffered.length; i += 1) {
+      const start = video.buffered.start(i);
+      const end = video.buffered.end(i);
+      if (currentTime >= start && currentTime <= end) {
+        return Math.max(0, end - currentTime);
+      }
+    }
+  } catch {
+    // ignore buffered range errors
+  }
+  return 0;
+};
+
 export const useResilientPlayback = ({
   videoRef,
   channel,
@@ -100,103 +116,96 @@ export const useResilientPlayback = ({
     return new URL('functions/v1/stream-proxy', supabaseUrl).toString();
   }, []);
 
-  const buildPlayableCandidates = useCallback((rawUrl: string): string[] => {
-    if (Capacitor.isNativePlatform()) return [rawUrl];
-
-    const candidates: string[] = [];
-    // Always build proxy URL from the ORIGINAL rawUrl (may be http://)
-    const proxyUrl = streamProxyUrl ? `${streamProxyUrl}?url=${encodeURIComponent(rawUrl)}` : '';
-
-    const add = (value: string) => {
-      if (!value) return;
-      if (!candidates.includes(value)) candidates.push(value);
-    };
-
-    if (channel.isLocal) {
-      if (rawUrl.startsWith('http://')) add(proxyUrl);
-      else {
-        add(rawUrl);
-        if (proxyUrl) add(proxyUrl);
-      }
-      return candidates;
-    }
-
-    if (rawUrl.startsWith('http://')) {
-      // 1. Try direct HTTP first — modern browsers auto-upgrade media to HTTPS
-      add(rawUrl);
-      // 2. Explicit HTTPS upgrade in case browser doesn't auto-upgrade
-      add(rawUrl.replace(/^http:\/\//i, 'https://'));
-      // 3. Proxy fallback (always include)
-      if (proxyUrl) add(proxyUrl);
-      return candidates;
-    }
-
-    if (rawUrl.startsWith('https://')) {
-      add(rawUrl);
-      // Always include proxy as fallback — don't exclude any hosts
-      if (proxyUrl) add(proxyUrl);
-      return candidates;
-    }
-
-    add(rawUrl);
-    return candidates;
-  }, [channel.isLocal, streamProxyUrl]);
-
   const sourceCandidates = useMemo(() => {
     const base = channel.url;
     if (!base) return [];
 
     const streamType = getStreamType(base);
     const variants: string[] = [];
-    const add = (candidate: string | undefined) => {
+    const finalCandidates: string[] = [];
+
+    const addVariant = (candidate: string | undefined) => {
       if (!candidate) return;
       if (!variants.includes(candidate)) variants.push(candidate);
     };
 
+    const addCandidate = (candidate: string | undefined, useProxy = false) => {
+      if (!candidate) return;
+      const value = useProxy && streamProxyUrl
+        ? `${streamProxyUrl}?url=${encodeURIComponent(candidate)}`
+        : candidate;
+      if (!value) return;
+      if (!finalCandidates.includes(value)) finalCandidates.push(value);
+    };
+
     if (streamType === 'live') {
-      // LIVE: .m3u8 is the only web-playable format. .ts requires native player.
       if (isLikelyHlsUrl(base)) {
-        add(base);
+        addVariant(base);
       } else {
-        // Original is .ts — try .m3u8 swap first (HLS manifest), keep .ts as fallback
-        const hlsVariant = swapExtension(base, 'm3u8');
-        add(hlsVariant);
-        add(base); // .ts fallback — some browsers/proxy can handle it
+        addVariant(swapExtension(base, 'm3u8'));
+        addVariant(base);
       }
     } else if (streamType === 'movie' || streamType === 'series') {
-      // VOD: Try web-playable formats. Xtream servers transcode by extension.
       const hasNonWebExt = NON_WEB_EXTENSIONS.test(base);
-      
       if (hasNonWebExt) {
-        // .mkv/.avi etc → try .mp4 first, then .m3u8 (HLS wrapper), then original as last resort
-        add(swapExtension(base, 'mp4'));
-        add(swapExtension(base, 'm3u8'));
-        add(base); // Original non-web format — native/proxy might handle it
+        addVariant(swapExtension(base, 'mp4'));
+        addVariant(swapExtension(base, 'm3u8'));
       } else if (isLikelyHlsUrl(base)) {
-        add(base);
-        add(swapExtension(base, 'mp4')); // MP4 fallback
+        addVariant(base);
+        addVariant(swapExtension(base, 'mp4'));
       } else {
-        // Already .mp4 or other — use as-is, add HLS wrapper as fallback
-        add(base);
-        add(swapExtension(base, 'm3u8'));
+        addVariant(base);
+        addVariant(swapExtension(base, 'm3u8'));
       }
+      addVariant(base);
     } else {
-      // Unknown type — keep original + HLS swap
-      add(base);
-      if (!isLikelyHlsUrl(base)) {
-        add(swapExtension(base, 'm3u8'));
+      addVariant(base);
+      if (!isLikelyHlsUrl(base)) addVariant(swapExtension(base, 'm3u8'));
+    }
+
+    for (const variant of variants) {
+      const isHttp = variant.startsWith('http://');
+      const isHttps = variant.startsWith('https://');
+      const isHls = isLikelyHlsUrl(variant);
+      const isTs = isTsLikeUrl(variant);
+
+      if (channel.isLocal || Capacitor.isNativePlatform()) {
+        addCandidate(variant, false);
+        continue;
       }
+
+      if (isHttp) {
+        // Root-cause fix: on HTTPS app shells, direct HTTP attempts waste time before proxy succeeds.
+        // Prefer the proxy immediately for all remote HTTP streams.
+        addCandidate(variant, true);
+
+        // Keep direct fallback only for non-live, non-TS content to avoid slow dead-end retries.
+        if (streamType !== 'live' && !isTs) {
+          addCandidate(variant, false);
+        }
+        continue;
+      }
+
+      if (isHttps) {
+        addCandidate(variant, false);
+        if (isHls || streamType === 'live') addCandidate(variant, true);
+        continue;
+      }
+
+      addCandidate(variant, false);
     }
 
     log('candidates_generated', {
       streamType,
-      originalUrl: base.slice(0, 120),
+      sourceUrl: base.slice(0, 180),
       variantCount: variants.length,
-      variants: variants.map(v => v.slice(0, 80)),
+      candidateCount: finalCandidates.length,
+      variants: variants.map(v => v.slice(0, 120)),
+      candidates: finalCandidates.map(v => v.slice(0, 140)),
     });
 
-    return Array.from(new Set(variants.flatMap(buildPlayableCandidates)));
-  }, [channel.url, buildPlayableCandidates, log]);
+    return finalCandidates;
+  }, [channel.isLocal, channel.url, log, streamProxyUrl]);
 
   const retryPlayback = useCallback(() => {
     // Immediate UI reset so retry action feels responsive.
@@ -218,6 +227,7 @@ export const useResilientPlayback = ({
     let canceled = false;
     let reconnectCycle = 0;
     let candidateIndex = 0;
+    let lastFailureReason = 'unknown';
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let startupWatchdog: ReturnType<typeof setTimeout> | null = null;
     let stalledMonitor: ReturnType<typeof setInterval> | null = null;
@@ -272,7 +282,7 @@ export const useResilientPlayback = ({
       if (canceled) return;
       setPlaybackState('failed');
       setError(message);
-      log('fatal_error', { reason, reconnectCycle });
+      log('fatal_error', { reason, reconnectCycle, lastFailureReason, sourceUrl: channel.url.slice(0, 200) });
     };
 
     const startCandidate = (trigger: string) => {
@@ -312,9 +322,10 @@ export const useResilientPlayback = ({
         candidateIndex,
         candidateCount: sourceCandidates.length,
         isHls,
+        sourceUrl: channel.url.slice(0, 200),
+        finalPlaybackUrl: candidateUrl.slice(0, 200),
         protocol: candidateUrl.startsWith('https://') ? 'HTTPS' : candidateUrl.startsWith('http://') ? 'HTTP' : 'proxy',
         isProxy: candidateUrl.includes('stream-proxy'),
-        candidate: candidateUrl.slice(0, 200),
       });
 
       let switchedCandidate = false;
@@ -322,12 +333,15 @@ export const useResilientPlayback = ({
       let mediaRecoveries = 0;
       let lastTime = 0;
       let stallSince = Date.now();
+      const candidateStartedAt = performance.now();
+      let firstFrameLogged = false;
 
       const moveNext = (reason: string, details?: Record<string, unknown>) => {
         if (canceled || switchedCandidate) return;
         switchedCandidate = true;
+        lastFailureReason = reason;
         clearTimers();
-        log('switch_candidate', { reason, ...details });
+        log('switch_candidate', { reason, ...details, bufferedSeconds: getBufferedSeconds(video) });
         window.setTimeout(() => startCandidate(reason), 0);
       };
 
@@ -336,25 +350,29 @@ export const useResilientPlayback = ({
         stallSince = Date.now();
         setPlaybackState('playing');
         setError(null);
-        // Ensure audio is unmuted when playing starts
         if (!forceMuted && video.muted) {
           video.muted = false;
         }
-        log('playing', { currentTime: video.currentTime, muted: video.muted });
+        log('playing', {
+          currentTime: video.currentTime,
+          muted: video.muted,
+          bufferedSeconds: getBufferedSeconds(video),
+          startupMs: Math.round(performance.now() - candidateStartedAt),
+        });
       };
 
       const onWaiting = () => {
         if (canceled) return;
         setPlaybackState('buffering');
-        log('buffering', { readyState: video.readyState });
+        log('buffering', { readyState: video.readyState, bufferedSeconds: getBufferedSeconds(video) });
       };
 
       const onStalled = () => {
         if (canceled) return;
         setPlaybackState('buffering');
-        log('stalled', { reason: 'video_stalled_event' });
+        log('stalled', { reason: 'video_stalled_event', bufferedSeconds: getBufferedSeconds(video) });
 
-        if (hlsRef.current && networkRecoveries < 2) {
+        if (hlsRef.current && networkRecoveries < 1) {
           networkRecoveries += 1;
           setPlaybackState('reconnecting');
           try {
@@ -372,13 +390,37 @@ export const useResilientPlayback = ({
 
       const onVideoError = () => {
         if (canceled) return;
-        moveNext('video_error_event', { mediaErrorCode: video.error?.code });
+        moveNext('video_error_event', { mediaErrorCode: video.error?.code, mediaErrorMessage: video.error?.message });
+      };
+
+      const onLoadedMetadata = () => {
+        log('loaded_metadata', {
+          duration: Number.isFinite(video.duration) ? video.duration : null,
+          videoWidth: video.videoWidth,
+          videoHeight: video.videoHeight,
+        });
+      };
+
+      const onCanPlay = () => {
+        log('canplay', {
+          startupMs: Math.round(performance.now() - candidateStartedAt),
+          bufferedSeconds: getBufferedSeconds(video),
+          readyState: video.readyState,
+        });
       };
 
       const onTimeUpdate = () => {
         if (video.currentTime > lastTime + 0.05) {
           lastTime = video.currentTime;
           stallSince = Date.now();
+          if (!firstFrameLogged) {
+            firstFrameLogged = true;
+            log('first_frame', {
+              startupMs: Math.round(performance.now() - candidateStartedAt),
+              bufferedSeconds: getBufferedSeconds(video),
+              currentTime: video.currentTime,
+            });
+          }
         }
       };
 
@@ -386,6 +428,8 @@ export const useResilientPlayback = ({
       video.addEventListener('waiting', onWaiting);
       video.addEventListener('stalled', onStalled);
       video.addEventListener('error', onVideoError);
+      video.addEventListener('loadedmetadata', onLoadedMetadata);
+      video.addEventListener('canplay', onCanPlay);
       video.addEventListener('timeupdate', onTimeUpdate);
 
       detachVideoListeners = () => {
@@ -393,6 +437,8 @@ export const useResilientPlayback = ({
         video.removeEventListener('waiting', onWaiting);
         video.removeEventListener('stalled', onStalled);
         video.removeEventListener('error', onVideoError);
+        video.removeEventListener('loadedmetadata', onLoadedMetadata);
+        video.removeEventListener('canplay', onCanPlay);
         video.removeEventListener('timeupdate', onTimeUpdate);
       };
 
@@ -417,9 +463,10 @@ export const useResilientPlayback = ({
           reason: 'progress_not_advancing',
           stalledFor,
           currentTime: video.currentTime,
+          bufferedSeconds: getBufferedSeconds(video),
         });
 
-        if (hlsRef.current && networkRecoveries < 2) {
+        if (hlsRef.current && networkRecoveries < 1) {
           networkRecoveries += 1;
           try {
             hlsRef.current.startLoad(-1);
@@ -432,7 +479,7 @@ export const useResilientPlayback = ({
         }
 
         moveNext('progress_stalled');
-      }, 3000);
+      }, 2000);
 
       const startPlayback = async () => {
         try {
@@ -459,16 +506,20 @@ export const useResilientPlayback = ({
       if (isHls && Hls.isSupported()) {
         const hls = new Hls({
           enableWorker: true,
-          lowLatencyMode: !isVOD,
-          maxBufferLength: isVOD ? 45 : 15,
-          maxMaxBufferLength: isVOD ? 90 : 30,
-          manifestLoadingMaxRetry: 2,
-          levelLoadingMaxRetry: 2,
-          fragLoadingMaxRetry: 3,
-          manifestLoadingRetryDelay: 300,
-          levelLoadingRetryDelay: 500,
-          fragLoadingRetryDelay: 500,
-          startFragPrefetch: true,
+          lowLatencyMode: false,
+          maxBufferLength: isVOD ? 35 : 20,
+          maxMaxBufferLength: isVOD ? 60 : 40,
+          backBufferLength: isVOD ? 30 : 20,
+          manifestLoadingMaxRetry: 1,
+          levelLoadingMaxRetry: 1,
+          fragLoadingMaxRetry: 1,
+          manifestLoadingRetryDelay: 250,
+          levelLoadingRetryDelay: 250,
+          fragLoadingRetryDelay: 250,
+          liveSyncDurationCount: isVOD ? undefined : 3,
+          liveMaxLatencyDurationCount: isVOD ? undefined : 8,
+          startFragPrefetch: !isVOD,
+          testBandwidth: false,
         });
 
         hlsRef.current = hls;

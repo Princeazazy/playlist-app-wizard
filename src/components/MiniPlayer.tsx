@@ -50,9 +50,9 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
     videoRef,
     channel,
     forceMuted: false,
-    maxReconnectCycles: 5,
-    startupTimeoutMs: 9000,
-    stalledThresholdMs: 12000,
+    maxReconnectCycles: 1,
+    startupTimeoutMs: 3500,
+    stalledThresholdMs: 6000,
     logPrefix: 'MiniPlayer',
   });
 
