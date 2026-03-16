@@ -116,103 +116,96 @@ export const useResilientPlayback = ({
     return new URL('functions/v1/stream-proxy', supabaseUrl).toString();
   }, []);
 
-  const buildPlayableCandidates = useCallback((rawUrl: string): string[] => {
-    if (Capacitor.isNativePlatform()) return [rawUrl];
-
-    const candidates: string[] = [];
-    // Always build proxy URL from the ORIGINAL rawUrl (may be http://)
-    const proxyUrl = streamProxyUrl ? `${streamProxyUrl}?url=${encodeURIComponent(rawUrl)}` : '';
-
-    const add = (value: string) => {
-      if (!value) return;
-      if (!candidates.includes(value)) candidates.push(value);
-    };
-
-    if (channel.isLocal) {
-      if (rawUrl.startsWith('http://')) add(proxyUrl);
-      else {
-        add(rawUrl);
-        if (proxyUrl) add(proxyUrl);
-      }
-      return candidates;
-    }
-
-    if (rawUrl.startsWith('http://')) {
-      // 1. Try direct HTTP first — modern browsers auto-upgrade media to HTTPS
-      add(rawUrl);
-      // 2. Explicit HTTPS upgrade in case browser doesn't auto-upgrade
-      add(rawUrl.replace(/^http:\/\//i, 'https://'));
-      // 3. Proxy fallback (always include)
-      if (proxyUrl) add(proxyUrl);
-      return candidates;
-    }
-
-    if (rawUrl.startsWith('https://')) {
-      add(rawUrl);
-      // Always include proxy as fallback — don't exclude any hosts
-      if (proxyUrl) add(proxyUrl);
-      return candidates;
-    }
-
-    add(rawUrl);
-    return candidates;
-  }, [channel.isLocal, streamProxyUrl]);
-
   const sourceCandidates = useMemo(() => {
     const base = channel.url;
     if (!base) return [];
 
     const streamType = getStreamType(base);
     const variants: string[] = [];
-    const add = (candidate: string | undefined) => {
+    const finalCandidates: string[] = [];
+
+    const addVariant = (candidate: string | undefined) => {
       if (!candidate) return;
       if (!variants.includes(candidate)) variants.push(candidate);
     };
 
+    const addCandidate = (candidate: string | undefined, useProxy = false) => {
+      if (!candidate) return;
+      const value = useProxy && streamProxyUrl
+        ? `${streamProxyUrl}?url=${encodeURIComponent(candidate)}`
+        : candidate;
+      if (!value) return;
+      if (!finalCandidates.includes(value)) finalCandidates.push(value);
+    };
+
     if (streamType === 'live') {
-      // LIVE: .m3u8 is the only web-playable format. .ts requires native player.
       if (isLikelyHlsUrl(base)) {
-        add(base);
+        addVariant(base);
       } else {
-        // Original is .ts — try .m3u8 swap first (HLS manifest), keep .ts as fallback
-        const hlsVariant = swapExtension(base, 'm3u8');
-        add(hlsVariant);
-        add(base); // .ts fallback — some browsers/proxy can handle it
+        addVariant(swapExtension(base, 'm3u8'));
+        addVariant(base);
       }
     } else if (streamType === 'movie' || streamType === 'series') {
-      // VOD: Try web-playable formats. Xtream servers transcode by extension.
       const hasNonWebExt = NON_WEB_EXTENSIONS.test(base);
-      
       if (hasNonWebExt) {
-        // .mkv/.avi etc → try .mp4 first, then .m3u8 (HLS wrapper), then original as last resort
-        add(swapExtension(base, 'mp4'));
-        add(swapExtension(base, 'm3u8'));
-        add(base); // Original non-web format — native/proxy might handle it
+        addVariant(swapExtension(base, 'mp4'));
+        addVariant(swapExtension(base, 'm3u8'));
       } else if (isLikelyHlsUrl(base)) {
-        add(base);
-        add(swapExtension(base, 'mp4')); // MP4 fallback
+        addVariant(base);
+        addVariant(swapExtension(base, 'mp4'));
       } else {
-        // Already .mp4 or other — use as-is, add HLS wrapper as fallback
-        add(base);
-        add(swapExtension(base, 'm3u8'));
+        addVariant(base);
+        addVariant(swapExtension(base, 'm3u8'));
       }
+      addVariant(base);
     } else {
-      // Unknown type — keep original + HLS swap
-      add(base);
-      if (!isLikelyHlsUrl(base)) {
-        add(swapExtension(base, 'm3u8'));
+      addVariant(base);
+      if (!isLikelyHlsUrl(base)) addVariant(swapExtension(base, 'm3u8'));
+    }
+
+    for (const variant of variants) {
+      const isHttp = variant.startsWith('http://');
+      const isHttps = variant.startsWith('https://');
+      const isHls = isLikelyHlsUrl(variant);
+      const isTs = isTsLikeUrl(variant);
+
+      if (channel.isLocal || Capacitor.isNativePlatform()) {
+        addCandidate(variant, false);
+        continue;
       }
+
+      if (isHttp) {
+        // Root-cause fix: on HTTPS app shells, direct HTTP attempts waste time before proxy succeeds.
+        // Prefer the proxy immediately for all remote HTTP streams.
+        addCandidate(variant, true);
+
+        // Keep direct fallback only for non-live, non-TS content to avoid slow dead-end retries.
+        if (streamType !== 'live' && !isTs) {
+          addCandidate(variant, false);
+        }
+        continue;
+      }
+
+      if (isHttps) {
+        addCandidate(variant, false);
+        if (isHls || streamType === 'live') addCandidate(variant, true);
+        continue;
+      }
+
+      addCandidate(variant, false);
     }
 
     log('candidates_generated', {
       streamType,
-      originalUrl: base.slice(0, 120),
+      sourceUrl: base.slice(0, 180),
       variantCount: variants.length,
-      variants: variants.map(v => v.slice(0, 80)),
+      candidateCount: finalCandidates.length,
+      variants: variants.map(v => v.slice(0, 120)),
+      candidates: finalCandidates.map(v => v.slice(0, 140)),
     });
 
-    return Array.from(new Set(variants.flatMap(buildPlayableCandidates)));
-  }, [channel.url, buildPlayableCandidates, log]);
+    return finalCandidates;
+  }, [channel.isLocal, channel.url, log, streamProxyUrl]);
 
   const retryPlayback = useCallback(() => {
     // Immediate UI reset so retry action feels responsive.
