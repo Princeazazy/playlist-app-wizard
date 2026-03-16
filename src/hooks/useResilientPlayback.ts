@@ -146,33 +146,57 @@ export const useResilientPlayback = ({
     const base = channel.url;
     if (!base) return [];
 
+    const streamType = getStreamType(base);
     const variants: string[] = [];
     const add = (candidate: string | undefined) => {
       if (!candidate) return;
       if (!variants.includes(candidate)) variants.push(candidate);
     };
 
-    const liveSwap = /\/live\/.+\.ts(\?.*)?$/i.test(base)
-      ? base.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
-      : /\/live\/.+\.m3u8(\?.*)?$/i.test(base)
-        ? base.replace(/\.m3u8(\?.*)?$/i, '.ts$1')
-        : undefined;
-
-    const outputSwap = /output=ts/i.test(base)
-      ? base.replace(/output=ts/i, 'output=m3u8')
-      : /output=(m3u8|hls)/i.test(base)
-        ? base.replace(/output=(m3u8|hls)/i, 'output=ts')
-        : undefined;
-
-    const ordered = [base, liveSwap, outputSwap].filter((candidate): candidate is string => !!candidate);
-    if (isTsLikeUrl(base)) {
-      ordered.sort((a, b) => Number(isLikelyHlsUrl(b)) - Number(isLikelyHlsUrl(a)));
+    if (streamType === 'live') {
+      // LIVE: .m3u8 is the only web-playable format. .ts requires native player.
+      if (isLikelyHlsUrl(base)) {
+        add(base);
+      } else {
+        // Original is .ts — try .m3u8 swap first (HLS manifest), keep .ts as fallback
+        const hlsVariant = swapExtension(base, 'm3u8');
+        add(hlsVariant);
+        add(base); // .ts fallback — some browsers/proxy can handle it
+      }
+    } else if (streamType === 'movie' || streamType === 'series') {
+      // VOD: Try web-playable formats. Xtream servers transcode by extension.
+      const hasNonWebExt = NON_WEB_EXTENSIONS.test(base);
+      
+      if (hasNonWebExt) {
+        // .mkv/.avi etc → try .mp4 first, then .m3u8 (HLS wrapper), then original as last resort
+        add(swapExtension(base, 'mp4'));
+        add(swapExtension(base, 'm3u8'));
+        add(base); // Original non-web format — native/proxy might handle it
+      } else if (isLikelyHlsUrl(base)) {
+        add(base);
+        add(swapExtension(base, 'mp4')); // MP4 fallback
+      } else {
+        // Already .mp4 or other — use as-is, add HLS wrapper as fallback
+        add(base);
+        add(swapExtension(base, 'm3u8'));
+      }
+    } else {
+      // Unknown type — keep original + HLS swap
+      add(base);
+      if (!isLikelyHlsUrl(base)) {
+        add(swapExtension(base, 'm3u8'));
+      }
     }
 
-    ordered.forEach(add);
+    log('candidates_generated', {
+      streamType,
+      originalUrl: base.slice(0, 120),
+      variantCount: variants.length,
+      variants: variants.map(v => v.slice(0, 80)),
+    });
 
     return Array.from(new Set(variants.flatMap(buildPlayableCandidates)));
-  }, [channel.url, buildPlayableCandidates]);
+  }, [channel.url, buildPlayableCandidates, log]);
 
   const retryPlayback = useCallback(() => {
     // Immediate UI reset so retry action feels responsive.
