@@ -315,7 +315,14 @@ export const useResilientPlayback = ({
       setActiveSource(candidateUrl);
       setPlaybackState(reconnectCycle > 0 ? 'reconnecting' : 'connecting');
 
-      const streamType = getStreamType(candidateUrl);
+      const resolvedProtocol = isProxyWrappedUrl(candidateUrl)
+        ? 'PROXY'
+        : candidateUrl.startsWith('https://')
+          ? 'HTTPS'
+          : candidateUrl.startsWith('http://')
+            ? 'HTTP'
+            : 'OTHER';
+
       log('player_init', {
         trigger,
         streamType,
@@ -325,8 +332,8 @@ export const useResilientPlayback = ({
         isHls,
         sourceUrl: channel.url.slice(0, 200),
         finalPlaybackUrl: candidateUrl.slice(0, 200),
-        protocol: candidateUrl.startsWith('https://') ? 'HTTPS' : candidateUrl.startsWith('http://') ? 'HTTP' : 'proxy',
-        isProxy: candidateUrl.includes('stream-proxy'),
+        protocol: resolvedProtocol,
+        isProxy: isProxyWrappedUrl(candidateUrl),
       });
 
       let switchedCandidate = false;
