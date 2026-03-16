@@ -20,6 +20,7 @@ export interface XtreamConfig {
 export interface M3UConfig {
   type: 'm3u';
   m3uUrl: string;
+  vpnUrl?: string;         // Optional VPN/backup URL for failover
   epgUrl?: string;
 }
 
