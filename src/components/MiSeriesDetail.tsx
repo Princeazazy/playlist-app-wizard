@@ -78,7 +78,8 @@ function buildSeriesInfoFromRaw(
   rawData: any,
   creds: { baseUrl: string; username: string; password: string },
   seriesName: string,
-  fallbackPlot: string
+  fallbackPlot: string,
+  providerConfig?: ProviderConfig,
 ): SeriesInfo {
   const info = rawData?.info || {};
   const result: SeriesInfo = {
