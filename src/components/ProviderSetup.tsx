@@ -74,7 +74,7 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [], onSignOu
 
   const resetForms = () => {
     setXtreamServer(''); setXtreamUser(''); setXtreamPass(''); setXtreamName('');
-    setM3uUrl(''); setM3uEpg(''); setM3uName('');
+    setM3uUrl(''); setM3uVpnUrl(''); setM3uEpg(''); setM3uName('');
     setAcServer(''); setAcCode(''); setAcName('');
     setConnectError(''); setConnectSuccess('');
   };
