@@ -336,8 +336,11 @@ export const useResilientPlayback = ({
         stallSince = Date.now();
         setPlaybackState('playing');
         setError(null);
-        if (!forceMuted) video.muted = false;
-        log('playing', { currentTime: video.currentTime });
+        // Ensure audio is unmuted when playing starts
+        if (!forceMuted && video.muted) {
+          video.muted = false;
+        }
+        log('playing', { currentTime: video.currentTime, muted: video.muted });
       };
 
       const onWaiting = () => {

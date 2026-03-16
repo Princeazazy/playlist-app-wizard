@@ -168,7 +168,7 @@ export const MiFullscreenPlayer = ({
     videoRef,
     channel,
     isVOD,
-    forceMuted: !isNativeOrWebView(),
+    forceMuted: false,
     maxReconnectCycles: 6,
     startupTimeoutMs: 9000,
     stalledThresholdMs: 12000,
