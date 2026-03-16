@@ -433,12 +433,18 @@ export const useResilientPlayback = ({
 
       const startPlayback = async () => {
         try {
-          video.muted = forceMuted || reconnectCycle > 0;
+          // Start muted to satisfy autoplay policy, then unmute
+          video.muted = true;
           await video.play();
-          if (!forceMuted) video.muted = false;
+          // Unmute after successful play — works because play() was user-gesture-initiated
+          // or the muted autoplay succeeded
+          if (!forceMuted) {
+            video.muted = false;
+          }
         } catch (playError) {
           const errorName = (playError as { name?: string })?.name;
           if (errorName === 'NotAllowedError') {
+            // Even muted autoplay failed — need user gesture
             fail('Autoplay blocked by browser. Tap retry to start playback.', 'autoplay_blocked');
             return;
           }
