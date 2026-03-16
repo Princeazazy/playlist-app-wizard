@@ -207,7 +207,12 @@ export async function fetchProviderContent(
       throw new Error(`Failed to fetch content: ${errors.join('; ')}`);
     }
 
-    return normalizeChannels(allChannels, providerId);
+    const normalized = normalizeChannels(allChannels, providerId);
+    // Rewrite URLs to VPN domain if configured
+    if (config.type === 'm3u' && config.vpnUrl) {
+      return rewriteUrlsToVpn(normalized, m3uUrl, config.vpnUrl);
+    }
+    return normalized;
   }
 
   // Non-Xtream: single M3U call
