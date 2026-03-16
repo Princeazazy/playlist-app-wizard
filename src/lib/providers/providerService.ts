@@ -14,6 +14,10 @@ import {
   ContentType,
   SeriesDetail,
 } from './types';
+import {
+  applyPlaybackUrlPreferences,
+  normalizePlaybackUrl,
+} from '@/lib/playback/urlResolver';
 
 // ── Xtream API Authentication ───────────────────────────────
 
