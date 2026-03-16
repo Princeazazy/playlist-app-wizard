@@ -66,6 +66,22 @@ const swapExtension = (url: string, newExt: string): string => {
 
 const getRetryDelay = (cycle: number) => RETRY_BACKOFF_MS[Math.min(Math.max(cycle - 1, 0), RETRY_BACKOFF_MS.length - 1)];
 
+const getBufferedSeconds = (video: HTMLVideoElement): number => {
+  try {
+    const currentTime = video.currentTime || 0;
+    for (let i = 0; i < video.buffered.length; i += 1) {
+      const start = video.buffered.start(i);
+      const end = video.buffered.end(i);
+      if (currentTime >= start && currentTime <= end) {
+        return Math.max(0, end - currentTime);
+      }
+    }
+  } catch {
+    // ignore buffered range errors
+  }
+  return 0;
+};
+
 export const useResilientPlayback = ({
   videoRef,
   channel,
