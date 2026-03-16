@@ -20,6 +20,7 @@ import {
   normalizePlaybackUrl,
 } from '@/lib/playback/urlResolver';
 import { isNativeOrWebView } from '@/lib/platformDetect';
+import { fetchDirectPlaylistChannels } from './m3uDirectFetch';
 
 // ── Xtream API Authentication ───────────────────────────────
 
@@ -186,6 +187,32 @@ export async function fetchProviderContent(
     const normalized = normalizeChannels(data.channels, providerId);
     return applyPlaybackUrlPreferences(normalized, config);
   };
+
+  const fetchDirectOnDevice = async (): Promise<NormalizedChannel[] | null> => {
+    if (!isNativeOrWebView()) return null;
+
+    try {
+      console.log('[ProviderService] Attempting direct device playlist fetch...');
+      const channels = await fetchDirectPlaylistChannels(m3uUrl, {
+        maxChannels,
+        maxBytesMB,
+      });
+
+      if (channels.length === 0) return null;
+
+      const normalized = normalizeChannels(channels, providerId);
+      console.log(`[ProviderService] Direct device fetch loaded ${normalized.length} items`);
+      return applyPlaybackUrlPreferences(normalized, config);
+    } catch (error) {
+      console.warn('[ProviderService] Direct device playlist fetch failed, falling back to backend path', error);
+      return null;
+    }
+  };
+
+  const directDeviceChannels = await fetchDirectOnDevice();
+  if (directDeviceChannels && directDeviceChannels.length > 0) {
+    return directDeviceChannels;
+  }
 
   const isXtreamCompatible = config.type === 'xtream' || config.type === 'access_code' || m3uUrl.includes('get.php');
 
