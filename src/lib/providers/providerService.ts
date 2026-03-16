@@ -323,9 +323,8 @@ export async function fetchSeriesInfo(
 // ── Build stream URL for a channel ──────────────────────────
 
 export function buildStreamUrl(channel: NormalizedChannel, config: ProviderConfig): string {
-  // If channel already has a full URL, use it
   if (channel.url && (channel.url.startsWith('http://') || channel.url.startsWith('https://'))) {
-    return channel.url;
+    return normalizePlaybackUrl(channel.url, config);
   }
 
   const NON_WEB = /^(mkv|avi|wmv|flv|mov|divx|rmvb|3gp)$/i;
@@ -335,16 +334,16 @@ export function buildStreamUrl(channel: NormalizedChannel, config: ProviderConfi
     const rawExt = channel.containerExtension || 'ts';
     if (channel.type === 'movies') {
       const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
-      return `${serverUrl}/movie/${config.username}/${config.password}/${channel.streamId}.${ext}`;
+      return normalizePlaybackUrl(`${serverUrl}/movie/${config.username}/${config.password}/${channel.streamId}.${ext}`, config);
     }
     if (channel.type === 'series') {
       const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
-      return `${serverUrl}/series/${config.username}/${config.password}/${channel.streamId}.${ext}`;
+      return normalizePlaybackUrl(`${serverUrl}/series/${config.username}/${config.password}/${channel.streamId}.${ext}`, config);
     }
-    return `${serverUrl}/live/${config.username}/${config.password}/${channel.streamId}.ts`;
+    return normalizePlaybackUrl(`${serverUrl}/live/${config.username}/${config.password}/${channel.streamId}.ts`, config);
   }
 
-  return channel.url;
+  return normalizePlaybackUrl(channel.url, config);
 }
 
 // ── Name cleaning (moved from useIPTV) ──────────────────────
