@@ -49,7 +49,7 @@ export const MiniPlayer = ({ channel, onExpand, onClose }: MiniPlayerProps) => {
   } = useResilientPlayback({
     videoRef,
     channel,
-    forceMuted: !isNativeOrWebView(),
+    forceMuted: false,
     maxReconnectCycles: 5,
     startupTimeoutMs: 9000,
     stalledThresholdMs: 12000,
