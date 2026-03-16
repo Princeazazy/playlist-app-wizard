@@ -20,6 +20,7 @@ import {
   normalizePlaybackUrl,
 } from '@/lib/playback/urlResolver';
 import { isNativeOrWebView } from '@/lib/platformDetect';
+import { fetchDirectPlaylistChannels } from './m3uDirectFetch';
 
 // ── Xtream API Authentication ───────────────────────────────
 
