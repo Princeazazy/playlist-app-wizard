@@ -14,6 +14,10 @@ import {
   ContentType,
   SeriesDetail,
 } from './types';
+import {
+  applyPlaybackUrlPreferences,
+  normalizePlaybackUrl,
+} from '@/lib/playback/urlResolver';
 
 // ── Xtream API Authentication ───────────────────────────────
 
@@ -208,11 +212,7 @@ export async function fetchProviderContent(
     }
 
     const normalized = normalizeChannels(allChannels, providerId);
-    // Rewrite URLs to VPN domain if configured
-    if (config.type === 'm3u' && config.vpnUrl) {
-      return rewriteUrlsToVpn(normalized, m3uUrl, config.vpnUrl);
-    }
-    return normalized;
+    return applyPlaybackUrlPreferences(normalized, config);
   }
 
   // Non-Xtream: single M3U call
@@ -235,48 +235,7 @@ export async function fetchProviderContent(
   }
 
   const normalized = normalizeChannels(data.channels, providerId);
-  if (config.type === 'm3u' && config.vpnUrl) {
-    return rewriteUrlsToVpn(normalized, m3uUrl, config.vpnUrl);
-  }
-  return normalized;
-}
-
-/** Rewrite all channel URLs to use the VPN/backup server domain for faster playback */
-function rewriteUrlsToVpn(channels: NormalizedChannel[], primaryUrl: string, vpnUrl: string): NormalizedChannel[] {
-  try {
-    const primaryBase = extractServerBase(primaryUrl);
-    const vpnBase = extractServerBase(vpnUrl);
-    if (!primaryBase || !vpnBase || primaryBase === vpnBase) return channels;
-
-    console.log(`[ProviderService] Rewriting URLs: ${primaryBase} → ${vpnBase}`);
-    let rewritten = 0;
-
-    const result = channels.map(ch => {
-      if (ch.url && ch.url.includes(primaryBase)) {
-        rewritten++;
-        return { ...ch, url: ch.url.replace(primaryBase, vpnBase) };
-      }
-      return ch;
-    });
-
-    console.log(`[ProviderService] Rewrote ${rewritten}/${channels.length} URLs to VPN domain`);
-    return result;
-  } catch (e) {
-    console.warn('[ProviderService] VPN URL rewrite failed, using original URLs:', e);
-    return channels;
-  }
-}
-
-/** Extract protocol://host:port from a URL */
-function extractServerBase(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    return `${parsed.protocol}//${parsed.host}`;
-  } catch {
-    // Try regex for non-standard URLs
-    const match = url.match(/^(https?:\/\/[^\/\?]+)/i);
-    return match ? match[1] : null;
-  }
+  return applyPlaybackUrlPreferences(normalized, config);
 }
 
 /** Normalize raw channel data into our common model */
@@ -364,9 +323,8 @@ export async function fetchSeriesInfo(
 // ── Build stream URL for a channel ──────────────────────────
 
 export function buildStreamUrl(channel: NormalizedChannel, config: ProviderConfig): string {
-  // If channel already has a full URL, use it
   if (channel.url && (channel.url.startsWith('http://') || channel.url.startsWith('https://'))) {
-    return channel.url;
+    return normalizePlaybackUrl(channel.url, config);
   }
 
   const NON_WEB = /^(mkv|avi|wmv|flv|mov|divx|rmvb|3gp)$/i;
@@ -376,16 +334,16 @@ export function buildStreamUrl(channel: NormalizedChannel, config: ProviderConfi
     const rawExt = channel.containerExtension || 'ts';
     if (channel.type === 'movies') {
       const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
-      return `${serverUrl}/movie/${config.username}/${config.password}/${channel.streamId}.${ext}`;
+      return normalizePlaybackUrl(`${serverUrl}/movie/${config.username}/${config.password}/${channel.streamId}.${ext}`, config);
     }
     if (channel.type === 'series') {
       const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
-      return `${serverUrl}/series/${config.username}/${config.password}/${channel.streamId}.${ext}`;
+      return normalizePlaybackUrl(`${serverUrl}/series/${config.username}/${config.password}/${channel.streamId}.${ext}`, config);
     }
-    return `${serverUrl}/live/${config.username}/${config.password}/${channel.streamId}.ts`;
+    return normalizePlaybackUrl(`${serverUrl}/live/${config.username}/${config.password}/${channel.streamId}.ts`, config);
   }
 
-  return channel.url;
+  return normalizePlaybackUrl(channel.url, config);
 }
 
 // ── Name cleaning (moved from useIPTV) ──────────────────────

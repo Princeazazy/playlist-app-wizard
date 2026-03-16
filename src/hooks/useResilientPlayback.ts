@@ -32,7 +32,6 @@ const RETRY_BACKOFF_MS = [200, 500, 1000, 2000] as const;
 
 const isLikelyHlsUrl = (url: string): boolean => {
   if (/\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url)) return true;
-  // Detect proxy-wrapped HLS: stream-proxy?url=<encoded .m3u8 URL>
   try {
     const parsed = new URL(url);
     const inner = parsed.searchParams.get('url');
@@ -42,6 +41,15 @@ const isLikelyHlsUrl = (url: string): boolean => {
     }
   } catch { /* not a valid URL, skip */ }
   return false;
+};
+
+const isProxyWrappedUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname.includes('/functions/v1/stream-proxy') && parsed.searchParams.has('url');
+  } catch {
+    return false;
+  }
 };
 
 const isTsLikeUrl = (url: string): boolean => (
@@ -129,12 +137,11 @@ export const useResilientPlayback = ({
       if (!variants.includes(candidate)) variants.push(candidate);
     };
 
-    const addCandidate = (candidate: string | undefined, useProxy = false) => {
+    const addCandidate = (candidate: string | undefined, mode: 'direct' | 'proxy') => {
       if (!candidate) return;
-      const value = useProxy && streamProxyUrl
+      const value = mode === 'proxy' && streamProxyUrl
         ? `${streamProxyUrl}?url=${encodeURIComponent(candidate)}`
         : candidate;
-      if (!value) return;
       if (!finalCandidates.includes(value)) finalCandidates.push(value);
     };
 
@@ -142,22 +149,22 @@ export const useResilientPlayback = ({
       if (isLikelyHlsUrl(base)) {
         addVariant(base);
       } else {
-        addVariant(swapExtension(base, 'm3u8'));
         addVariant(base);
+        addVariant(swapExtension(base, 'm3u8'));
       }
     } else if (streamType === 'movie' || streamType === 'series') {
-      const hasNonWebExt = NON_WEB_EXTENSIONS.test(base);
-      if (hasNonWebExt) {
+      if (NON_WEB_EXTENSIONS.test(base)) {
         addVariant(swapExtension(base, 'mp4'));
         addVariant(swapExtension(base, 'm3u8'));
-      } else if (isLikelyHlsUrl(base)) {
-        addVariant(base);
-        addVariant(swapExtension(base, 'mp4'));
       } else {
         addVariant(base);
-        addVariant(swapExtension(base, 'm3u8'));
+        if (!/\.mp4(\?.*)?$/i.test(base) && !isLikelyHlsUrl(base)) {
+          addVariant(swapExtension(base, 'mp4'));
+        }
+        if (!isLikelyHlsUrl(base)) {
+          addVariant(swapExtension(base, 'm3u8'));
+        }
       }
-      addVariant(base);
     } else {
       addVariant(base);
       if (!isLikelyHlsUrl(base)) addVariant(swapExtension(base, 'm3u8'));
@@ -167,32 +174,26 @@ export const useResilientPlayback = ({
       const isHttp = variant.startsWith('http://');
       const isHttps = variant.startsWith('https://');
       const isHls = isLikelyHlsUrl(variant);
-      const isTs = isTsLikeUrl(variant);
 
       if (channel.isLocal || Capacitor.isNativePlatform()) {
-        addCandidate(variant, false);
+        addCandidate(variant, 'direct');
         continue;
       }
 
       if (isHttp) {
-        // Root-cause fix: on HTTPS app shells, direct HTTP attempts waste time before proxy succeeds.
-        // Prefer the proxy immediately for all remote HTTP streams.
-        addCandidate(variant, true);
-
-        // Keep direct fallback only for non-live, non-TS content to avoid slow dead-end retries.
-        if (streamType !== 'live' && !isTs) {
-          addCandidate(variant, false);
-        }
+        addCandidate(variant, 'proxy');
         continue;
       }
 
       if (isHttps) {
-        addCandidate(variant, false);
-        if (isHls || streamType === 'live') addCandidate(variant, true);
+        addCandidate(variant, 'direct');
+        if (isHls) {
+          addCandidate(variant, 'proxy');
+        }
         continue;
       }
 
-      addCandidate(variant, false);
+      addCandidate(variant, 'direct');
     }
 
     log('candidates_generated', {
@@ -315,6 +316,14 @@ export const useResilientPlayback = ({
       setPlaybackState(reconnectCycle > 0 ? 'reconnecting' : 'connecting');
 
       const streamType = getStreamType(candidateUrl);
+      const resolvedProtocol = isProxyWrappedUrl(candidateUrl)
+        ? 'PROXY'
+        : candidateUrl.startsWith('https://')
+          ? 'HTTPS'
+          : candidateUrl.startsWith('http://')
+            ? 'HTTP'
+            : 'OTHER';
+
       log('player_init', {
         trigger,
         streamType,
@@ -324,8 +333,8 @@ export const useResilientPlayback = ({
         isHls,
         sourceUrl: channel.url.slice(0, 200),
         finalPlaybackUrl: candidateUrl.slice(0, 200),
-        protocol: candidateUrl.startsWith('https://') ? 'HTTPS' : candidateUrl.startsWith('http://') ? 'HTTP' : 'proxy',
-        isProxy: candidateUrl.includes('stream-proxy'),
+        protocol: resolvedProtocol,
+        isProxy: isProxyWrappedUrl(candidateUrl),
       });
 
       let switchedCandidate = false;

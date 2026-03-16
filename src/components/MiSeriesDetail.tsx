@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTMDB, TMDBDetailedItem } from '@/hooks/useTMDB';
 import { WeatherIcon } from './shared/WeatherIcon';
 import { ProviderConfig } from '@/lib/providers/types';
+import { normalizePlaybackUrl } from '@/lib/playback/urlResolver';
 
 interface Episode {
   id: string;
@@ -77,7 +78,8 @@ function buildSeriesInfoFromRaw(
   rawData: any,
   creds: { baseUrl: string; username: string; password: string },
   seriesName: string,
-  fallbackPlot: string
+  fallbackPlot: string,
+  providerConfig?: ProviderConfig,
 ): SeriesInfo {
   const info = rawData?.info || {};
   const result: SeriesInfo = {
@@ -106,9 +108,9 @@ function buildSeriesInfoFromRaw(
       if (!Array.isArray(rawEps)) continue;
       const episodes: Episode[] = rawEps.map((ep: any) => {
         const rawExt = ep.container_extension || 'mp4';
-        // Force web-playable extension — Xtream servers transcode by extension
         const NON_WEB = /^(mkv|avi|wmv|flv|mov|divx|rmvb|3gp)$/i;
         const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
+        const rawUrl = `${creds.baseUrl}/series/${creds.username}/${creds.password}/${ep.id}.${ext}`;
         return {
           id: String(ep.id),
           episode_num: ep.episode_num || 0,
@@ -121,7 +123,7 @@ function buildSeriesInfoFromRaw(
             rating: ep.info?.rating || '',
             movie_image: ep.info?.movie_image || '',
           },
-          url: `${creds.baseUrl}/series/${creds.username}/${creds.password}/${ep.id}.${ext}`,
+          url: normalizePlaybackUrl(rawUrl, providerConfig),
         };
       }).sort((a: Episode, b: Episode) => a.episode_num - b.episode_num);
 
@@ -234,7 +236,7 @@ export const MiSeriesDetail = ({
           try {
             const rawData = JSON.parse(rawText);
             if (rawData && typeof rawData === 'object' && !Array.isArray(rawData) && Object.keys(rawData).length > 0) {
-              const info = buildSeriesInfoFromRaw(rawData, creds, item.name, item.plot || '');
+              const info = buildSeriesInfoFromRaw(rawData, creds, item.name, item.plot || '', providerConfig);
               console.log(`[SeriesDetail] ✅ Direct fetch success: ${info.seasons.length} seasons`);
               setSeriesInfo(info);
               if (info.seasons.length > 0) {
@@ -300,7 +302,7 @@ export const MiSeriesDetail = ({
 
     setLoading(false);
     setFetchMethod('done');
-  }, [item.series_id, item.name, item.plot, getPlaylistUrl]);
+  }, [item.series_id, item.name, item.plot, getPlaylistUrl, providerConfig]);
 
   useEffect(() => {
     fetchSeriesData();
