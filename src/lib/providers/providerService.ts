@@ -3,6 +3,7 @@
 // Uses edge functions for actual fetching (CORS-safe)
 // ═══════════════════════════════════════════════════════════════
 
+import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 import {
   ProviderConfig,
@@ -18,6 +19,7 @@ import {
   applyPlaybackUrlPreferences,
   normalizePlaybackUrl,
 } from '@/lib/playback/urlResolver';
+import { isNativeOrWebView } from '@/lib/platformDetect';
 
 // ── Xtream API Authentication ───────────────────────────────
 
