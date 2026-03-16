@@ -315,6 +315,7 @@ export const useResilientPlayback = ({
       setActiveSource(candidateUrl);
       setPlaybackState(reconnectCycle > 0 ? 'reconnecting' : 'connecting');
 
+      const streamType = getStreamType(candidateUrl);
       const resolvedProtocol = isProxyWrappedUrl(candidateUrl)
         ? 'PROXY'
         : candidateUrl.startsWith('https://')
