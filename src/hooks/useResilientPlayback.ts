@@ -48,6 +48,22 @@ const isTsLikeUrl = (url: string): boolean => (
   /\/live\/.+\.ts(\?.*)?$/i.test(url) || /(?:^|[?&])output=ts\b/i.test(url)
 );
 
+/** Non-web-playable container formats */
+const NON_WEB_EXTENSIONS = /\.(mkv|avi|wmv|flv|mov|webm|divx|rmvb|3gp)(\?.*)?$/i;
+
+/** Detect path type from URL */
+const getStreamType = (url: string): 'live' | 'movie' | 'series' | 'unknown' => {
+  if (/\/live\//i.test(url)) return 'live';
+  if (/\/movie\//i.test(url)) return 'movie';
+  if (/\/series\//i.test(url)) return 'series';
+  return 'unknown';
+};
+
+/** Swap file extension in Xtream-style URL */
+const swapExtension = (url: string, newExt: string): string => {
+  return url.replace(/\.[a-z0-9]{2,5}(\?.*)?$/i, `.${newExt}$1`);
+};
+
 const getRetryDelay = (cycle: number) => RETRY_BACKOFF_MS[Math.min(Math.max(cycle - 1, 0), RETRY_BACKOFF_MS.length - 1)];
 
 export const useResilientPlayback = ({
