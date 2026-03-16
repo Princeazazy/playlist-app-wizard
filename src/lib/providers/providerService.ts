@@ -209,6 +209,11 @@ export async function fetchProviderContent(
     }
   };
 
+  const directDeviceChannels = await fetchDirectOnDevice();
+  if (directDeviceChannels && directDeviceChannels.length > 0) {
+    return directDeviceChannels;
+  }
+
   const isXtreamCompatible = config.type === 'xtream' || config.type === 'access_code' || m3uUrl.includes('get.php');
 
   if (isXtreamCompatible) {
