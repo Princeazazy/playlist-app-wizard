@@ -130,6 +130,7 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [], onSignOu
     const config: M3UConfig = {
       type: 'm3u',
       m3uUrl: m3uUrl.trim(),
+      vpnUrl: m3uVpnUrl.trim() || undefined,
       epgUrl: m3uEpg.trim() || undefined,
     };
 
