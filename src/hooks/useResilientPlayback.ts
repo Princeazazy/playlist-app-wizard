@@ -30,9 +30,19 @@ interface UseResilientPlaybackResult {
 
 const RETRY_BACKOFF_MS = [300, 800, 1500, 2500, 4000, 6000] as const;
 
-const isLikelyHlsUrl = (url: string): boolean => (
-  /\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url)
-);
+const isLikelyHlsUrl = (url: string): boolean => {
+  if (/\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url)) return true;
+  // Detect proxy-wrapped HLS: stream-proxy?url=<encoded .m3u8 URL>
+  try {
+    const parsed = new URL(url);
+    const inner = parsed.searchParams.get('url');
+    if (inner) {
+      const decoded = decodeURIComponent(inner);
+      return /\.m3u8(\?.*)?$/i.test(decoded) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(decoded);
+    }
+  } catch { /* not a valid URL, skip */ }
+  return false;
+};
 
 const isTsLikeUrl = (url: string): boolean => (
   /\/live\/.+\.ts(\?.*)?$/i.test(url) || /(?:^|[?&])output=ts\b/i.test(url)
