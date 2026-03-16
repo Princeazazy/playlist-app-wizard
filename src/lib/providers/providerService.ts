@@ -3,6 +3,7 @@
 // Uses edge functions for actual fetching (CORS-safe)
 // ═══════════════════════════════════════════════════════════════
 
+import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 import {
   ProviderConfig,
@@ -18,6 +19,7 @@ import {
   applyPlaybackUrlPreferences,
   normalizePlaybackUrl,
 } from '@/lib/playback/urlResolver';
+import { isNativeOrWebView } from '@/lib/platformDetect';
 
 // ── Xtream API Authentication ───────────────────────────────
 
@@ -157,7 +159,7 @@ export async function fetchProviderContent(
     const serverUrl = config.serverUrl.replace(/\/+$/, '');
     m3uUrl = `${serverUrl}/get.php?username=${encodeURIComponent(config.username)}&password=${encodeURIComponent(config.password)}&type=m3u_plus&output=ts`;
   } else if (config.type === 'm3u') {
-    m3uUrl = config.m3uUrl;
+    m3uUrl = config.vpnUrl || config.m3uUrl;
   } else if (config.type === 'access_code') {
     const serverUrl = config.serverUrl.replace(/\/+$/, '');
     m3uUrl = `${serverUrl}/get.php?username=${encodeURIComponent(config.accessCode)}&password=${encodeURIComponent(config.accessCode)}&type=m3u_plus&output=ts`;
@@ -165,10 +167,28 @@ export async function fetchProviderContent(
     throw new Error('Unknown provider type');
   }
 
+  const fallbackToStandardM3U = async (): Promise<NormalizedChannel[]> => {
+    const { data, error } = await supabase.functions.invoke('fetch-m3u', {
+      body: {
+        url: m3uUrl,
+        maxChannels,
+        maxBytesMB,
+        maxReturnPerType,
+        preferXtreamApi: false,
+        forceXtreamApi: false,
+      },
+    });
+
+    if (error) throw new Error(error.message);
+    if (data?.error) throw new Error(data.error);
+    if (!Array.isArray(data?.channels)) return [];
+
+    const normalized = normalizeChannels(data.channels, providerId);
+    return applyPlaybackUrlPreferences(normalized, config);
+  };
+
   const isXtreamCompatible = config.type === 'xtream' || config.type === 'access_code' || m3uUrl.includes('get.php');
 
-  // For Xtream-compatible providers, split into 3 parallel calls by content type
-  // to avoid exceeding edge function memory limits on large catalogs (93k+ items)
   if (isXtreamCompatible) {
     console.log('[ProviderService] Fetching via 3 parallel Xtream calls (live/movies/series)...');
     const baseBody = {
@@ -207,35 +227,21 @@ export async function fetchProviderContent(
       }
     }
 
-    if (allChannels.length === 0 && errors.length > 0) {
-      throw new Error(`Failed to fetch content: ${errors.join('; ')}`);
+    if (allChannels.length > 0) {
+      const normalized = normalizeChannels(allChannels, providerId);
+      return applyPlaybackUrlPreferences(normalized, config);
     }
 
-    const normalized = normalizeChannels(allChannels, providerId);
-    return applyPlaybackUrlPreferences(normalized, config);
+    const providerBlocked = errors.some((entry) => entry.includes('451'));
+    if (providerBlocked || errors.length === 0) {
+      console.warn('[ProviderService] Xtream API returned no content, falling back to standard M3U parsing');
+      return fallbackToStandardM3U();
+    }
+
+    throw new Error(`Failed to fetch content: ${errors.join('; ')}`);
   }
 
-  // Non-Xtream: single M3U call
-  const { data, error } = await supabase.functions.invoke('fetch-m3u', {
-    body: {
-      url: m3uUrl,
-      maxChannels,
-      maxBytesMB,
-      maxReturnPerType,
-      preferXtreamApi: true,
-      forceXtreamApi: false,
-    },
-  });
-
-  if (error) throw new Error(error.message);
-  if (data?.error) throw new Error(data.error);
-
-  if (!data?.channels || !Array.isArray(data.channels)) {
-    return [];
-  }
-
-  const normalized = normalizeChannels(data.channels, providerId);
-  return applyPlaybackUrlPreferences(normalized, config);
+  return fallbackToStandardM3U();
 }
 
 /** Normalize raw channel data into our common model */
@@ -328,19 +334,24 @@ export function buildStreamUrl(channel: NormalizedChannel, config: ProviderConfi
   }
 
   const NON_WEB = /^(mkv|avi|wmv|flv|mov|divx|rmvb|3gp)$/i;
+  const shouldPreferM3u8 = isNativeOrWebView() && !Capacitor.isNativePlatform();
+  const liveExtension = shouldPreferM3u8 ? 'm3u8' : 'ts';
 
-  if (config.type === 'xtream' && channel.streamId) {
-    const serverUrl = (config as XtreamConfig).serverUrl.replace(/\/+$/, '');
-    const rawExt = channel.containerExtension || 'ts';
+  if ((config.type === 'xtream' || config.type === 'access_code') && channel.streamId) {
+    const serverUrl = config.serverUrl.replace(/\/+$/, '');
+    const rawExt = channel.containerExtension || liveExtension;
     if (channel.type === 'movies') {
       const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
-      return normalizePlaybackUrl(`${serverUrl}/movie/${config.username}/${config.password}/${channel.streamId}.${ext}`, config);
+      const credential = config.type === 'xtream' ? config : { username: config.accessCode, password: config.accessCode };
+      return normalizePlaybackUrl(`${serverUrl}/movie/${credential.username}/${credential.password}/${channel.streamId}.${ext}`, config);
     }
     if (channel.type === 'series') {
       const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
-      return normalizePlaybackUrl(`${serverUrl}/series/${config.username}/${config.password}/${channel.streamId}.${ext}`, config);
+      const credential = config.type === 'xtream' ? config : { username: config.accessCode, password: config.accessCode };
+      return normalizePlaybackUrl(`${serverUrl}/series/${credential.username}/${credential.password}/${channel.streamId}.${ext}`, config);
     }
-    return normalizePlaybackUrl(`${serverUrl}/live/${config.username}/${config.password}/${channel.streamId}.ts`, config);
+    const credential = config.type === 'xtream' ? config : { username: config.accessCode, password: config.accessCode };
+    return normalizePlaybackUrl(`${serverUrl}/live/${credential.username}/${credential.password}/${channel.streamId}.${liveExtension}`, config);
   }
 
   return normalizePlaybackUrl(channel.url, config);
