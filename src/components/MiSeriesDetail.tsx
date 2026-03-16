@@ -107,9 +107,9 @@ function buildSeriesInfoFromRaw(
       if (!Array.isArray(rawEps)) continue;
       const episodes: Episode[] = rawEps.map((ep: any) => {
         const rawExt = ep.container_extension || 'mp4';
-        // Force web-playable extension — Xtream servers transcode by extension
         const NON_WEB = /^(mkv|avi|wmv|flv|mov|divx|rmvb|3gp)$/i;
         const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
+        const rawUrl = `${creds.baseUrl}/series/${creds.username}/${creds.password}/${ep.id}.${ext}`;
         return {
           id: String(ep.id),
           episode_num: ep.episode_num || 0,
@@ -122,7 +122,7 @@ function buildSeriesInfoFromRaw(
             rating: ep.info?.rating || '',
             movie_image: ep.info?.movie_image || '',
           },
-          url: `${creds.baseUrl}/series/${creds.username}/${creds.password}/${ep.id}.${ext}`,
+          url: normalizePlaybackUrl(rawUrl, providerConfig),
         };
       }).sort((a: Episode, b: Episode) => a.episode_num - b.episode_num);
 
