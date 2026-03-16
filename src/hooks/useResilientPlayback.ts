@@ -137,12 +137,11 @@ export const useResilientPlayback = ({
       if (!variants.includes(candidate)) variants.push(candidate);
     };
 
-    const addCandidate = (candidate: string | undefined, useProxy = false) => {
+    const addCandidate = (candidate: string | undefined, mode: 'direct' | 'proxy') => {
       if (!candidate) return;
-      const value = useProxy && streamProxyUrl
+      const value = mode === 'proxy' && streamProxyUrl
         ? `${streamProxyUrl}?url=${encodeURIComponent(candidate)}`
         : candidate;
-      if (!value) return;
       if (!finalCandidates.includes(value)) finalCandidates.push(value);
     };
 
@@ -150,22 +149,22 @@ export const useResilientPlayback = ({
       if (isLikelyHlsUrl(base)) {
         addVariant(base);
       } else {
-        addVariant(swapExtension(base, 'm3u8'));
         addVariant(base);
+        addVariant(swapExtension(base, 'm3u8'));
       }
     } else if (streamType === 'movie' || streamType === 'series') {
-      const hasNonWebExt = NON_WEB_EXTENSIONS.test(base);
-      if (hasNonWebExt) {
+      if (NON_WEB_EXTENSIONS.test(base)) {
         addVariant(swapExtension(base, 'mp4'));
         addVariant(swapExtension(base, 'm3u8'));
-      } else if (isLikelyHlsUrl(base)) {
-        addVariant(base);
-        addVariant(swapExtension(base, 'mp4'));
       } else {
         addVariant(base);
-        addVariant(swapExtension(base, 'm3u8'));
+        if (!/\.mp4(\?.*)?$/i.test(base) && !isLikelyHlsUrl(base)) {
+          addVariant(swapExtension(base, 'mp4'));
+        }
+        if (!isLikelyHlsUrl(base)) {
+          addVariant(swapExtension(base, 'm3u8'));
+        }
       }
-      addVariant(base);
     } else {
       addVariant(base);
       if (!isLikelyHlsUrl(base)) addVariant(swapExtension(base, 'm3u8'));
@@ -175,32 +174,26 @@ export const useResilientPlayback = ({
       const isHttp = variant.startsWith('http://');
       const isHttps = variant.startsWith('https://');
       const isHls = isLikelyHlsUrl(variant);
-      const isTs = isTsLikeUrl(variant);
 
       if (channel.isLocal || Capacitor.isNativePlatform()) {
-        addCandidate(variant, false);
+        addCandidate(variant, 'direct');
         continue;
       }
 
       if (isHttp) {
-        // Root-cause fix: on HTTPS app shells, direct HTTP attempts waste time before proxy succeeds.
-        // Prefer the proxy immediately for all remote HTTP streams.
-        addCandidate(variant, true);
-
-        // Keep direct fallback only for non-live, non-TS content to avoid slow dead-end retries.
-        if (streamType !== 'live' && !isTs) {
-          addCandidate(variant, false);
-        }
+        addCandidate(variant, 'proxy');
         continue;
       }
 
       if (isHttps) {
-        addCandidate(variant, false);
-        if (isHls || streamType === 'live') addCandidate(variant, true);
+        addCandidate(variant, 'direct');
+        if (isHls) {
+          addCandidate(variant, 'proxy');
+        }
         continue;
       }
 
-      addCandidate(variant, false);
+      addCandidate(variant, 'direct');
     }
 
     log('candidates_generated', {
