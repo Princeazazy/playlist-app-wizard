@@ -236,7 +236,7 @@ export const MiSeriesDetail = ({
           try {
             const rawData = JSON.parse(rawText);
             if (rawData && typeof rawData === 'object' && !Array.isArray(rawData) && Object.keys(rawData).length > 0) {
-              const info = buildSeriesInfoFromRaw(rawData, creds, item.name, item.plot || '');
+              const info = buildSeriesInfoFromRaw(rawData, creds, item.name, item.plot || '', providerConfig);
               console.log(`[SeriesDetail] ✅ Direct fetch success: ${info.seasons.length} seasons`);
               setSeriesInfo(info);
               if (info.seasons.length > 0) {
