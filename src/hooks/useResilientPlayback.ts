@@ -70,7 +70,7 @@ export const useResilientPlayback = ({
   videoRef,
   channel,
   isVOD = false,
-  forceMuted = !Capacitor.isNativePlatform(),
+  forceMuted = false,
   maxReconnectCycles = 3,
   startupTimeoutMs = 6000,
   stalledThresholdMs = 10000,
