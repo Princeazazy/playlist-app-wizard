@@ -28,7 +28,7 @@ interface UseResilientPlaybackResult {
   retryPlayback: () => void;
 }
 
-const RETRY_BACKOFF_MS = [300, 800, 1500, 2500, 4000, 6000] as const;
+const RETRY_BACKOFF_MS = [200, 500, 1000, 2000] as const;
 
 const isLikelyHlsUrl = (url: string): boolean => {
   if (/\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url)) return true;
@@ -48,6 +48,22 @@ const isTsLikeUrl = (url: string): boolean => (
   /\/live\/.+\.ts(\?.*)?$/i.test(url) || /(?:^|[?&])output=ts\b/i.test(url)
 );
 
+/** Non-web-playable container formats */
+const NON_WEB_EXTENSIONS = /\.(mkv|avi|wmv|flv|mov|webm|divx|rmvb|3gp)(\?.*)?$/i;
+
+/** Detect path type from URL */
+const getStreamType = (url: string): 'live' | 'movie' | 'series' | 'unknown' => {
+  if (/\/live\//i.test(url)) return 'live';
+  if (/\/movie\//i.test(url)) return 'movie';
+  if (/\/series\//i.test(url)) return 'series';
+  return 'unknown';
+};
+
+/** Swap file extension in Xtream-style URL */
+const swapExtension = (url: string, newExt: string): string => {
+  return url.replace(/\.[a-z0-9]{2,5}(\?.*)?$/i, `.${newExt}$1`);
+};
+
 const getRetryDelay = (cycle: number) => RETRY_BACKOFF_MS[Math.min(Math.max(cycle - 1, 0), RETRY_BACKOFF_MS.length - 1)];
 
 export const useResilientPlayback = ({
@@ -55,9 +71,9 @@ export const useResilientPlayback = ({
   channel,
   isVOD = false,
   forceMuted = !Capacitor.isNativePlatform(),
-  maxReconnectCycles = 5,
-  startupTimeoutMs = 9000,
-  stalledThresholdMs = 12000,
+  maxReconnectCycles = 3,
+  startupTimeoutMs = 6000,
+  stalledThresholdMs = 10000,
   logPrefix = 'Playback',
   onManifestParsed,
   onSubtitleTracksUpdated,
@@ -130,33 +146,57 @@ export const useResilientPlayback = ({
     const base = channel.url;
     if (!base) return [];
 
+    const streamType = getStreamType(base);
     const variants: string[] = [];
     const add = (candidate: string | undefined) => {
       if (!candidate) return;
       if (!variants.includes(candidate)) variants.push(candidate);
     };
 
-    const liveSwap = /\/live\/.+\.ts(\?.*)?$/i.test(base)
-      ? base.replace(/\.ts(\?.*)?$/i, '.m3u8$1')
-      : /\/live\/.+\.m3u8(\?.*)?$/i.test(base)
-        ? base.replace(/\.m3u8(\?.*)?$/i, '.ts$1')
-        : undefined;
-
-    const outputSwap = /output=ts/i.test(base)
-      ? base.replace(/output=ts/i, 'output=m3u8')
-      : /output=(m3u8|hls)/i.test(base)
-        ? base.replace(/output=(m3u8|hls)/i, 'output=ts')
-        : undefined;
-
-    const ordered = [base, liveSwap, outputSwap].filter((candidate): candidate is string => !!candidate);
-    if (isTsLikeUrl(base)) {
-      ordered.sort((a, b) => Number(isLikelyHlsUrl(b)) - Number(isLikelyHlsUrl(a)));
+    if (streamType === 'live') {
+      // LIVE: .m3u8 is the only web-playable format. .ts requires native player.
+      if (isLikelyHlsUrl(base)) {
+        add(base);
+      } else {
+        // Original is .ts — try .m3u8 swap first (HLS manifest), keep .ts as fallback
+        const hlsVariant = swapExtension(base, 'm3u8');
+        add(hlsVariant);
+        add(base); // .ts fallback — some browsers/proxy can handle it
+      }
+    } else if (streamType === 'movie' || streamType === 'series') {
+      // VOD: Try web-playable formats. Xtream servers transcode by extension.
+      const hasNonWebExt = NON_WEB_EXTENSIONS.test(base);
+      
+      if (hasNonWebExt) {
+        // .mkv/.avi etc → try .mp4 first, then .m3u8 (HLS wrapper), then original as last resort
+        add(swapExtension(base, 'mp4'));
+        add(swapExtension(base, 'm3u8'));
+        add(base); // Original non-web format — native/proxy might handle it
+      } else if (isLikelyHlsUrl(base)) {
+        add(base);
+        add(swapExtension(base, 'mp4')); // MP4 fallback
+      } else {
+        // Already .mp4 or other — use as-is, add HLS wrapper as fallback
+        add(base);
+        add(swapExtension(base, 'm3u8'));
+      }
+    } else {
+      // Unknown type — keep original + HLS swap
+      add(base);
+      if (!isLikelyHlsUrl(base)) {
+        add(swapExtension(base, 'm3u8'));
+      }
     }
 
-    ordered.forEach(add);
+    log('candidates_generated', {
+      streamType,
+      originalUrl: base.slice(0, 120),
+      variantCount: variants.length,
+      variants: variants.map(v => v.slice(0, 80)),
+    });
 
     return Array.from(new Set(variants.flatMap(buildPlayableCandidates)));
-  }, [channel.url, buildPlayableCandidates]);
+  }, [channel.url, buildPlayableCandidates, log]);
 
   const retryPlayback = useCallback(() => {
     // Immediate UI reset so retry action feels responsive.
@@ -264,13 +304,17 @@ export const useResilientPlayback = ({
       setActiveSource(candidateUrl);
       setPlaybackState(reconnectCycle > 0 ? 'reconnecting' : 'connecting');
 
+      const streamType = getStreamType(candidateUrl);
       log('player_init', {
         trigger,
+        streamType,
         reconnectCycle,
         candidateIndex,
         candidateCount: sourceCandidates.length,
         isHls,
-        candidate: candidateUrl.slice(0, 160),
+        protocol: candidateUrl.startsWith('https://') ? 'HTTPS' : candidateUrl.startsWith('http://') ? 'HTTP' : 'proxy',
+        isProxy: candidateUrl.includes('stream-proxy'),
+        candidate: candidateUrl.slice(0, 200),
       });
 
       let switchedCandidate = false;

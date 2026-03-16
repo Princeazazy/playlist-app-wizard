@@ -105,7 +105,10 @@ function buildSeriesInfoFromRaw(
       const rawEps = rawData.episodes[String(seasonNum)];
       if (!Array.isArray(rawEps)) continue;
       const episodes: Episode[] = rawEps.map((ep: any) => {
-        const ext = ep.container_extension || 'mp4';
+        const rawExt = ep.container_extension || 'mp4';
+        // Force web-playable extension — Xtream servers transcode by extension
+        const NON_WEB = /^(mkv|avi|wmv|flv|mov|divx|rmvb|3gp)$/i;
+        const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
         return {
           id: String(ep.id),
           episode_num: ep.episode_num || 0,

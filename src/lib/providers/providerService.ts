@@ -322,13 +322,17 @@ export function buildStreamUrl(channel: NormalizedChannel, config: ProviderConfi
     return channel.url;
   }
 
+  const NON_WEB = /^(mkv|avi|wmv|flv|mov|divx|rmvb|3gp)$/i;
+
   if (config.type === 'xtream' && channel.streamId) {
     const serverUrl = (config as XtreamConfig).serverUrl.replace(/\/+$/, '');
-    const ext = channel.containerExtension || 'ts';
+    const rawExt = channel.containerExtension || 'ts';
     if (channel.type === 'movies') {
+      const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
       return `${serverUrl}/movie/${config.username}/${config.password}/${channel.streamId}.${ext}`;
     }
     if (channel.type === 'series') {
+      const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
       return `${serverUrl}/series/${config.username}/${config.password}/${channel.streamId}.${ext}`;
     }
     return `${serverUrl}/live/${config.username}/${config.password}/${channel.streamId}.ts`;
