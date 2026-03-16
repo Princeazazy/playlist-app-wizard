@@ -39,6 +39,7 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [], onSignOu
 
   // M3U form
   const [m3uUrl, setM3uUrl] = useState('');
+  const [m3uVpnUrl, setM3uVpnUrl] = useState('');
   const [m3uEpg, setM3uEpg] = useState('');
   const [m3uName, setM3uName] = useState('');
 
