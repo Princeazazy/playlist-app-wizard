@@ -150,24 +150,67 @@ export async function fetchProviderContent(
   let m3uUrl: string;
 
   if (config.type === 'xtream') {
-    // Build Xtream M3U URL
     const serverUrl = config.serverUrl.replace(/\/+$/, '');
     m3uUrl = `${serverUrl}/get.php?username=${encodeURIComponent(config.username)}&password=${encodeURIComponent(config.password)}&type=m3u_plus&output=ts`;
   } else if (config.type === 'm3u') {
     m3uUrl = config.m3uUrl;
   } else if (config.type === 'access_code') {
-    // Access code: construct URL from server + code
     const serverUrl = config.serverUrl.replace(/\/+$/, '');
     m3uUrl = `${serverUrl}/get.php?username=${encodeURIComponent(config.accessCode)}&password=${encodeURIComponent(config.accessCode)}&type=m3u_plus&output=ts`;
   } else {
     throw new Error('Unknown provider type');
   }
 
-  // Always prefer Xtream API — it's 3-5x faster than M3U parsing because
-  // it fetches live/movies/series categories in parallel via JSON endpoints
-  // instead of streaming and parsing a huge M3U text file.
   const isXtreamCompatible = config.type === 'xtream' || config.type === 'access_code' || m3uUrl.includes('get.php');
-  
+
+  // For Xtream-compatible providers, split into 3 parallel calls by content type
+  // to avoid exceeding edge function memory limits on large catalogs (93k+ items)
+  if (isXtreamCompatible) {
+    console.log('[ProviderService] Fetching via 3 parallel Xtream calls (live/movies/series)...');
+    const baseBody = {
+      url: m3uUrl,
+      maxChannels,
+      maxBytesMB,
+      maxReturnPerType,
+      preferXtreamApi: true,
+      forceXtreamApi: true,
+    };
+
+    const [liveRes, moviesRes, seriesRes] = await Promise.all([
+      supabase.functions.invoke('fetch-m3u', { body: { ...baseBody, contentTypes: ['live'] } }),
+      supabase.functions.invoke('fetch-m3u', { body: { ...baseBody, contentTypes: ['movies'] } }),
+      supabase.functions.invoke('fetch-m3u', { body: { ...baseBody, contentTypes: ['series'] } }),
+    ]);
+
+    const allChannels: any[] = [];
+    const errors: string[] = [];
+
+    for (const [label, res] of [['live', liveRes], ['movies', moviesRes], ['series', seriesRes]] as const) {
+      if (res.error) {
+        console.error(`[ProviderService] ${label} fetch error:`, res.error.message);
+        errors.push(`${label}: ${res.error.message}`);
+        continue;
+      }
+      if (res.data?.error) {
+        console.error(`[ProviderService] ${label} data error:`, res.data.error);
+        errors.push(`${label}: ${res.data.error}`);
+        continue;
+      }
+      const channels = res.data?.channels;
+      if (Array.isArray(channels)) {
+        console.log(`[ProviderService] ${label}: ${channels.length} items`);
+        allChannels.push(...channels);
+      }
+    }
+
+    if (allChannels.length === 0 && errors.length > 0) {
+      throw new Error(`Failed to fetch content: ${errors.join('; ')}`);
+    }
+
+    return normalizeChannels(allChannels, providerId);
+  }
+
+  // Non-Xtream: single M3U call
   const { data, error } = await supabase.functions.invoke('fetch-m3u', {
     body: {
       url: m3uUrl,
@@ -175,7 +218,7 @@ export async function fetchProviderContent(
       maxBytesMB,
       maxReturnPerType,
       preferXtreamApi: true,
-      forceXtreamApi: isXtreamCompatible,
+      forceXtreamApi: false,
     },
   });
 
@@ -186,10 +229,14 @@ export async function fetchProviderContent(
     return [];
   }
 
-  // Normalize into our common model (skip expensive text cleaning for huge catalogs)
-  const shouldCleanText = data.channels.length <= 20000;
+  return normalizeChannels(data.channels, providerId);
+}
 
-  return data.channels
+/** Normalize raw channel data into our common model */
+function normalizeChannels(rawChannels: any[], providerId: string): NormalizedChannel[] {
+  const shouldCleanText = rawChannels.length <= 20000;
+
+  return rawChannels
     .filter((ch: any) => ch.name && (ch.url || ch.type === 'series'))
     .map((ch: any, idx: number): NormalizedChannel => ({
       id: `${providerId}-ch-${idx}`,

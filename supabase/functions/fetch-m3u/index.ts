@@ -771,38 +771,40 @@ Deno.serve(async (req) => {
     }
 
     if (canUseXtreamApi) {
-      console.log('preferXtreamApi=true, fetching via Xtream API (IPTV Smarters compatible)...');
+      console.log(`preferXtreamApi=true, fetching via Xtream API. Types: [${[...typesToFetch].join(', ')}]`);
       const { baseUrl, username, password } = xtreamCreds;
 
       const limit = safeMaxReturnPerType;
-      console.log(`Using limit: ${limit} per content type (to prevent memory overflow)`);
+      console.log(`Using limit: ${limit} per content type`);
 
-      // Retry logic: if first attempt returns 0 for all types, wait and retry once
-      // This handles provider rate-limiting from prior burst requests
-      const fetchAllXtream = async () => {
-        const [liveResult, moviesResult, seriesResult] = await Promise.all([
-          fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension),
-          fetchXtreamMovies(baseUrl, username, password, limit),
-          fetchXtreamSeries(baseUrl, username, password, limit),
-        ]);
+      // Only fetch requested content types to stay within memory limits
+      const emptyResult: XtreamFetchResult = { items: [], total: 0 };
+
+      const fetchRequested = async () => {
+        const promises: [Promise<XtreamFetchResult>, Promise<XtreamFetchResult>, Promise<XtreamFetchResult>] = [
+          typesToFetch.has('live') ? fetchXtreamLive(baseUrl, username, password, limit, preferredLiveExtension) : Promise.resolve(emptyResult),
+          typesToFetch.has('movies') ? fetchXtreamMovies(baseUrl, username, password, limit) : Promise.resolve(emptyResult),
+          typesToFetch.has('series') ? fetchXtreamSeries(baseUrl, username, password, limit) : Promise.resolve(emptyResult),
+        ];
+        const [liveResult, moviesResult, seriesResult] = await Promise.all(promises);
         return { liveResult, moviesResult, seriesResult };
       };
 
-      let { liveResult, moviesResult, seriesResult } = await fetchAllXtream();
+      let { liveResult, moviesResult, seriesResult } = await fetchRequested();
 
-      // If everything came back empty, the provider likely rate-limited us — retry after delay
+      // If everything requested came back empty, retry once
       const totalItems = liveResult.items.length + moviesResult.items.length + seriesResult.items.length;
       if (totalItems === 0) {
-        console.log('All content types returned 0 items — provider may be rate-limiting. Retrying in 3s...');
+        console.log('All requested types returned 0 — retrying in 3s...');
         await new Promise(r => setTimeout(r, 3000));
-        ({ liveResult, moviesResult, seriesResult } = await fetchAllXtream());
-        
-        const retryTotal = liveResult.items.length + moviesResult.items.length + seriesResult.items.length;
-        if (retryTotal === 0) {
-          console.log('Retry also returned 0 — trying one more time after 5s...');
-          await new Promise(r => setTimeout(r, 5000));
-          ({ liveResult, moviesResult, seriesResult } = await fetchAllXtream());
-        }
+        ({ liveResult, moviesResult, seriesResult } = await fetchRequested());
+      }
+
+      // Strip internal fields from series items to reduce response size
+      for (const item of seriesResult.items) {
+        delete item._baseUrl;
+        delete item._username;
+        delete item._password;
       }
 
       const returnedChannels = [
@@ -811,7 +813,7 @@ Deno.serve(async (req) => {
         ...seriesResult.items,
       ];
 
-      console.log(`Xtream API final result: ${returnedChannels.length} total (live: ${liveResult.items.length}, movies: ${moviesResult.items.length}, series: ${seriesResult.items.length})`);
+      console.log(`Xtream API result: ${returnedChannels.length} total (live: ${liveResult.items.length}, movies: ${moviesResult.items.length}, series: ${seriesResult.items.length})`);
 
       return new Response(
         JSON.stringify({
