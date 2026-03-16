@@ -304,13 +304,17 @@ export const useResilientPlayback = ({
       setActiveSource(candidateUrl);
       setPlaybackState(reconnectCycle > 0 ? 'reconnecting' : 'connecting');
 
+      const streamType = getStreamType(candidateUrl);
       log('player_init', {
         trigger,
+        streamType,
         reconnectCycle,
         candidateIndex,
         candidateCount: sourceCandidates.length,
         isHls,
-        candidate: candidateUrl.slice(0, 160),
+        protocol: candidateUrl.startsWith('https://') ? 'HTTPS' : candidateUrl.startsWith('http://') ? 'HTTP' : 'proxy',
+        isProxy: candidateUrl.includes('stream-proxy'),
+        candidate: candidateUrl.slice(0, 200),
       });
 
       let switchedCandidate = false;
