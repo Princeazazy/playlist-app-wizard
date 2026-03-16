@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTMDB, TMDBDetailedItem } from '@/hooks/useTMDB';
 import { WeatherIcon } from './shared/WeatherIcon';
 import { ProviderConfig } from '@/lib/providers/types';
+import { normalizePlaybackUrl } from '@/lib/playback/urlResolver';
 
 interface Episode {
   id: string;
