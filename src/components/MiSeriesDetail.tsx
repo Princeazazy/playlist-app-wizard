@@ -1,5 +1,5 @@
-import { useState, useEffect, memo } from 'react';
-import { ChevronLeft, Play, Star, Clock, Globe, Calendar, User, Search, Tv, Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback, memo } from 'react';
+import { ChevronLeft, Play, Star, Clock, Globe, Calendar, User, Search, Tv, Loader2, RefreshCw } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useWeather } from '@/hooks/useWeather';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,6 +59,75 @@ interface MiSeriesDetailProps {
   providerConfig?: ProviderConfig;
 }
 
+// Parse Xtream credentials from any playlist-style URL
+function parseXtreamCredentials(url: string): { baseUrl: string; username: string; password: string } | null {
+  try {
+    const urlObj = new URL(url);
+    const username = urlObj.searchParams.get('username');
+    const password = urlObj.searchParams.get('password');
+    if (username && password) {
+      return { baseUrl: `${urlObj.protocol}//${urlObj.host}`, username, password };
+    }
+    return null;
+  } catch { return null; }
+}
+
+// Build SeriesInfo from raw Xtream API response
+function buildSeriesInfoFromRaw(
+  rawData: any,
+  creds: { baseUrl: string; username: string; password: string },
+  seriesName: string,
+  fallbackPlot: string
+): SeriesInfo {
+  const info = rawData?.info || {};
+  const result: SeriesInfo = {
+    info: {
+      name: info.name || seriesName || '',
+      cover: info.cover || '',
+      plot: info.plot || fallbackPlot || '',
+      cast: info.cast || '',
+      director: info.director || '',
+      genre: info.genre || '',
+      releaseDate: info.releaseDate || info.releasedate || '',
+      rating: info.rating || '',
+      backdrop_path: Array.isArray(info.backdrop_path) ? info.backdrop_path : [],
+    },
+    seasons: [],
+  };
+
+  if (rawData?.episodes && typeof rawData.episodes === 'object') {
+    const sortedSeasonNums = Object.keys(rawData.episodes)
+      .map(Number)
+      .filter(n => !isNaN(n))
+      .sort((a, b) => a - b);
+
+    for (const seasonNum of sortedSeasonNums) {
+      const rawEps = rawData.episodes[String(seasonNum)];
+      if (!Array.isArray(rawEps)) continue;
+      const episodes: Episode[] = rawEps.map((ep: any) => {
+        const ext = ep.container_extension || 'mp4';
+        return {
+          id: String(ep.id),
+          episode_num: ep.episode_num || 0,
+          title: ep.title || `Episode ${ep.episode_num}`,
+          container_extension: ext,
+          info: {
+            duration: ep.info?.duration || '',
+            plot: ep.info?.plot || '',
+            releaseDate: ep.info?.releasedate || ep.info?.air_date || '',
+            rating: ep.info?.rating || '',
+            movie_image: ep.info?.movie_image || '',
+          },
+          url: `${creds.baseUrl}/series/${creds.username}/${creds.password}/${ep.id}.${ext}`,
+        };
+      }).sort((a: Episode, b: Episode) => a.episode_num - b.episode_num);
+
+      result.seasons.push({ season_number: seasonNum, name: `Season ${seasonNum}`, episodes });
+    }
+  }
+  return result;
+}
+
 export const MiSeriesDetail = ({
   item,
   onBack,
@@ -74,6 +143,7 @@ export const MiSeriesDetail = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedSeason, setSelectedSeason] = useState<number>(1);
   const [tmdbData, setTmdbData] = useState<TMDBDetailedItem | null>(null);
+  const [fetchMethod, setFetchMethod] = useState<'idle' | 'direct' | 'edge' | 'done'>('idle');
   const { search: tmdbSearch, getDetails } = useTMDB();
 
   useEffect(() => {
@@ -94,7 +164,6 @@ export const MiSeriesDetail = ({
         const searchResults = await tmdbSearch(cleanName, 1);
         
         if (searchResults.results.length > 0) {
-          // Prioritize TV results for series
           const tvResult = searchResults.results.find(r => r.mediaType === 'tv') || searchResults.results[0];
           const details = await getDetails(tvResult.id, tvResult.mediaType);
           setTmdbData(details);
@@ -107,164 +176,139 @@ export const MiSeriesDetail = ({
     fetchTMDBData();
   }, [item.name, tmdbSearch, getDetails]);
 
-  // Parse Xtream credentials from playlist URL
-  const parseXtreamCredentials = (url: string): { baseUrl: string; username: string; password: string } | null => {
-    try {
-      const urlObj = new URL(url);
-      const username = urlObj.searchParams.get('username');
-      const password = urlObj.searchParams.get('password');
-      if (username && password) {
-        return { baseUrl: `${urlObj.protocol}//${urlObj.host}`, username, password };
+  // Resolve playlist URL from provider config or stored URL
+  const getPlaylistUrl = useCallback((): string => {
+    if (providerConfig) {
+      if (providerConfig.type === 'xtream') {
+        const serverUrl = providerConfig.serverUrl.replace(/\/+$/, '');
+        return `${serverUrl}/get.php?username=${encodeURIComponent(providerConfig.username)}&password=${encodeURIComponent(providerConfig.password)}&type=m3u_plus&output=ts`;
       }
-      return null;
-    } catch { return null; }
-  };
-
-  // Build episode structures from raw API response
-  const buildSeriesInfo = (rawData: any, creds: { baseUrl: string; username: string; password: string }, seriesName: string, fallbackPlot: string): SeriesInfo => {
-    const info = rawData?.info || {};
-    const result: SeriesInfo = {
-      info: {
-        name: info.name || seriesName || '',
-        cover: info.cover || '',
-        plot: info.plot || fallbackPlot || '',
-        cast: info.cast || '',
-        director: info.director || '',
-        genre: info.genre || '',
-        releaseDate: info.releaseDate || info.releasedate || '',
-        rating: info.rating || '',
-        backdrop_path: Array.isArray(info.backdrop_path) ? info.backdrop_path : [],
-      },
-      seasons: [],
-    };
-
-    if (rawData?.episodes && typeof rawData.episodes === 'object') {
-      const sortedSeasonNums = Object.keys(rawData.episodes)
-        .map(Number)
-        .filter(n => !isNaN(n))
-        .sort((a, b) => a - b);
-
-      for (const seasonNum of sortedSeasonNums) {
-        const rawEps = rawData.episodes[String(seasonNum)];
-        if (!Array.isArray(rawEps)) continue;
-        const episodes: Episode[] = rawEps.map((ep: any) => {
-          const ext = ep.container_extension || 'mp4';
-          return {
-            id: String(ep.id),
-            episode_num: ep.episode_num || 0,
-            title: ep.title || `Episode ${ep.episode_num}`,
-            container_extension: ext,
-            info: {
-              duration: ep.info?.duration || '',
-              plot: ep.info?.plot || '',
-              releaseDate: ep.info?.releasedate || ep.info?.air_date || '',
-              rating: ep.info?.rating || '',
-              movie_image: ep.info?.movie_image || '',
-            },
-            url: `${creds.baseUrl}/series/${creds.username}/${creds.password}/${ep.id}.${ext}`,
-          };
-        }).sort((a: Episode, b: Episode) => a.episode_num - b.episode_num);
-
-        result.seasons.push({ season_number: seasonNum, name: `Season ${seasonNum}`, episodes });
+      if (providerConfig.type === 'm3u') return providerConfig.m3uUrl;
+      if (providerConfig.type === 'access_code') {
+        const serverUrl = providerConfig.serverUrl.replace(/\/+$/, '');
+        return `${serverUrl}/get.php?username=${encodeURIComponent(providerConfig.accessCode)}&password=${encodeURIComponent(providerConfig.accessCode)}&type=m3u_plus&output=ts`;
       }
     }
-    return result;
-  };
+    return getStoredPlaylistUrl();
+  }, [providerConfig]);
 
-  // Fetch series info with seasons/episodes — try DIRECT client-side first, fall back to edge function
-  useEffect(() => {
-    const fetchSeriesInfo = async () => {
-      if (!item.series_id) {
-        setError('No series ID available');
-        setLoading(false);
-        return;
-      }
+  // Fetch series info — try client-side DIRECT first (user IP whitelisted), then edge function
+  const fetchSeriesData = useCallback(async () => {
+    if (!item.series_id) {
+      setError('No series ID available');
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
+    setError(null);
+    setSeriesInfo(null);
+
+    const playlistUrl = getPlaylistUrl();
+    if (!playlistUrl) {
+      setError('No playlist URL configured');
+      setLoading(false);
+      return;
+    }
+
+    const creds = parseXtreamCredentials(playlistUrl);
+    let resolved = false;
+
+    // === Attempt 1: Direct client-side fetch (user's browser IP is whitelisted by provider) ===
+    if (creds) {
+      setFetchMethod('direct');
+      const apiUrl = `${creds.baseUrl}/player_api.php?username=${creds.username}&password=${creds.password}&action=get_series_info&series_id=${item.series_id}`;
+      
       try {
-        setLoading(true);
-        setError(null);
+        console.log(`[SeriesDetail] Direct fetch: series_id=${item.series_id}`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        const res = await fetch(apiUrl, { signal: controller.signal });
+        clearTimeout(timeout);
+        
+        if (res.ok) {
+          const rawText = await res.text();
+          try {
+            const rawData = JSON.parse(rawText);
+            if (rawData && typeof rawData === 'object' && !Array.isArray(rawData) && Object.keys(rawData).length > 0) {
+              const info = buildSeriesInfoFromRaw(rawData, creds, item.name, item.plot || '');
+              console.log(`[SeriesDetail] ✅ Direct fetch success: ${info.seasons.length} seasons`);
+              setSeriesInfo(info);
+              if (info.seasons.length > 0) {
+                setSelectedSeason(info.seasons[0].season_number);
+              }
+              resolved = true;
+            }
+          } catch (parseErr) {
+            console.warn('[SeriesDetail] Direct fetch returned non-JSON:', parseErr);
+          }
+        } else {
+          console.warn(`[SeriesDetail] Direct fetch returned ${res.status}`);
+        }
+      } catch (directErr: any) {
+        // CORS or network error — expected on web, fall through to edge function
+        console.warn('[SeriesDetail] Direct fetch failed (likely CORS):', directErr.message);
+      }
+    }
 
-        const playlistUrl = getStoredPlaylistUrl();
-        if (!playlistUrl) {
-          setError('No playlist URL configured');
+    // === Attempt 2: Edge function fallback ===
+    if (!resolved) {
+      setFetchMethod('edge');
+      try {
+        console.log(`[SeriesDetail] Edge function fetch: series_id=${item.series_id}`);
+        const { data, error: fnError } = await supabase.functions.invoke('fetch-series-info', {
+          body: {
+            playlistUrl,
+            seriesId: item.series_id,
+            seriesName: item.name,
+            fallbackPlot: item.plot || '',
+          },
+        });
+
+        if (fnError) {
+          console.error('[SeriesDetail] Edge function error:', fnError);
+          setError('Failed to load series information');
           setLoading(false);
+          setFetchMethod('done');
           return;
         }
 
-        const creds = parseXtreamCredentials(playlistUrl);
-        let resolved = false;
-
-        // === Attempt 1: Direct client-side fetch (user's IP is whitelisted by provider) ===
-        if (creds) {
-          const apiUrl = `${creds.baseUrl}/player_api.php?username=${creds.username}&password=${creds.password}&action=get_series_info&series_id=${item.series_id}`;
-          try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 12000);
-            const res = await fetch(apiUrl, { signal: controller.signal });
-            clearTimeout(timeout);
-            if (res.ok) {
-              const rawData = await res.json();
-              if (rawData && typeof rawData === 'object' && !Array.isArray(rawData) && Object.keys(rawData).length > 0) {
-                const info = buildSeriesInfo(rawData, creds, item.name, item.plot || '');
-                setSeriesInfo(info);
-                if (info.seasons.length > 0) {
-                  setSelectedSeason(info.seasons[0].season_number);
-                }
-                resolved = true;
-              }
-            }
-          } catch (directErr) {
-            console.warn('[SeriesDetail] Direct fetch failed, falling back to edge function:', directErr);
-          }
+        if (data?.error) {
+          setError(data.error);
+          setLoading(false);
+          setFetchMethod('done');
+          return;
         }
 
-        // === Attempt 2: Edge function fallback (in case direct fetch is CORS-blocked) ===
-        if (!resolved) {
-          const { data, error: fnError } = await supabase.functions.invoke('fetch-series-info', {
-            body: {
-              playlistUrl,
-              seriesId: item.series_id,
-              seriesName: item.name,
-              fallbackPlot: item.plot || '',
-            },
-          });
+        setSeriesInfo(data);
+        if (data?.seasons?.length > 0) {
+          setSelectedSeason(data.seasons[0].season_number);
+        }
 
-          if (fnError) {
-            console.error('Error fetching series info:', fnError);
-            setError('Failed to load series information');
-            setLoading(false);
-            return;
-          }
-
-          if (data?.error) {
-            setError(data.error);
-            setLoading(false);
-            return;
-          }
-
-          setSeriesInfo(data);
-          if (data?.seasons?.length > 0) {
-            setSelectedSeason(data.seasons[0].season_number);
-          }
+        // Log warning if provider blocked
+        if (data?.warning) {
+          console.warn(`[SeriesDetail] ${data.warning}`);
         }
       } catch (err) {
-        console.error('Error:', err);
+        console.error('[SeriesDetail] Edge function failed:', err);
         setError('Failed to load series');
-      } finally {
-        setLoading(false);
       }
-    };
+    }
 
-    fetchSeriesInfo();
-  }, [item.series_id]);
+    setLoading(false);
+    setFetchMethod('done');
+  }, [item.series_id, item.name, item.plot, getPlaylistUrl]);
 
-  // Get poster URL - always prefer the provider's own cover/logo first (correct art), only use TMDB as last resort
+  useEffect(() => {
+    fetchSeriesData();
+  }, [fetchSeriesData]);
+
+  // Get poster URL - provider's cover first, TMDB as fallback
   const posterUrl = seriesInfo?.info?.cover || item.logo || tmdbData?.posterUrl || tmdbData?.poster || item.backdrop_path?.[0] || '/placeholder.svg';
 
   const currentSeason = seriesInfo?.seasons?.find(s => s.season_number === selectedSeason);
   const episodes = currentSeason?.episodes || [];
 
-  // Parse metadata - use TMDB as primary source, fall back to seriesInfo then item
   const metadata = {
     genre: tmdbData?.genres?.map(g => g.name).join(', ') || seriesInfo?.info?.genre || item.genre || 'Unknown',
     rating: tmdbData?.rating?.toFixed(1) || seriesInfo?.info?.rating || item.rating || 'N/A',
@@ -393,16 +437,27 @@ export const MiSeriesDetail = ({
             <div className="flex-1 flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
                 <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                <p className="text-muted-foreground">Loading episodes...</p>
+                <p className="text-muted-foreground">
+                  {fetchMethod === 'direct' ? 'Loading episodes...' : 
+                   fetchMethod === 'edge' ? 'Fetching from server...' : 
+                   'Loading episodes...'}
+                </p>
               </div>
             </div>
           ) : error ? (
             <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
+              <div className="text-center space-y-4">
                 <p className="text-destructive mb-2">{error}</p>
                 <p className="text-muted-foreground text-sm">
                   Episodes may not be available for this series
                 </p>
+                <button
+                  onClick={fetchSeriesData}
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors font-medium inline-flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Retry
+                </button>
               </div>
             </div>
           ) : (
@@ -424,11 +479,10 @@ export const MiSeriesDetail = ({
                 ))}
               </div>
 
-              {/* Episodes List - Clean numbered format */}
+              {/* Episodes List */}
               <ScrollArea className="flex-1">
                 <div className="space-y-2 pr-4">
                   {episodes.map((episode, index) => {
-                    // Build episode list for navigation
                     const episodeList = episodes.map((ep, i) => ({
                       url: ep.url,
                       title: `Episode ${i + 1}`,
@@ -444,7 +498,6 @@ export const MiSeriesDetail = ({
                         <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
                           <span className="text-lg font-bold text-foreground">{index + 1}</span>
                         </div>
-                        
                         
                         {/* Episode Info */}
                         <div className="flex-1 min-w-0">
@@ -465,9 +518,16 @@ export const MiSeriesDetail = ({
                   })}
                 </div>
                 
-                {episodes.length === 0 && (
-                  <div className="text-center py-10">
+                {episodes.length === 0 && !loading && (
+                  <div className="text-center py-10 space-y-4">
                     <p className="text-muted-foreground">No episodes available for this season</p>
+                    <button
+                      onClick={fetchSeriesData}
+                      className="px-4 py-2 bg-card border border-border rounded-xl text-foreground hover:bg-card/80 transition-colors inline-flex items-center gap-2 text-sm"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Retry Loading
+                    </button>
                   </div>
                 )}
               </ScrollArea>

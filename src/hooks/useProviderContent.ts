@@ -15,7 +15,8 @@ clearLegacyCache();
 
 /**
  * useProviderContent — fetches and caches content for the active provider account.
- * Replaces the old useIPTV hook for the multi-provider architecture.
+ * Single-pass full fetch (no bootstrap/full-sync split) for completeness.
+ * Cache-first for instant startup, then background refresh.
  */
 export function useProviderContent(account: ProviderAccount | null) {
   const [channels, setChannels] = useState<NormalizedChannel[]>([]);
@@ -24,6 +25,7 @@ export function useProviderContent(account: ProviderAccount | null) {
   const [refreshKey, setRefreshKey] = useState(0);
   const cacheLoaded = useRef(false);
   const prevAccountId = useRef<string | null>(null);
+  const fetchInProgress = useRef(false);
 
   // Cache key based on account
   const cacheKey = account ? `provider-${account.id}` : '';
@@ -33,19 +35,20 @@ export function useProviderContent(account: ProviderAccount | null) {
     if (account?.id !== prevAccountId.current) {
       prevAccountId.current = account?.id || null;
       cacheLoaded.current = false;
+      fetchInProgress.current = false;
       setChannels([]);
       setError(null);
       setLoading(true);
     }
   }, [account?.id]);
 
-  // Load from cache
+  // Load from cache immediately for instant startup
   useEffect(() => {
     if (!account || cacheLoaded.current) return;
     const load = async () => {
       const cached = await getCachedChannels(cacheKey);
       if (cached && cached.length > 0 && channels.length === 0) {
-        console.log(`[Provider] Loaded ${cached.length} channels from cache for ${account.name}`);
+        console.log(`[Provider] Cache hit: ${cached.length} channels for "${account.name}"`);
         setChannels(cached as NormalizedChannel[]);
         setLoading(false);
       }
@@ -54,77 +57,74 @@ export function useProviderContent(account: ProviderAccount | null) {
     load();
   }, [account, cacheKey, channels.length]);
 
-  // Fetch content — cache-first bootstrap + background full sync
+  // Fetch content — SINGLE full fetch, no bootstrap split
   useEffect(() => {
     if (!account) {
       setLoading(false);
       return;
     }
 
+    // Prevent duplicate fetches
+    if (fetchInProgress.current && refreshKey === 0) return;
+
     let cancelled = false;
+    fetchInProgress.current = true;
 
     const fetchContent = async () => {
       const hasCached = channels.length > 0;
-      const shouldBootstrap = !hasCached;
       if (!hasCached) setLoading(true);
 
       try {
-        const firstPassOptions = shouldBootstrap
-          ? { maxChannels: 90000, maxBytesMB: 60, maxReturnPerType: 12000 }
-          : { maxChannels: 250000, maxBytesMB: 60, maxReturnPerType: 100000 };
+        // Single full fetch — no bootstrap/full-sync split
+        // This ensures ALL content loads completely every time
+        const fetchOptions = {
+          maxChannels: 250000,
+          maxBytesMB: 80,
+          maxReturnPerType: 100000,
+        };
 
-        console.log(`[Provider] Fetching content for "${account.name}" [${shouldBootstrap ? 'bootstrap' : 'full'}]`);
+        console.log(`[Provider] Fetching FULL catalog for "${account.name}"...`);
+        const startTime = Date.now();
 
-        const firstPass = await fetchProviderContent(account.config, account.id, firstPassOptions);
+        const result = await fetchProviderContent(account.config, account.id, fetchOptions);
 
         if (cancelled) return;
 
-        if (firstPass.length === 0 && !hasCached) {
+        if (result.length === 0 && !hasCached) {
           setError('No channels found. Check your credentials.');
           setLoading(false);
+          fetchInProgress.current = false;
           return;
         }
 
-        const firstWithIds = firstPass.map((ch, i) => ({ ...ch, id: `${account.id}-ch-${i}` }));
+        const withIds = result.map((ch, i) => ({ ...ch, id: `${account.id}-ch-${i}` }));
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
-        setChannels(firstWithIds);
+        const counts = {
+          live: withIds.filter(c => c.type === 'live').length,
+          movies: withIds.filter(c => c.type === 'movies').length,
+          series: withIds.filter(c => c.type === 'series').length,
+          sports: withIds.filter(c => c.type === 'sports').length,
+        };
+
+        console.log(`[Provider] ✅ Loaded ${withIds.length} channels in ${elapsed}s`, counts);
+
+        setChannels(withIds);
         setError(null);
         setLoading(false);
-        setCachedChannels(firstWithIds, cacheKey).catch(e => console.warn('Cache failed:', e));
+        fetchInProgress.current = false;
 
-        console.log(`[Provider] Loaded ${firstWithIds.length} channels`, {
-          live: firstWithIds.filter(c => c.type === 'live').length,
-          movies: firstWithIds.filter(c => c.type === 'movies').length,
-          series: firstWithIds.filter(c => c.type === 'series').length,
-          sports: firstWithIds.filter(c => c.type === 'sports').length,
-        });
-
-        // If we bootstrapped, fetch full catalog in background
-        if (shouldBootstrap) {
-          try {
-            const fullResult = await fetchProviderContent(account.config, account.id, {
-              maxChannels: 250000,
-              maxBytesMB: 60,
-              maxReturnPerType: 100000,
-            });
-
-            if (cancelled || fullResult.length === 0) return;
-
-            if (fullResult.length > firstWithIds.length) {
-              const fullWithIds = fullResult.map((ch, i) => ({ ...ch, id: `${account.id}-ch-${i}` }));
-              setChannels(fullWithIds);
-              setCachedChannels(fullWithIds, cacheKey).catch(() => {});
-              console.log(`[Provider] Full sync completed: ${fullWithIds.length} channels`);
-            }
-          } catch (e) {
-            console.warn('[Provider] Background full sync failed:', e);
-          }
-        }
+        // Cache in background
+        setCachedChannels(withIds, cacheKey).catch(e => console.warn('Cache write failed:', e));
       } catch (err: any) {
         if (cancelled) return;
         console.error('[Provider] Fetch failed:', err);
+        fetchInProgress.current = false;
+
         if (channels.length === 0) {
           setError(err.message || 'Failed to load content');
+        } else {
+          console.warn('[Provider] Fetch failed but keeping cached data');
         }
         setLoading(false);
       }
@@ -135,11 +135,12 @@ export function useProviderContent(account: ProviderAccount | null) {
   }, [account?.id, refreshKey, cacheKey]);
 
   const refresh = useCallback(async () => {
-    console.log('[Provider] Refreshing...');
+    console.log('[Provider] Manual refresh triggered');
     setLoading(true);
     setError(null);
     setChannels([]);
     cacheLoaded.current = false;
+    fetchInProgress.current = false;
 
     try {
       const { clearChannelCache } = await import('@/lib/channelCache');
