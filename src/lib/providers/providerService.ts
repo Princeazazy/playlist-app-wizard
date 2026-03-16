@@ -112,25 +112,62 @@ export async function validateM3UUrl(config: M3UConfig): Promise<{
   error?: string;
   channelCount?: number;
 }> {
-  try {
+  const playlistUrl = config.vpnUrl || config.m3uUrl;
+  let lastError: unknown;
+
+  const validateViaBackend = async (): Promise<number> => {
     const { data, error } = await supabase.functions.invoke('fetch-m3u', {
       body: {
-        url: config.m3uUrl,
+        url: playlistUrl,
         maxChannels: 100,
-        maxBytesMB: 2,
-        maxReturnPerType: 25,
+        maxBytesMB: 5,
+        maxReturnPerType: 50,
+        preferXtreamApi: false,
+        forceXtreamApi: false,
       },
     });
 
     if (error) throw new Error(error.message);
     if (data?.error) throw new Error(data.error);
+    return Array.isArray(data?.channels) ? data.channels.length : 0;
+  };
 
-    const count = data?.channels?.length || 0;
-    if (count === 0) {
-      return { success: false, error: 'No channels found in playlist. Check the URL.' };
+  const validateDirectOnDevice = async (): Promise<number> => {
+    if (!isNativeOrWebView()) return 0;
+
+    const channels = await fetchDirectPlaylistChannels(playlistUrl, {
+      maxChannels: 100,
+      maxBytesMB: 5,
+    });
+
+    return channels.length;
+  };
+
+  try {
+    try {
+      const directCount = await validateDirectOnDevice();
+      if (directCount > 0) {
+        return { success: true, channelCount: directCount };
+      }
+    } catch (error) {
+      lastError = error;
     }
 
-    return { success: true, channelCount: count };
+    try {
+      const backendCount = await validateViaBackend();
+      if (backendCount > 0) {
+        return { success: true, channelCount: backendCount };
+      }
+    } catch (error) {
+      lastError = error;
+    }
+
+    return {
+      success: false,
+      error: lastError instanceof Error
+        ? lastError.message
+        : 'No channels found in playlist. Check the URL.',
+    };
   } catch (err: any) {
     return { success: false, error: err.message || 'Failed to fetch playlist' };
   }
