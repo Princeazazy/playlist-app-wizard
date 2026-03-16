@@ -681,8 +681,16 @@ Deno.serve(async (req) => {
       maxBytesMB = 20,
       maxReturnPerType = 3000,
       preferXtreamApi = true,
-      forceXtreamApi = false, // New: force Xtream API even for get.php URLs
+      forceXtreamApi = false,
+      contentTypes, // NEW: ['live'], ['movies'], ['series'], or undefined for all
     } = (body ?? {}) as Record<string, unknown>;
+
+    // Parse which content types to fetch (default: all)
+    const typesToFetch: Set<string> = new Set(
+      Array.isArray(contentTypes) && contentTypes.length > 0
+        ? contentTypes.map((t: any) => String(t))
+        : ['live', 'movies', 'series']
+    );
 
     if (!url || typeof url !== 'string') {
       return new Response(
