@@ -227,6 +227,7 @@ export const useResilientPlayback = ({
     let canceled = false;
     let reconnectCycle = 0;
     let candidateIndex = 0;
+    let lastFailureReason = 'unknown';
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let startupWatchdog: ReturnType<typeof setTimeout> | null = null;
     let stalledMonitor: ReturnType<typeof setInterval> | null = null;
@@ -281,7 +282,7 @@ export const useResilientPlayback = ({
       if (canceled) return;
       setPlaybackState('failed');
       setError(message);
-      log('fatal_error', { reason, reconnectCycle });
+      log('fatal_error', { reason, reconnectCycle, lastFailureReason, sourceUrl: channel.url.slice(0, 200) });
     };
 
     const startCandidate = (trigger: string) => {
