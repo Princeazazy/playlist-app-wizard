@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Play, Star, Film, Tv, X } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
 import { Channel } from '@/hooks/useIPTV';
+import { RatingBadge } from '@/components/shared/RatingBadge';
 
 interface ScreenSaverItem {
   id: string;
