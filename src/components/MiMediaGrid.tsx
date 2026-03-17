@@ -1047,7 +1047,7 @@ export const MiMediaGrid = ({
                       <img 
                         src={group.firstLogo} 
                         alt={group.name} 
-                        className="w-full h-full object-cover scale-110"
+                        className="w-[80%] h-[80%] object-contain"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
                           e.currentTarget.parentElement!.innerHTML = `<span class="text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
