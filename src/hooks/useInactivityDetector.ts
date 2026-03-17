@@ -2,32 +2,31 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 1 minute
 
-/**
- * Hook to detect user inactivity and trigger screensaver.
- * Resets on mouse, keyboard, touch, or scroll events.
- * Does NOT activate when content is actively playing.
- */
 export const useInactivityDetector = (isPlaying: boolean) => {
   const [isInactive, setIsInactive] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInactiveRef = useRef(false);
 
   const resetTimer = useCallback(() => {
-    if (isInactive) setIsInactive(false);
+    if (isInactiveRef.current) {
+      isInactiveRef.current = false;
+      setIsInactive(false);
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
+      isInactiveRef.current = true;
       setIsInactive(true);
     }, INACTIVITY_TIMEOUT);
-  }, [isInactive]);
+  }, []);
 
-  // Don't run screensaver when playing
   useEffect(() => {
     if (isPlaying) {
       if (timerRef.current) clearTimeout(timerRef.current);
+      isInactiveRef.current = false;
       setIsInactive(false);
       return;
     }
 
-    // Start timer
     resetTimer();
 
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel'];
@@ -40,6 +39,7 @@ export const useInactivityDetector = (isPlaying: boolean) => {
   }, [isPlaying, resetTimer]);
 
   const dismiss = useCallback(() => {
+    isInactiveRef.current = false;
     setIsInactive(false);
     resetTimer();
   }, [resetTimer]);
