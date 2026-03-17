@@ -336,8 +336,16 @@ export const MiFullscreenPlayer = ({
     };
   }, [isVOD, saveProgress, saveInterval]);
 
+  // Show resume prompt only once at the very beginning before playback starts
+  const resumeCheckedRef = useRef(false);
   useEffect(() => {
-    if (isVOD && hasSavedProgress && !hasResumed) setShowResumePrompt(true);
+    if (isVOD && hasSavedProgress && !hasResumed && !resumeCheckedRef.current) {
+      resumeCheckedRef.current = true;
+      setShowResumePrompt(true);
+      // Pause immediately so the movie doesn't play behind the prompt
+      const video = videoRef.current;
+      if (video) video.pause();
+    }
   }, [isVOD, hasSavedProgress, hasResumed]);
 
   // Now Playing banner: show for 5 seconds on channel load, then fade out
