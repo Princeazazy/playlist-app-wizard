@@ -109,16 +109,20 @@ export const MiFullscreenPlayer = ({
   const handleSkipForward = useCallback(() => {
     const video = videoRef.current;
     if (video) {
-      video.currentTime = Math.min(video.currentTime + 10, video.duration || video.currentTime + 10);
+      const target = Math.min(video.currentTime + 10, video.duration || video.currentTime + 10);
+      video.currentTime = target;
+      if (hlsRef.current) hlsRef.current.startLoad(target);
     }
-  }, []);
+  }, [hlsRef]);
 
   const handleSkipBackward = useCallback(() => {
     const video = videoRef.current;
     if (video) {
-      video.currentTime = Math.max(video.currentTime - 10, 0);
+      const target = Math.max(video.currentTime - 10, 0);
+      video.currentTime = target;
+      if (hlsRef.current) hlsRef.current.startLoad(target);
     }
-  }, []);
+  }, [hlsRef]);
 
   const { savedPosition, hasSavedProgress, saveProgress, saveInterval } = useWatchProgress(
     channel.id,
