@@ -479,6 +479,11 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const isExcluded = nameLower.includes('ramadan premiere') || nameLower.includes('رمضان premiere') || name.includes('جرس إنذار');
       if (isExcluded) return false;
       
+      // Exclude Turkish-dubbed, translated, and dubbed content
+      if (/\btar\b/i.test(name)) return false;
+      if (/مترجم/i.test(name)) return false;
+      if (/dubbed|dub\b/i.test(nameLower)) return false;
+      
       // Exclude sports/wrestling
       if (isSportsContent(ch)) return false;
       
