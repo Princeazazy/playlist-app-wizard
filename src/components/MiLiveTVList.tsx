@@ -5,6 +5,7 @@ import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getCountryInfo, getCountryFlagUrl, getCategoryEmoji, mergeAndSortGroups, normalizeGroupName, translateGroupName } from '@/lib/countryUtils';
+import { matchBrandLogo } from '@/lib/brandLogoService';
 import { EPGGuide } from './EPGGuide';
 import Hls from 'hls.js';
 import { supabase } from '@/integrations/supabase/client';
