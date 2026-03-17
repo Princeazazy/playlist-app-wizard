@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 1 minute
 
 /**
  * Hook to detect user inactivity and trigger screensaver.
