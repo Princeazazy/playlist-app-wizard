@@ -28,7 +28,7 @@ interface UseResilientPlaybackResult {
   retryPlayback: () => void;
 }
 
-const RETRY_BACKOFF_MS = [200, 500, 1000, 2000] as const;
+const RETRY_BACKOFF_MS = [150, 400, 800, 1500] as const;
 
 const isLikelyHlsUrl = (url: string): boolean => {
   if (/\.m3u8(\?.*)?$/i.test(url) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(url)) return true;
@@ -95,9 +95,9 @@ export const useResilientPlayback = ({
   channel,
   isVOD = false,
   forceMuted = false,
-  maxReconnectCycles = 3,
-  startupTimeoutMs = 6000,
-  stalledThresholdMs = 10000,
+  maxReconnectCycles = 2,
+  startupTimeoutMs = 8000,
+  stalledThresholdMs = 12000,
   logPrefix = 'Playback',
   onManifestParsed,
   onSubtitleTracksUpdated,
@@ -516,17 +516,17 @@ export const useResilientPlayback = ({
         const hls = new Hls({
           enableWorker: true,
           lowLatencyMode: false,
-          maxBufferLength: isVOD ? 35 : 20,
-          maxMaxBufferLength: isVOD ? 60 : 40,
-          backBufferLength: isVOD ? 30 : 20,
-          manifestLoadingMaxRetry: 1,
-          levelLoadingMaxRetry: 1,
-          fragLoadingMaxRetry: 1,
-          manifestLoadingRetryDelay: 250,
-          levelLoadingRetryDelay: 250,
-          fragLoadingRetryDelay: 250,
+          maxBufferLength: isVOD ? 60 : 30,
+          maxMaxBufferLength: isVOD ? 120 : 60,
+          backBufferLength: isVOD ? 60 : 30,
+          manifestLoadingMaxRetry: 3,
+          levelLoadingMaxRetry: 3,
+          fragLoadingMaxRetry: 3,
+          manifestLoadingRetryDelay: 500,
+          levelLoadingRetryDelay: 500,
+          fragLoadingRetryDelay: 500,
           liveSyncDurationCount: isVOD ? undefined : 3,
-          liveMaxLatencyDurationCount: isVOD ? undefined : 8,
+          liveMaxLatencyDurationCount: isVOD ? undefined : 10,
           startFragPrefetch: !isVOD,
           testBandwidth: false,
         });
