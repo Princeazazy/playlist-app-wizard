@@ -107,15 +107,40 @@ export async function authenticateXtream(config: XtreamConfig): Promise<{
 
 // ── Validate M3U URL ────────────────────────────────────────
 
+const getProviderPlaylistUrls = (config: ProviderConfig): string[] => {
+  if (config.type === 'xtream') {
+    const serverUrl = config.serverUrl.replace(/\/+$/, '');
+    return [
+      `${serverUrl}/get.php?username=${encodeURIComponent(config.username)}&password=${encodeURIComponent(config.password)}&type=m3u_plus&output=ts`,
+    ];
+  }
+
+  if (config.type === 'm3u') {
+    return [config.m3uUrl, config.vpnUrl]
+      .filter((value): value is string => Boolean(value?.trim()))
+      .map((value) => value.trim())
+      .filter((value, index, array) => array.indexOf(value) === index);
+  }
+
+  if (config.type === 'access_code') {
+    const serverUrl = config.serverUrl.replace(/\/+$/, '');
+    return [
+      `${serverUrl}/get.php?username=${encodeURIComponent(config.accessCode)}&password=${encodeURIComponent(config.accessCode)}&type=m3u_plus&output=ts`,
+    ];
+  }
+
+  return [];
+};
+
 export async function validateM3UUrl(config: M3UConfig): Promise<{
   success: boolean;
   error?: string;
   channelCount?: number;
 }> {
-  const playlistUrl = config.vpnUrl || config.m3uUrl;
+  const playlistUrls = getProviderPlaylistUrls(config);
   let lastError: unknown;
 
-  const validateViaBackend = async (): Promise<number> => {
+  const validateViaBackend = async (playlistUrl: string): Promise<number> => {
     const { data, error } = await supabase.functions.invoke('fetch-m3u', {
       body: {
         url: playlistUrl,
@@ -132,7 +157,7 @@ export async function validateM3UUrl(config: M3UConfig): Promise<{
     return Array.isArray(data?.channels) ? data.channels.length : 0;
   };
 
-  const validateDirectOnDevice = async (): Promise<number> => {
+  const validateDirectOnDevice = async (playlistUrl: string): Promise<number> => {
     if (!isNativeOrWebView()) return 0;
 
     const channels = await fetchDirectPlaylistChannels(playlistUrl, {
@@ -144,22 +169,24 @@ export async function validateM3UUrl(config: M3UConfig): Promise<{
   };
 
   try {
-    try {
-      const directCount = await validateDirectOnDevice();
-      if (directCount > 0) {
-        return { success: true, channelCount: directCount };
+    for (const playlistUrl of playlistUrls) {
+      try {
+        const directCount = await validateDirectOnDevice(playlistUrl);
+        if (directCount > 0) {
+          return { success: true, channelCount: directCount };
+        }
+      } catch (error) {
+        lastError = error;
       }
-    } catch (error) {
-      lastError = error;
-    }
 
-    try {
-      const backendCount = await validateViaBackend();
-      if (backendCount > 0) {
-        return { success: true, channelCount: backendCount };
+      try {
+        const backendCount = await validateViaBackend(playlistUrl);
+        if (backendCount > 0) {
+          return { success: true, channelCount: backendCount };
+        }
+      } catch (error) {
+        lastError = error;
       }
-    } catch (error) {
-      lastError = error;
     }
 
     return {
@@ -191,59 +218,66 @@ export async function fetchProviderContent(
     maxReturnPerType = 100000,
   } = options || {};
 
-  let m3uUrl: string;
+  const playlistUrls = getProviderPlaylistUrls(config);
+  const primaryPlaylistUrl = playlistUrls[0];
 
-  if (config.type === 'xtream') {
-    const serverUrl = config.serverUrl.replace(/\/+$/, '');
-    m3uUrl = `${serverUrl}/get.php?username=${encodeURIComponent(config.username)}&password=${encodeURIComponent(config.password)}&type=m3u_plus&output=ts`;
-  } else if (config.type === 'm3u') {
-    m3uUrl = config.vpnUrl || config.m3uUrl;
-  } else if (config.type === 'access_code') {
-    const serverUrl = config.serverUrl.replace(/\/+$/, '');
-    m3uUrl = `${serverUrl}/get.php?username=${encodeURIComponent(config.accessCode)}&password=${encodeURIComponent(config.accessCode)}&type=m3u_plus&output=ts`;
-  } else {
+  if (!primaryPlaylistUrl) {
     throw new Error('Unknown provider type');
   }
 
   const fallbackToStandardM3U = async (): Promise<NormalizedChannel[]> => {
-    const { data, error } = await supabase.functions.invoke('fetch-m3u', {
-      body: {
-        url: m3uUrl,
-        maxChannels,
-        maxBytesMB,
-        maxReturnPerType,
-        preferXtreamApi: false,
-        forceXtreamApi: false,
-      },
-    });
+    let lastError: unknown;
 
-    if (error) throw new Error(error.message);
-    if (data?.error) throw new Error(data.error);
-    if (!Array.isArray(data?.channels)) return [];
+    for (const playlistUrl of playlistUrls) {
+      try {
+        const { data, error } = await supabase.functions.invoke('fetch-m3u', {
+          body: {
+            url: playlistUrl,
+            maxChannels,
+            maxBytesMB,
+            maxReturnPerType,
+            preferXtreamApi: false,
+            forceXtreamApi: false,
+          },
+        });
 
-    const normalized = normalizeChannels(data.channels, providerId);
-    return applyPlaybackUrlPreferences(normalized, config);
+        if (error) throw new Error(error.message);
+        if (data?.error) throw new Error(data.error);
+        if (!Array.isArray(data?.channels) || data.channels.length === 0) continue;
+
+        const normalized = normalizeChannels(data.channels, providerId);
+        return applyPlaybackUrlPreferences(normalized, config);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (lastError instanceof Error) throw lastError;
+    return [];
   };
 
   const fetchDirectOnDevice = async (): Promise<NormalizedChannel[] | null> => {
     if (!isNativeOrWebView()) return null;
 
-    try {
-      console.log('[ProviderService] Attempting direct device playlist fetch...');
-      const channels = await fetchDirectPlaylistChannels(m3uUrl, {
-        maxChannels,
-        maxBytesMB,
-      });
+    for (const playlistUrl of playlistUrls) {
+      try {
+        console.log(`[ProviderService] Attempting direct device playlist fetch: ${playlistUrl}`);
+        const channels = await fetchDirectPlaylistChannels(playlistUrl, {
+          maxChannels,
+          maxBytesMB,
+        });
 
-      if (channels.length === 0) return null;
+        if (channels.length === 0) continue;
 
-      const normalized = normalizeChannels(channels, providerId);
-      console.log(`[ProviderService] Direct device fetch loaded ${normalized.length} items`);
-      return applyPlaybackUrlPreferences(normalized, config);
-    } catch (error) {
-      console.warn('[ProviderService] Direct device playlist fetch failed, falling back to backend path', error);
-      return null;
+        const normalized = normalizeChannels(channels, providerId);
+        console.log(`[ProviderService] Direct device fetch loaded ${normalized.length} items`);
+        return applyPlaybackUrlPreferences(normalized, config);
+      } catch (error) {
+        console.warn('[ProviderService] Direct device playlist fetch failed for one URL, trying next fallback', error);
+      }
     }
+
+    return null;
   };
 
   const directDeviceChannels = await fetchDirectOnDevice();
@@ -251,12 +285,12 @@ export async function fetchProviderContent(
     return directDeviceChannels;
   }
 
-  const isXtreamCompatible = config.type === 'xtream' || config.type === 'access_code' || m3uUrl.includes('get.php');
+  const isXtreamCompatible = config.type === 'xtream' || config.type === 'access_code' || primaryPlaylistUrl.includes('get.php');
 
   if (isXtreamCompatible) {
     console.log('[ProviderService] Fetching via 3 parallel Xtream calls (live/movies/series)...');
     const baseBody = {
-      url: m3uUrl,
+      url: primaryPlaylistUrl,
       maxChannels,
       maxBytesMB,
       maxReturnPerType,
