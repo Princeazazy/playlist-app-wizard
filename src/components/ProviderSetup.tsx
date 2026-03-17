@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wifi, Link2, Key, ChevronRight, Loader2, CheckCircle2, AlertCircle, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Wifi, Link2, Key, ChevronRight, Loader2, CheckCircle2, AlertCircle, Plus, Trash2, ArrowLeft, ListVideo } from 'lucide-react';
 import { ChromaKeyVideo } from '@/components/shared/ChromaKeyVideo';
 import logoVideo from '@/assets/logo-transparent.mp4';
 import {
