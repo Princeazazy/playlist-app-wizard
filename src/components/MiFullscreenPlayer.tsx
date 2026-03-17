@@ -105,18 +105,23 @@ export const MiFullscreenPlayer = ({
     channel.url?.includes('/movie/') ||
     channel.type === 'movies';
 
-  // Skip 10 seconds forward/backward
+  // Skip 10 seconds forward/backward (hlsRef accessed at call time, defined later)
+  const hlsRefLocal = useRef<any>(null);
   const handleSkipForward = useCallback(() => {
     const video = videoRef.current;
     if (video) {
-      video.currentTime = Math.min(video.currentTime + 10, video.duration || video.currentTime + 10);
+      const target = Math.min(video.currentTime + 10, video.duration || video.currentTime + 10);
+      video.currentTime = target;
+      if (hlsRefLocal.current) hlsRefLocal.current.startLoad(target);
     }
   }, []);
 
   const handleSkipBackward = useCallback(() => {
     const video = videoRef.current;
     if (video) {
-      video.currentTime = Math.max(video.currentTime - 10, 0);
+      const target = Math.max(video.currentTime - 10, 0);
+      video.currentTime = target;
+      if (hlsRefLocal.current) hlsRefLocal.current.startLoad(target);
     }
   }, []);
 
@@ -179,6 +184,9 @@ export const MiFullscreenPlayer = ({
     onManifestParsed: applyHlsSubtitleTracks,
     onSubtitleTracksUpdated: applyHlsSubtitleTracks,
   });
+
+  // Keep local ref in sync for skip handlers defined before hlsRef
+  hlsRefLocal.current = hlsRef.current;
 
   useEffect(() => {
     if (playbackError) {
@@ -408,8 +416,18 @@ export const MiFullscreenPlayer = ({
     if (!video || !duration) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
-    const percentage = clickX / rect.width;
-    video.currentTime = percentage * duration;
+    const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+    const targetTime = percentage * duration;
+    
+    // For HLS streams, we need to ensure the correct segment is loaded
+    const hls = hlsRef.current;
+    if (hls) {
+      // Stop current loading, seek, then restart loading from new position
+      video.currentTime = targetTime;
+      hls.startLoad(targetTime);
+    } else {
+      video.currentTime = targetTime;
+    }
     setProgress(percentage * 100);
   };
 
