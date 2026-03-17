@@ -40,14 +40,19 @@ const MediaCard = ({ item, onClick }: { item: TMDBItem; onClick?: () => void }) 
           loading="lazy"
           onError={(e) => {
             const target = e.currentTarget;
-            if (target.dataset.fallbackApplied !== '1') {
-              target.dataset.fallbackApplied = '1';
-              target.src = '/placeholder.svg';
-            } else {
-              target.style.display = 'none';
-            }
+            target.style.display = 'none';
+            // Show the sibling fallback
+            const fallback = target.parentElement?.querySelector('.poster-fallback');
+            if (fallback) (fallback as HTMLElement).style.display = 'flex';
           }}
         />
+        <div className="poster-fallback w-full h-full items-center justify-center bg-gradient-to-br from-muted to-background gap-2 p-3 absolute inset-0" style={{ display: 'none' }}>
+          {item.mediaType === 'tv' ? (
+            <Tv className="w-10 h-10 text-muted-foreground/50" />
+          ) : (
+            <Film className="w-10 h-10 text-muted-foreground/50" />
+          )}
+        </div>
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-muted">
           {item.mediaType === 'tv' ? (
