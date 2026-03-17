@@ -285,6 +285,15 @@ export const MiFullscreenPlayer = ({
     fetchSubs();
   }, [channel.url, isVOD, functionConfig.streamProxyUrl]);
 
+  // Clear auto-next timer on unmount or channel change
+  useEffect(() => {
+    setAutoNextCountdown(null);
+    if (autoNextTimerRef.current) {
+      clearInterval(autoNextTimerRef.current);
+      autoNextTimerRef.current = null;
+    }
+  }, [channel.id]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -292,14 +301,35 @@ export const MiFullscreenPlayer = ({
     const onPlaying = () => { setIsPlaying(true); setError(null); };
     const onPause = () => setIsPlaying(false);
 
+    const onEnded = () => {
+      if (isSeries && hasNextEpisode) {
+        // Start 10-second countdown to next episode
+        setAutoNextCountdown(10);
+        if (autoNextTimerRef.current) clearInterval(autoNextTimerRef.current);
+        autoNextTimerRef.current = setInterval(() => {
+          setAutoNextCountdown(prev => {
+            if (prev === null || prev <= 1) {
+              if (autoNextTimerRef.current) clearInterval(autoNextTimerRef.current);
+              autoNextTimerRef.current = null;
+              onNextEpisode?.();
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+    };
+
     video.addEventListener('playing', onPlaying);
     video.addEventListener('pause', onPause);
+    video.addEventListener('ended', onEnded);
 
     return () => {
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('pause', onPause);
+      video.removeEventListener('ended', onEnded);
     };
-  }, []);
+  }, [isSeries, hasNextEpisode, onNextEpisode]);
 
   useEffect(() => {
     const video = videoRef.current;
