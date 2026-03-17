@@ -608,24 +608,38 @@ export const MiLiveTVList = ({
   // Preview channel (hovered or current)
   const previewChannel = hoveredChannel || currentChannel;
 
-  // Get logo for groups - use country flag for countries, first channel logo for streaming services and others
+  // Get logo for groups - brand logos for services, country flags for countries, neutral icon for generic
   const getGroupLogo = (group: { name: string; displayName: string; firstLogo?: string; originalNames: string[] }): string | null => {
     // Sports mode: use sports-specific meta
     if (category === 'sports') {
       const meta = SPORTS_GROUP_META[group.name];
       if (meta?.flagUrl) return meta.flagUrl;
+      // Try brand matching for unrecognized sports groups
+      const brandLogo = matchBrandLogo(group.name);
+      if (brandLogo) return brandLogo;
       return group.firstLogo || null;
+    }
+
+    // 1. Try brand logo matching first (highest priority for streaming/brand groups)
+    const brandLogo = matchBrandLogo(group.displayName);
+    if (brandLogo) return brandLogo;
+    
+    // Also check original names for brand matches
+    for (const origName of group.originalNames) {
+      const origBrand = matchBrandLogo(origName);
+      if (origBrand) return origBrand;
     }
 
     const countryInfo = getCountryInfo(group.displayName);
     
-    // For streaming services, use explicit flagUrl if set (e.g., MBC logo), otherwise first channel logo
+    // For streaming services with explicit logos (local assets like MBC, beIN)
     if (countryInfo?.isStreamingService) {
       if (countryInfo.flagUrl) return countryInfo.flagUrl;
-      return group.firstLogo || null;
+      // No logo found for this service - return null for neutral icon fallback
+      return null;
     }
     
-    // For countries, ALWAYS return the flag URL - never use channel logos for countries
+    // For countries, use the flag URL
     if (countryInfo && countryInfo.flagUrl) {
       return countryInfo.flagUrl;
     }
@@ -636,11 +650,8 @@ export const MiLiveTVList = ({
       if (flag) return flag;
     }
     
-    // For non-country groups, use the first channel's logo
-    if (group.firstLogo) {
-      return group.firstLogo;
-    }
-    
+    // For non-country, non-brand groups: return null → neutral icon fallback
+    // Do NOT use first channel logo for category groups to avoid mismatches
     return null;
   };
 
