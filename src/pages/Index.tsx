@@ -33,6 +33,8 @@ import { MobileBrowseScreen } from '@/components/MobileBrowseScreen';
 import { TMDBItem } from '@/hooks/useTMDB';
 import { ChromaKeyVideo } from '@/components/shared/ChromaKeyVideo';
 import logoVideo from '@/assets/logo-transparent.mp4';
+import { ScreenSaver } from '@/components/ScreenSaver';
+import { useInactivityDetector } from '@/hooks/useInactivityDetector';
 
 // Adapt NormalizedChannel to Channel for backward compat
 const toChannel = (nc: NormalizedChannel): Channel => ({
@@ -97,6 +99,10 @@ const Index = () => {
   const isMobile = useIsMobile();
 
   const nav = useAppNavigation();
+
+  // Screensaver - activates after 5 min of inactivity when nothing is playing
+  const isContentPlaying = !!(nav.isFullscreen && nav.currentChannel);
+  const { isInactive: showScreenSaver, dismiss: dismissScreenSaver } = useInactivityDetector(isContentPlaying);
 
   // Fetch accounts from DB once authenticated & restore active account
   useEffect(() => {
@@ -485,6 +491,7 @@ const Index = () => {
   return (
     <>
       <BackgroundMusic src="/audio/background-music.mp4" autoPlay={true} defaultVolume={0.25} />
+      {showScreenSaver && <ScreenSaver onDismiss={dismissScreenSaver} onSelectItem={handleTMDBSelect} />}
       {renderScreen()}
 
       {nav.showMiniPlayer && nav.currentChannel && nav.currentScreen !== 'home' && (
