@@ -222,14 +222,19 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
     preloadImage(items[next2].backdrop).catch(() => {});
   }, [currentIndex, isReady, items]);
 
-  // Auto-cycle
+  // Auto-cycle — fade out text+image together, swap index, fade in together
   useEffect(() => {
     if (!isReady || items.length <= 1) return;
     intervalRef.current = setInterval(() => {
+      // Start fading out current slide (image + text together)
       setIsTransitioning(true);
+      // After fade-out completes, swap to next slide and fade in
       window.setTimeout(() => {
         setCurrentIndex((prev) => (prev + 1) % items.length);
-        setIsTransitioning(false);
+        // Small delay to let the new image/text render before fading in
+        requestAnimationFrame(() => {
+          setIsTransitioning(false);
+        });
       }, TRANSITION_DURATION);
     }, SLIDE_DURATION);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
