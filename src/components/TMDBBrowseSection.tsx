@@ -110,6 +110,8 @@ const PlaylistCard = ({ channel, onClick, tmdbPoster }: { channel: Channel; onCl
     return { label: 'VOD', color: 'bg-slate-500/80' };
   };
   const badge = getBadge();
+
+  const [imgFailed, setImgFailed] = React.useState(false);
   
   return (
     <button
@@ -117,7 +119,7 @@ const PlaylistCard = ({ channel, onClick, tmdbPoster }: { channel: Channel; onCl
       className="flex-shrink-0 w-full group relative transition-transform duration-200 hover:scale-105 hover:-translate-y-1 active:scale-[0.98]"
     >
       <div className="aspect-[2/3] rounded-xl overflow-hidden bg-card border border-border/30 relative">
-        {posterUrl ? (
+        {posterUrl && !imgFailed ? (
           <img
             src={posterUrl}
             alt={channel.name}
@@ -125,19 +127,20 @@ const PlaylistCard = ({ channel, onClick, tmdbPoster }: { channel: Channel; onCl
             loading="lazy"
             onError={(e) => {
               const target = e.currentTarget;
-              if (tmdbPoster && channel.logo && target.src !== channel.logo) {
-                target.src = channel.logo;
-              } else if (target.dataset.fallbackApplied !== '1') {
-                target.dataset.fallbackApplied = '1';
-                target.src = '/placeholder.svg';
+              // Try tmdbPoster if provider logo failed
+              if (channel.logo && tmdbPoster && target.src !== tmdbPoster) {
+                target.src = tmdbPoster;
               } else {
-                target.style.display = 'none';
+                setImgFailed(true);
               }
             }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-            <Film className="w-10 h-10 text-primary/50" />
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-muted to-background gap-2 p-3">
+            <Film className="w-10 h-10 text-muted-foreground/50" />
+            <p className="text-xs text-muted-foreground/70 text-center line-clamp-3 leading-tight" dir="auto">
+              {cleanName(channel.name)}
+            </p>
           </div>
         )}
         
