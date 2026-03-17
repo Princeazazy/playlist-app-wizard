@@ -230,14 +230,16 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   // Drama & Romance
   if ((g.includes('drama') || g.includes('romance') || g.includes('رومانسي') || g.includes('دراما'))) return serDramaRomanceLogo;
   
-  // HBO / Amazon Prime
-  if (g.includes('hbo') || g.includes('amazon') || g.includes('prime')) return serHboAmazonLogo;
+  // HBO / Amazon / Paramount streaming brands
+  if (g.includes('paramount')) return paramountPlusCustomLogo;
+  if (g.includes('hbo') || g.includes('max')) return hboMaxCustomLogo;
+  if (g.includes('amazon') || g.includes('prime')) return primeVideoCustomLogo;
   
   // Kids & Family
   if (g.includes('kids') || g.includes('family') || g.includes('اطفال') || g.includes('عائلي') || g.includes('أطفال')) return serKidsFamilyLogo;
   
   // Netflix
-  if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return serNetflixLogo;
+  if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return netflixCustomLogo;
   
   // Disney
   if (g.includes('disney')) return serDisneyLogo;
