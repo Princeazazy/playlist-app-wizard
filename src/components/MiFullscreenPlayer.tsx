@@ -185,7 +185,9 @@ export const MiFullscreenPlayer = ({
     onSubtitleTracksUpdated: applyHlsSubtitleTracks,
   });
 
-  useEffect(() => {
+  // Keep local ref in sync for skip handlers defined before hlsRef
+  hlsRefLocal.current = hlsRef.current;
+
     if (playbackError) {
       setError(playbackError);
       setIsPlaying(false);
