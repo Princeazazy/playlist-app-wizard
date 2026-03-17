@@ -105,24 +105,25 @@ export const MiFullscreenPlayer = ({
     channel.url?.includes('/movie/') ||
     channel.type === 'movies';
 
-  // Skip 10 seconds forward/backward
+  // Skip 10 seconds forward/backward (hlsRef accessed at call time, defined later)
+  const hlsRefLocal = useRef<any>(null);
   const handleSkipForward = useCallback(() => {
     const video = videoRef.current;
     if (video) {
       const target = Math.min(video.currentTime + 10, video.duration || video.currentTime + 10);
       video.currentTime = target;
-      if (hlsRef.current) hlsRef.current.startLoad(target);
+      if (hlsRefLocal.current) hlsRefLocal.current.startLoad(target);
     }
-  }, [hlsRef]);
+  }, []);
 
   const handleSkipBackward = useCallback(() => {
     const video = videoRef.current;
     if (video) {
       const target = Math.max(video.currentTime - 10, 0);
       video.currentTime = target;
-      if (hlsRef.current) hlsRef.current.startLoad(target);
+      if (hlsRefLocal.current) hlsRefLocal.current.startLoad(target);
     }
-  }, [hlsRef]);
+  }, []);
 
   const { savedPosition, hasSavedProgress, saveProgress, saveInterval } = useWatchProgress(
     channel.id,
