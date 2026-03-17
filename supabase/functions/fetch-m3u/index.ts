@@ -1083,10 +1083,21 @@ Deno.serve(async (req) => {
         
         if (channels.length === 0) {
           console.error('No channels parsed');
+
+          // Some providers return HTTP 200 with only the M3U header (#EXTM3U)
+          // for datacenter/IP-restricted requests. Treat this the same way as a blocked
+          // playlist fetch and try the Xtream fallback before failing.
+          const fallback = await tryXtreamFallback(response.status);
+          if (fallback) return fallback;
+
           if (attempt === 2) {
             return new Response(
-              JSON.stringify({ error: 'No channels found in playlist' }),
-              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              JSON.stringify({
+                blocked: true,
+                upstream_status: response.status,
+                error: 'No channels found in playlist',
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
           continue;
