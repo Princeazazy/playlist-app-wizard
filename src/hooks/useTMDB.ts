@@ -11,6 +11,7 @@ export interface TMDBItem {
   year?: string;
   mediaType: 'movie' | 'tv';
   genreIds?: number[];
+  originalLanguage?: string | null;
   source: 'tmdb';
 }
 
