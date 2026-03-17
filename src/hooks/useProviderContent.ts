@@ -89,7 +89,7 @@ export function useProviderContent(account: ProviderAccount | null) {
 
         if (cancelled) return;
 
-        if (result.length === 0 && !hasCached) {
+        if (result.length === 0 && channels.length === 0) {
           setError('No channels found. The provider may be blocking this connection. Try from the native APK or check credentials.');
           setLoading(false);
           fetchInProgress.current = false;
