@@ -83,6 +83,8 @@ export const MiFullscreenPlayer = ({
   const [showPreview, setShowPreview] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement | null>(null);
+  const lastPreviewSeekRef = useRef(0);
 
   // Now Playing banner state
   const [showNowPlaying, setShowNowPlaying] = useState(true);
