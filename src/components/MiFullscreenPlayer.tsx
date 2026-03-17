@@ -336,8 +336,16 @@ export const MiFullscreenPlayer = ({
     };
   }, [isVOD, saveProgress, saveInterval]);
 
+  // Show resume prompt only once at the very beginning before playback starts
+  const resumeCheckedRef = useRef(false);
   useEffect(() => {
-    if (isVOD && hasSavedProgress && !hasResumed) setShowResumePrompt(true);
+    if (isVOD && hasSavedProgress && !hasResumed && !resumeCheckedRef.current) {
+      resumeCheckedRef.current = true;
+      setShowResumePrompt(true);
+      // Pause immediately so the movie doesn't play behind the prompt
+      const video = videoRef.current;
+      if (video) video.pause();
+    }
   }, [isVOD, hasSavedProgress, hasResumed]);
 
   // Now Playing banner: show for 5 seconds on channel load, then fade out
@@ -366,14 +374,20 @@ export const MiFullscreenPlayer = ({
 
   const handleResume = useCallback(() => {
     const video = videoRef.current;
-    if (video && savedPosition > 0) video.currentTime = savedPosition;
+    if (video) {
+      if (savedPosition > 0) video.currentTime = savedPosition;
+      video.play().catch(() => {});
+    }
     setShowResumePrompt(false);
     setHasResumed(true);
   }, [savedPosition]);
 
   const handleStartOver = useCallback(() => {
     const video = videoRef.current;
-    if (video) video.currentTime = 0;
+    if (video) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    }
     setShowResumePrompt(false);
     setHasResumed(true);
   }, []);
@@ -768,31 +782,32 @@ export const MiFullscreenPlayer = ({
           </div>
         )}
 
-        {/* Bottom Left - Channel Info */}
-        <div className="absolute bottom-8 left-6">
-          {/* Favorite Star */}
-          <button onClick={onToggleFavorite} className="mb-4">
-            <Star className={`w-7 h-7 ${isFavorite ? 'fill-accent text-accent' : 'text-white/60 hover:text-white'}`} />
+        {/* Top Left - Channel Info (small card) */}
+        <div className="absolute top-6 left-20 flex items-center gap-3">
+          <button onClick={onToggleFavorite} className="p-1">
+            <Star className={`w-4 h-4 ${isFavorite ? 'fill-accent text-accent' : 'text-white/60 hover:text-white'}`} />
           </button>
 
-          {/* Badges */}
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-3 py-1 bg-primary text-primary-foreground text-sm font-semibold rounded">Live</span>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowEPGOverlay(true); }}
-              className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded flex items-center gap-1.5 transition-colors"
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              TV Guide
-            </button>
-          </div>
+          {!isVOD && (
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded">Live</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowEPGOverlay(true); }}
+                className="px-2 py-0.5 bg-white/20 hover:bg-white/30 text-white text-[10px] font-medium rounded flex items-center gap-1 transition-colors"
+              >
+                <Calendar className="w-3 h-3" />
+                TV Guide
+              </button>
+            </div>
+          )}
 
-          {/* Title */}
-          <h1 className="text-white text-3xl font-bold mb-1">{channel.name}</h1>
-          <p className="text-white/60">{channel.group || 'Live TV'}</p>
+          <h1 className="text-white text-sm font-semibold truncate max-w-[280px]">{channel.name}</h1>
+          <span className="text-white/50 text-xs">{channel.group || 'Live TV'}</span>
+        </div>
 
-          {/* Elapsed Time */}
-          <p className="text-white/50 text-2xl font-light mt-6">{currentTime}</p>
+        {/* Bottom Left - Elapsed Time */}
+        <div className="absolute bottom-8 left-6">
+          <p className="text-white/50 text-2xl font-light">{currentTime}</p>
           {isVOD && duration > 0 && (
             <p className="text-white/40 text-lg">{formatTime(duration)}</p>
           )}
@@ -932,10 +947,10 @@ export const MiFullscreenPlayer = ({
           )}
         </div>
 
-        {/* Back Button - Top left corner */}
+        {/* Back Button - Bottom right corner */}
         <button
           onClick={(e) => { e.stopPropagation(); onClose(); }}
-          className="absolute top-6 left-28 flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+          className="absolute bottom-8 right-6 flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
         >
           <ChevronLeft className="w-5 h-5 text-white" />
           <span className="text-white font-medium">Back</span>
