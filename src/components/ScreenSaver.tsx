@@ -276,7 +276,7 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
       onKeyDown={handleDismiss}
       aria-label="Dismiss screensaver"
     >
-      {/* Background images with crossfade */}
+      {/* Background image — fades out/in together with text */}
       <div className="absolute inset-0">
         <div
           className={`absolute inset-0 transition-opacity duration-[1500ms] ease-in-out ${
@@ -288,18 +288,6 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
             alt={current.title}
             className="h-full w-full object-cover animate-screensaver-zoom"
             key={`bg-${currentIndex}`}
-          />
-        </div>
-        <div
-          className={`absolute inset-0 transition-opacity duration-[1500ms] ease-in-out ${
-            isTransitioning ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          <img
-            src={next.backdrop}
-            alt={next.title}
-            className="h-full w-full object-cover"
-            key={`bg-next-${(currentIndex + 1) % items.length}`}
           />
         </div>
       </div>
