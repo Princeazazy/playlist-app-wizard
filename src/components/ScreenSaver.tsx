@@ -278,21 +278,10 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
             isTransitioning ? 'opacity-0' : 'opacity-100'
           }`}
         >
-          {/* Blurred background fill for provider poster images */}
-          {current.source === 'provider' && (
-            <img
-              src={current.backdrop}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover blur-3xl scale-110 opacity-60"
-              key={`bg-blur-${currentIndex}`}
-            />
-          )}
           <img
             src={current.backdrop}
             alt={current.title}
-            className={`h-full w-full animate-screensaver-zoom ${
-              current.source === 'provider' ? 'object-contain' : 'object-cover'
-            }`}
+            className="h-full w-full object-cover animate-screensaver-zoom"
             key={`bg-${currentIndex}`}
           />
         </div>
@@ -301,20 +290,10 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
             isTransitioning ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          {next.source === 'provider' && (
-            <img
-              src={next.backdrop}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover blur-3xl scale-110 opacity-60"
-              key={`bg-blur-next-${(currentIndex + 1) % items.length}`}
-            />
-          )}
           <img
             src={next.backdrop}
             alt={next.title}
-            className={`h-full w-full ${
-              next.source === 'provider' ? 'object-contain' : 'object-cover'
-            }`}
+            className="h-full w-full object-cover"
             key={`bg-next-${(currentIndex + 1) % items.length}`}
           />
         </div>
