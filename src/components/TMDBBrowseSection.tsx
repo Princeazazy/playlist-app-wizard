@@ -4,6 +4,7 @@ import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
 import { useTMDBPosters } from '@/hooks/useTMDBPosters';
 import { Channel } from '@/hooks/useIPTV';
+import { RatingBadge } from '@/components/shared/RatingBadge';
 
 interface TMDBBrowseSectionProps {
   onSelectItem?: (item: TMDBItem) => void;
