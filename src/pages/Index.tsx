@@ -33,6 +33,8 @@ import { MobileBrowseScreen } from '@/components/MobileBrowseScreen';
 import { TMDBItem } from '@/hooks/useTMDB';
 import { ChromaKeyVideo } from '@/components/shared/ChromaKeyVideo';
 import logoVideo from '@/assets/logo-transparent.mp4';
+import { ScreenSaver } from '@/components/ScreenSaver';
+import { useInactivityDetector } from '@/hooks/useInactivityDetector';
 
 // Adapt NormalizedChannel to Channel for backward compat
 const toChannel = (nc: NormalizedChannel): Channel => ({
