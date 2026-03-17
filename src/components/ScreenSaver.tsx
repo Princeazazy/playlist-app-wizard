@@ -139,6 +139,10 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
         const eligibleChannels = channels.filter((ch) => {
           if (!ch.logo || isExcludedTitle(ch.name)) return false;
           if (ch.type !== 'series' && ch.type !== 'movies') return false;
+          // Exclude TAR (Turkish Arabic-dubbed) and dubbed/translated content
+          if (/\bTAR\b/i.test(ch.name)) return false;
+          if (/مترجم/i.test(ch.name)) return false;
+          if (/dubbed|dub\b/i.test(ch.name)) return false;
           return isRamadan2026(ch) || isLatestArabic(ch);
         });
 
@@ -156,7 +160,7 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
 
           arabicProviderItems.push({
             id: `provider-${ch.id}`,
-            title: ch.name,
+            title: cleanProviderTitle(ch.name),
             backdrop,
             overview: ch.plot,
             rating: ch.rating ? parseFloat(String(ch.rating)) : undefined,
