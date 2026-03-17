@@ -342,8 +342,10 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   // Drama & Romance
   if ((g.includes('drama') || g.includes('romance') || g.includes('رومانسي') || g.includes('دراما')) && !g.includes('arabic')) return enDramaRomanceLogo;
   
-  // HBO / Amazon Prime
-  if (g.includes('hbo') || g.includes('amazon') || g.includes('prime')) return enHboAmazonLogo;
+  // HBO / Amazon / Paramount streaming brands
+  if (g.includes('paramount')) return paramountPlusCustomLogo;
+  if (g.includes('hbo') || g.includes('max')) return hboMaxCustomLogo;
+  if (g.includes('amazon') || g.includes('prime')) return primeVideoCustomLogo;
   
   // Kids & Family
   if (g.includes('kids') || g.includes('family') || g.includes('اطفال') || g.includes('عائلي') || g.includes('أطفال')) return enKidsFamilyLogo;
@@ -355,7 +357,7 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   if (g.includes('formula') || g.includes('f1') || g.includes('فورمولا')) return formula1Logo;
   
   // Netflix
-  if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return enNetflixLogo;
+  if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return netflixCustomLogo;
   
   // Latest English/Movies - includes "EN MOV 2025" style groups
   if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي') || g.includes('movie') || g.includes('film')) || g.includes('أفلام اجنبية جديدة')) return englishMoviesLogo;
