@@ -491,7 +491,7 @@ const Index = () => {
   return (
     <>
       <BackgroundMusic src="/audio/background-music.mp4" autoPlay={true} defaultVolume={0.25} />
-      {showScreenSaver && <ScreenSaver onDismiss={dismissScreenSaver} onSelectItem={handleTMDBSelect} />}
+      {showScreenSaver && <ScreenSaver onDismiss={dismissScreenSaver} onSelectItem={handleTMDBSelect} channels={channels} />}
       {renderScreen()}
 
       {nav.showMiniPlayer && nav.currentChannel && nav.currentScreen !== 'home' && (

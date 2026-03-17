@@ -21,6 +21,7 @@ interface TMDBContent {
   first_air_date?: string;
   genre_ids?: number[];
   media_type?: string;
+  original_language?: string;
 }
 
 interface TMDBResponse {
@@ -175,6 +176,7 @@ serve(async (req) => {
       year: (item.release_date || item.first_air_date || '').split('-')[0],
       mediaType: item.media_type || (action === 'tv' ? 'tv' : 'movie'),
       genreIds: item.genre_ids,
+      originalLanguage: item.original_language || null,
       source: 'tmdb',
     }));
 
