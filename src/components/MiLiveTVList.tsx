@@ -610,23 +610,89 @@ export const MiLiveTVList = ({
   // Preview channel (hovered or current)
   const previewChannel = hoveredChannel || currentChannel;
 
-  // Get logo for groups - brand logos for services, country flags for countries, neutral icon for generic
+  // Auto-fetch/generate logos for groups that have no static logo match
+  useEffect(() => {
+    if (groups.length === 0) return;
+
+    const needLogos: string[] = [];
+    for (const group of groups) {
+      const hasStaticLogo = (() => {
+        if (category === 'sports') {
+          const meta = SPORTS_GROUP_META[group.name];
+          if (meta?.flagUrl) return true;
+          if (matchBrandLogo(group.name)) return true;
+          return !!group.firstLogo;
+        }
+        if (matchBrandLogo(group.displayName)) return true;
+        for (const origName of group.originalNames) {
+          if (matchBrandLogo(origName)) return true;
+        }
+        const countryInfo = getCountryInfo(group.displayName);
+        if (countryInfo?.flagUrl) return true;
+        for (const origName of group.originalNames) {
+          if (getCountryFlagUrl(origName)) return true;
+        }
+        return false;
+      })();
+
+      if (!hasStaticLogo && !aiGroupLogos[group.displayName] && !aiGroupLogosFetchedRef.current.has(group.displayName)) {
+        needLogos.push(group.displayName);
+      }
+    }
+
+    if (needLogos.length === 0) return;
+
+    // Mark as fetched to prevent duplicate requests
+    needLogos.forEach(name => aiGroupLogosFetchedRef.current.add(name));
+
+    const fetchBatch = async (batch: string[]) => {
+      try {
+        const { data, error } = await supabase.functions.invoke('find-channel-logo', {
+          body: {
+            items: batch.map(name => ({ name, mediaType: 'channel' })),
+            allowAiGeneration: true,
+          },
+        });
+        if (!error && data?.logos) {
+          const valid: Record<string, string> = {};
+          for (const [name, url] of Object.entries(data.logos)) {
+            if (url) valid[name] = url as string;
+          }
+          if (Object.keys(valid).length > 0) {
+            setAiGroupLogos(prev => ({ ...prev, ...valid }));
+          }
+        }
+      } catch (e) {
+        console.error('AI group logo fetch failed:', e);
+      }
+    };
+
+    // Process in batches of 5
+    const run = async () => {
+      for (let i = 0; i < needLogos.length; i += 5) {
+        await fetchBatch(needLogos.slice(i, i + 5));
+        if (i + 5 < needLogos.length) await new Promise(r => setTimeout(r, 1500));
+      }
+    };
+    run();
+  }, [groups, category]);
+
+  // Get logo for groups - brand logos for services, country flags for countries, AI fallback
   const getGroupLogo = (group: { name: string; displayName: string; firstLogo?: string; originalNames: string[] }): string | null => {
     // Sports mode: use sports-specific meta
     if (category === 'sports') {
       const meta = SPORTS_GROUP_META[group.name];
       if (meta?.flagUrl) return meta.flagUrl;
-      // Try brand matching for unrecognized sports groups
       const brandLogo = matchBrandLogo(group.name);
       if (brandLogo) return brandLogo;
-      return group.firstLogo || null;
+      if (group.firstLogo) return group.firstLogo;
+      return aiGroupLogos[group.displayName] || null;
     }
 
-    // 1. Try brand logo matching first (highest priority for streaming/brand groups)
+    // 1. Try brand logo matching first
     const brandLogo = matchBrandLogo(group.displayName);
     if (brandLogo) return brandLogo;
     
-    // Also check original names for brand matches
     for (const origName of group.originalNames) {
       const origBrand = matchBrandLogo(origName);
       if (origBrand) return origBrand;
@@ -634,27 +700,20 @@ export const MiLiveTVList = ({
 
     const countryInfo = getCountryInfo(group.displayName);
     
-    // For streaming services with explicit logos (local assets like MBC, beIN)
     if (countryInfo?.isStreamingService) {
       if (countryInfo.flagUrl) return countryInfo.flagUrl;
-      // No logo found for this service - return null for neutral icon fallback
-      return null;
+      return aiGroupLogos[group.displayName] || null;
     }
     
-    // For countries, use the flag URL
-    if (countryInfo && countryInfo.flagUrl) {
-      return countryInfo.flagUrl;
-    }
+    if (countryInfo && countryInfo.flagUrl) return countryInfo.flagUrl;
     
-    // Check if any original name is a country
     for (const origName of group.originalNames) {
       const flag = getCountryFlagUrl(origName);
       if (flag) return flag;
     }
     
-    // For non-country, non-brand groups: return null → neutral icon fallback
-    // Do NOT use first channel logo for category groups to avoid mismatches
-    return null;
+    // AI-resolved logo fallback
+    return aiGroupLogos[group.displayName] || null;
   };
 
   // Check if a group is a streaming service (for logo styling)
