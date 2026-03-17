@@ -231,7 +231,16 @@ export const useWatchProgress = (
   group?: string
 ) => {
   const savedProgress = channelId ? getChannelProgress(channelId) : null;
-  
+
+  // Only consider saved progress valid if the URL matches (prevents stale/wrong resume prompts)
+  const isProgressValid = !!(
+    savedProgress &&
+    savedProgress.position > MIN_PROGRESS_TO_SAVE &&
+    url &&
+    savedProgress.url &&
+    savedProgress.url === url
+  );
+
   const saveProgress = (position: number, duration: number) => {
     if (!channelId) return;
     saveWatchProgress(channelId, channelName, position, duration, logo, url, group);
@@ -244,8 +253,8 @@ export const useWatchProgress = (
   };
 
   return {
-    savedPosition: savedProgress?.position || 0,
-    hasSavedProgress: !!savedProgress && savedProgress.position > MIN_PROGRESS_TO_SAVE,
+    savedPosition: isProgressValid ? savedProgress!.position : 0,
+    hasSavedProgress: isProgressValid,
     saveProgress,
     clearProgress,
     saveInterval: SAVE_INTERVAL,
