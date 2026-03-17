@@ -768,31 +768,32 @@ export const MiFullscreenPlayer = ({
           </div>
         )}
 
-        {/* Bottom Left - Channel Info */}
-        <div className="absolute bottom-8 left-6">
-          {/* Favorite Star */}
-          <button onClick={onToggleFavorite} className="mb-4">
-            <Star className={`w-7 h-7 ${isFavorite ? 'fill-accent text-accent' : 'text-white/60 hover:text-white'}`} />
+        {/* Top Left - Channel Info (small card) */}
+        <div className="absolute top-6 left-20 flex items-center gap-3">
+          <button onClick={onToggleFavorite} className="p-1">
+            <Star className={`w-4 h-4 ${isFavorite ? 'fill-accent text-accent' : 'text-white/60 hover:text-white'}`} />
           </button>
 
-          {/* Badges */}
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-3 py-1 bg-primary text-primary-foreground text-sm font-semibold rounded">Live</span>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowEPGOverlay(true); }}
-              className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded flex items-center gap-1.5 transition-colors"
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              TV Guide
-            </button>
-          </div>
+          {!isVOD && (
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded">Live</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowEPGOverlay(true); }}
+                className="px-2 py-0.5 bg-white/20 hover:bg-white/30 text-white text-[10px] font-medium rounded flex items-center gap-1 transition-colors"
+              >
+                <Calendar className="w-3 h-3" />
+                TV Guide
+              </button>
+            </div>
+          )}
 
-          {/* Title */}
-          <h1 className="text-white text-3xl font-bold mb-1">{channel.name}</h1>
-          <p className="text-white/60">{channel.group || 'Live TV'}</p>
+          <h1 className="text-white text-sm font-semibold truncate max-w-[280px]">{channel.name}</h1>
+          <span className="text-white/50 text-xs">{channel.group || 'Live TV'}</span>
+        </div>
 
-          {/* Elapsed Time */}
-          <p className="text-white/50 text-2xl font-light mt-6">{currentTime}</p>
+        {/* Bottom Left - Elapsed Time */}
+        <div className="absolute bottom-8 left-6">
+          <p className="text-white/50 text-2xl font-light">{currentTime}</p>
           {isVOD && duration > 0 && (
             <p className="text-white/40 text-lg">{formatTime(duration)}</p>
           )}
