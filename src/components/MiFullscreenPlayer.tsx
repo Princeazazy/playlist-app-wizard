@@ -83,6 +83,8 @@ export const MiFullscreenPlayer = ({
   const [showPreview, setShowPreview] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement | null>(null);
+  const lastPreviewSeekRef = useRef(0);
 
   // Now Playing banner state
   const [showNowPlaying, setShowNowPlaying] = useState(true);
@@ -164,6 +166,7 @@ export const MiFullscreenPlayer = ({
     error: playbackError,
     retryCount,
     retryPlayback,
+    activeSource,
   } = useResilientPlayback({
     videoRef,
     channel,
@@ -410,11 +413,48 @@ export const MiFullscreenPlayer = ({
     setProgress(percentage * 100);
   };
 
+  // Initialize hidden preview video when source is available
+  useEffect(() => {
+    const mainVideo = videoRef.current;
+    if (!mainVideo || !isVOD || !activeSource) return;
+
+    // Create a hidden video element for thumbnail generation
+    const pv = document.createElement('video');
+    pv.preload = 'metadata';
+    pv.muted = true;
+    pv.playsInline = true;
+    pv.style.display = 'none';
+    pv.src = activeSource;
+    document.body.appendChild(pv);
+    previewVideoRef.current = pv;
+
+    const onSeeked = () => {
+      const canvas = previewCanvasRef.current;
+      if (!canvas || pv.videoWidth === 0) return;
+      try {
+        canvas.width = 240;
+        canvas.height = 135;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(pv, 0, 0, 240, 135);
+          setPreviewImage(canvas.toDataURL('image/jpeg', 0.7));
+        }
+      } catch {
+        setPreviewImage(null);
+      }
+    };
+    pv.addEventListener('seeked', onSeeked);
+
+    return () => {
+      pv.removeEventListener('seeked', onSeeked);
+      pv.remove();
+      previewVideoRef.current = null;
+    };
+  }, [activeSource, isVOD]);
+
   // Generate preview thumbnail when hovering over progress bar
   const handleProgressHover = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const video = videoRef.current;
-    const canvas = previewCanvasRef.current;
-    if (!video || !duration || !canvas) return;
+    if (!duration) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const hoverX = e.clientX - rect.left;
@@ -425,26 +465,14 @@ export const MiFullscreenPlayer = ({
     setHoverPosition(hoverX);
     setShowPreview(true);
 
-    // Create preview thumbnail from video
-    try {
-      const tempVideo = document.createElement('video');
-      tempVideo.crossOrigin = 'anonymous';
-      tempVideo.src = video.src;
-      tempVideo.currentTime = time;
-      
-      tempVideo.onseeked = () => {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          canvas.width = 192;
-          canvas.height = 108;
-          ctx.drawImage(tempVideo, 0, 0, 192, 108);
-          setPreviewImage(canvas.toDataURL());
-        }
-        tempVideo.remove();
-      };
-    } catch {
-      // Fallback for CORS-restricted videos
-      setPreviewImage(null);
+    // Throttle seeks to prevent overwhelming the preview video
+    const now = Date.now();
+    if (now - lastPreviewSeekRef.current < 200) return;
+    lastPreviewSeekRef.current = now;
+
+    const pv = previewVideoRef.current;
+    if (pv && pv.readyState >= 1) {
+      pv.currentTime = time;
     }
   }, [duration]);
 
@@ -827,10 +855,10 @@ export const MiFullscreenPlayer = ({
               >
                 <div className="bg-black/90 rounded-lg p-1 shadow-2xl border border-white/20">
                   {previewImage ? (
-                    <img src={previewImage} alt="Preview" className="w-48 h-28 object-cover rounded" />
+                    <img src={previewImage} alt="Preview" className="w-60 h-[135px] object-cover rounded" />
                   ) : (
-                    <div className="w-48 h-28 bg-card/80 rounded flex items-center justify-center">
-                      <span className="text-white/50 text-sm">Preview</span>
+                    <div className="w-60 h-[135px] bg-card/80 rounded flex items-center justify-center">
+                      <span className="text-muted-foreground text-sm">Preview</span>
                     </div>
                   )}
                   <div className="text-center mt-1">
