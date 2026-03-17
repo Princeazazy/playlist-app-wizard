@@ -287,6 +287,9 @@ export const ProviderSetup = ({ onProviderReady, existingAccounts = [], onSignOu
               <p className="text-muted-foreground text-sm text-center">Choose how to connect</p>
 
               {[
+                ...(accounts.length > 0
+                  ? [{ id: 'account-list' as SetupStep, icon: ListVideo, label: 'My Playlists', desc: 'Open your saved playlist library' }]
+                  : []),
                 { id: 'xtream-form' as SetupStep, icon: Wifi, label: 'Xtream Codes', desc: 'Server URL, username & password' },
                 { id: 'm3u-form' as SetupStep, icon: Link2, label: 'M3U Playlist URL', desc: 'Direct M3U or M3U8 link' },
                 { id: 'access-code-form' as SetupStep, icon: Key, label: 'Access Code / Portal', desc: 'Server URL + activation code' },
