@@ -138,7 +138,9 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
           seenNames.add(normalName);
 
           // Use the provider logo/cover as backdrop
-          const backdrop = ch.backdrop_path || ch.logo;
+          const rawBackdrop = ch.backdrop_path || ch.logo;
+          if (!rawBackdrop) continue;
+          const backdrop = Array.isArray(rawBackdrop) ? rawBackdrop[0] : rawBackdrop;
           if (!backdrop) continue;
 
           arabicProviderItems.push({
