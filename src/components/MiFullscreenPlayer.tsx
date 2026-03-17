@@ -408,8 +408,18 @@ export const MiFullscreenPlayer = ({
     if (!video || !duration) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
-    const percentage = clickX / rect.width;
-    video.currentTime = percentage * duration;
+    const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+    const targetTime = percentage * duration;
+    
+    // For HLS streams, we need to ensure the correct segment is loaded
+    const hls = hlsRef.current;
+    if (hls) {
+      // Stop current loading, seek, then restart loading from new position
+      video.currentTime = targetTime;
+      hls.startLoad(targetTime);
+    } else {
+      video.currentTime = targetTime;
+    }
     setProgress(percentage * 100);
   };
 
