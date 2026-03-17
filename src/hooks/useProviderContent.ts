@@ -64,15 +64,14 @@ export function useProviderContent(account: ProviderAccount | null) {
       return;
     }
 
-    // Prevent duplicate fetches
-    if (fetchInProgress.current && refreshKey === 0) return;
-
     let cancelled = false;
     fetchInProgress.current = true;
 
     const fetchContent = async () => {
-      const hasCached = channels.length > 0;
-      if (!hasCached) setLoading(true);
+      // Always show loading on manual refresh (refreshKey > 0) or when no cached data
+      if (refreshKey > 0) {
+        setLoading(true);
+      }
 
       try {
         // Single full fetch — no bootstrap/full-sync split
@@ -90,7 +89,7 @@ export function useProviderContent(account: ProviderAccount | null) {
 
         if (cancelled) return;
 
-        if (result.length === 0 && !hasCached) {
+        if (result.length === 0 && channels.length === 0) {
           setError('No channels found. The provider may be blocking this connection. Try from the native APK or check credentials.');
           setLoading(false);
           fetchInProgress.current = false;
