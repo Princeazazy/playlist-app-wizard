@@ -288,6 +288,8 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
 const getMovieCategoryLogo = (groupName: string): string | null => {
   const g = (groupName + ' ' + translateGroupName(groupName)).toLowerCase();
   
+  // PPV
+  if (g.includes('ppv') || g.includes('pay per view') || g.includes('pay-per-view')) return ppvDaznLogo;
   // Arabic Movies by Year/Era
   if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2026')) return arabicMovies2026Logo;
   if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2025')) return arabicMovies2025Logo;
