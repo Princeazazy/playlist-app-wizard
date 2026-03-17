@@ -32,28 +32,29 @@ const MediaCard = ({ item, onClick }: { item: TMDBItem; onClick?: () => void }) 
     className="flex-shrink-0 w-full group relative transition-transform duration-200 hover:scale-105 hover:-translate-y-1 active:scale-[0.98]"
   >
     <div className="aspect-[2/3] rounded-xl overflow-hidden bg-card border border-border/30 relative">
-      {item.poster ? (
-        <img
-          src={item.poster}
-          alt={item.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-          loading="lazy"
-          onError={(e) => {
-            const target = e.currentTarget;
-            target.style.display = 'none';
-            // Show the sibling fallback
-            const fallback = target.parentElement?.querySelector('.poster-fallback');
-            if (fallback) (fallback as HTMLElement).style.display = 'flex';
-          }}
-        />
-        <div className="poster-fallback w-full h-full items-center justify-center bg-gradient-to-br from-muted to-background gap-2 p-3 absolute inset-0" style={{ display: 'none' }}>
-          {item.mediaType === 'tv' ? (
-            <Tv className="w-10 h-10 text-muted-foreground/50" />
-          ) : (
-            <Film className="w-10 h-10 text-muted-foreground/50" />
-          )}
-        </div>
-      ) : (
+        {item.poster ? (
+          <>
+            <img
+              src={item.poster}
+              alt={item.title}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              loading="lazy"
+              onError={(e) => {
+                const target = e.currentTarget;
+                target.style.display = 'none';
+                const fallback = target.parentElement?.querySelector('.poster-fallback');
+                if (fallback) (fallback as HTMLElement).style.display = 'flex';
+              }}
+            />
+            <div className="poster-fallback w-full h-full items-center justify-center bg-gradient-to-br from-muted to-background gap-2 p-3 absolute inset-0" style={{ display: 'none' }}>
+              {item.mediaType === 'tv' ? (
+                <Tv className="w-10 h-10 text-muted-foreground/50" />
+              ) : (
+                <Film className="w-10 h-10 text-muted-foreground/50" />
+              )}
+            </div>
+          </>
+        ) : (
         <div className="w-full h-full flex items-center justify-center bg-muted">
           {item.mediaType === 'tv' ? (
             <Tv className="w-10 h-10 text-muted-foreground" />
