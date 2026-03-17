@@ -374,14 +374,20 @@ export const MiFullscreenPlayer = ({
 
   const handleResume = useCallback(() => {
     const video = videoRef.current;
-    if (video && savedPosition > 0) video.currentTime = savedPosition;
+    if (video) {
+      if (savedPosition > 0) video.currentTime = savedPosition;
+      video.play().catch(() => {});
+    }
     setShowResumePrompt(false);
     setHasResumed(true);
   }, [savedPosition]);
 
   const handleStartOver = useCallback(() => {
     const video = videoRef.current;
-    if (video) video.currentTime = 0;
+    if (video) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    }
     setShowResumePrompt(false);
     setHasResumed(true);
   }, []);
