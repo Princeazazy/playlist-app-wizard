@@ -1,25 +1,39 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Play, Star, Film, Tv, X } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
+import { Channel } from '@/hooks/useIPTV';
+
+interface ScreenSaverItem {
+  id: string;
+  title: string;
+  backdrop: string;
+  overview?: string;
+  rating?: number;
+  year?: string;
+  mediaType: 'movie' | 'tv';
+  source: 'tmdb' | 'provider';
+  tmdbItem?: TMDBItem;
+}
 
 interface ScreenSaverProps {
   onDismiss: () => void;
   onSelectItem?: (item: TMDBItem) => void;
+  channels?: Channel[];
 }
 
 const SLIDE_DURATION = 8000;
 const TRANSITION_DURATION = 1500;
 
-// Asian language codes to exclude
+// Languages to EXCLUDE from screensaver
 const EXCLUDED_LANGUAGES = new Set([
-  'ja', 'ko', 'zh', 'th', 'vi', 'id', 'ms', 'tl', 'hi', 'ta', 'te', 'ml', 'kn', 'bn',
+  'ja', 'ko', 'zh', 'th', 'vi', 'id', 'ms', 'tl',
+  'hi', 'ta', 'te', 'ml', 'kn', 'bn', 'mr', 'pa',
+  'cn',
 ]);
 
-// Upgrade backdrop URL to original (4K) resolution
 const toOriginalBackdrop = (url: string) =>
   url.replace('/w780/', '/original/').replace('/w1280/', '/original/');
 
-// Preload an image and resolve when ready
 const preloadImage = (src: string): Promise<void> =>
   new Promise((resolve, reject) => {
     const img = new Image();
@@ -28,8 +42,43 @@ const preloadImage = (src: string): Promise<void> =>
     img.src = src;
   });
 
-export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectItem }) => {
-  const [items, setItems] = useState<TMDBItem[]>([]);
+// Check if a channel is Arabic Ramadan 2026 or latest Arabic content
+const isRamadan2026 = (ch: Channel): boolean => {
+  const group = (ch.group || '').toLowerCase();
+  const name = (ch.name || '').toLowerCase();
+  return (
+    (group.includes('ramadan') || group.includes('رمضان')) &&
+    (group.includes('26') || group.includes('2026') || name.includes('2026'))
+  );
+};
+
+const isLatestArabic = (ch: Channel): boolean => {
+  const group = (ch.group || '').toLowerCase();
+  const name = (ch.name || '');
+  // Must have Arabic characters in name
+  const hasArabic = /[\u0600-\u06FF]/.test(name);
+  if (!hasArabic) return false;
+  // Check for Arabic movie/series groups
+  const arabicKeywords = ['عربي', 'arabic', 'مصر', 'egypt', 'مغرب', 'جزائر'];
+  const isArabicGroup = arabicKeywords.some((kw) => group.includes(kw));
+  // Check year
+  const recentYear = /202[4-6]/.test(group) || /202[4-6]/.test(name);
+  return isArabicGroup || recentYear;
+};
+
+// Exclusion list
+const EXCLUDED_TITLES = [
+  'ramadan premiere', 'بريميير رمضان', 'جرس إنذار',
+  'المداح', 'سواها البخت', 'روضة القرآن', 'قصص الأنبياء',
+];
+
+const isExcludedTitle = (name: string): boolean => {
+  const lower = name.toLowerCase();
+  return EXCLUDED_TITLES.some((t) => lower.includes(t.toLowerCase()));
+};
+
+export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectItem, channels = [] }) => {
+  const [items, setItems] = useState<ScreenSaverItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -43,55 +92,96 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
     onDismiss();
   }, [onDismiss]);
 
-  // Load and filter content, preload first two images before showing
   useEffect(() => {
     if (loadedRef.current) return;
     loadedRef.current = true;
 
     const loadContent = async () => {
       try {
+        // 1. Fetch TMDB trending (filtered)
         const trending = await getTrending(1);
-
-        const filtered = (trending || []).filter((item: TMDBItem) => {
+        const tmdbFiltered = (trending || []).filter((item: TMDBItem) => {
           if (!item.backdrop || !item.title) return false;
-          // Exclude Asian content by checking original_language via genre heuristic
-          // TMDB trending includes original_language but our type doesn't expose it,
-          // so we filter by title characters (CJK, Hangul, Thai, Devanagari, etc.)
-          const title = item.title;
-          if (/[\u3000-\u9FFF\uAC00-\uD7AF\u0E00-\u0E7F\u0900-\u097F\u0B80-\u0BFF\u0C00-\u0C7F\u0D00-\u0D7F]/.test(title)) {
-            return false;
-          }
+          // Filter by original_language
+          if (item.originalLanguage && EXCLUDED_LANGUAGES.has(item.originalLanguage)) return false;
+          // Also filter by title characters as safety net
+          if (/[\u3000-\u9FFF\uAC00-\uD7AF\u0E00-\u0E7F\u0900-\u097F\u0B80-\u0BFF\u0C00-\u0C7F\u0D00-\u0D7F]/.test(item.title)) return false;
           return true;
         });
 
-        if (filtered.length === 0) {
+        const tmdbItems: ScreenSaverItem[] = tmdbFiltered.map((item) => ({
+          id: `tmdb-${item.id}`,
+          title: item.title,
+          backdrop: toOriginalBackdrop(item.backdrop!),
+          overview: item.overview,
+          rating: item.rating,
+          year: item.year,
+          mediaType: item.mediaType,
+          source: 'tmdb' as const,
+          tmdbItem: item,
+        }));
+
+        // 2. Get Ramadan 2026 + latest Arabic from provider channels
+        const arabicProviderItems: ScreenSaverItem[] = [];
+        const seenNames = new Set<string>();
+
+        const eligibleChannels = channels.filter((ch) => {
+          if (!ch.logo || isExcludedTitle(ch.name)) return false;
+          if (ch.type !== 'series' && ch.type !== 'movies') return false;
+          return isRamadan2026(ch) || isLatestArabic(ch);
+        });
+
+        // Take up to 8 Arabic/Ramadan items
+        for (const ch of eligibleChannels.slice(0, 8)) {
+          const normalName = ch.name.trim().toLowerCase();
+          if (seenNames.has(normalName)) continue;
+          seenNames.add(normalName);
+
+          // Use the provider logo/cover as backdrop
+          const backdrop = ch.backdrop_path || ch.logo;
+          if (!backdrop) continue;
+
+          arabicProviderItems.push({
+            id: `provider-${ch.id}`,
+            title: ch.name,
+            backdrop,
+            overview: ch.plot,
+            rating: ch.rating ? parseFloat(String(ch.rating)) : undefined,
+            year: ch.year,
+            mediaType: ch.type === 'series' ? 'tv' : 'movie',
+            source: 'provider',
+          });
+        }
+
+        // 3. Merge: alternate TMDB and Arabic content
+        const merged: ScreenSaverItem[] = [];
+        const tmdbPool = [...tmdbItems].sort(() => Math.random() - 0.5);
+        const arabicPool = [...arabicProviderItems].sort(() => Math.random() - 0.5);
+
+        let ti = 0;
+        let ai = 0;
+        // Pattern: 2 TMDB, 1 Arabic, repeat
+        while (merged.length < 20 && (ti < tmdbPool.length || ai < arabicPool.length)) {
+          if (ti < tmdbPool.length) merged.push(tmdbPool[ti++]);
+          if (ti < tmdbPool.length) merged.push(tmdbPool[ti++]);
+          if (ai < arabicPool.length) merged.push(arabicPool[ai++]);
+        }
+
+        if (merged.length === 0) {
           onDismiss();
           return;
         }
 
-        // Upgrade all backdrops to original/4K
-        const upgraded = filtered.map((item) => ({
-          ...item,
-          backdrop: toOriginalBackdrop(item.backdrop!),
-        }));
-
-        const shuffled = [...upgraded].sort(() => Math.random() - 0.5).slice(0, 20);
-
-        // Preload first two images before revealing
+        // Preload first two
         try {
-          await Promise.all(shuffled.slice(0, 2).map((item) => preloadImage(item.backdrop!)));
-        } catch {
-          // Still show even if preload partially fails
-        }
+          await Promise.all(merged.slice(0, 2).map((item) => preloadImage(item.backdrop)));
+        } catch { /* still show */ }
 
-        setItems(shuffled);
+        setItems(merged);
         setIsReady(true);
 
-        // Small delay then fade in content smoothly
         requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setContentVisible(true);
-          });
+          requestAnimationFrame(() => setContentVisible(true));
         });
       } catch (e) {
         console.error('Screensaver: failed to load content', e);
@@ -100,22 +190,20 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
     };
 
     loadContent();
-  }, [getTrending, onDismiss]);
+  }, [getTrending, onDismiss, channels]);
 
-  // Preload upcoming slide
+  // Preload upcoming slides
   useEffect(() => {
     if (!isReady || items.length <= 1) return;
-    const nextIdx = (currentIndex + 1) % items.length;
-    const nextNext = (currentIndex + 2) % items.length;
-    // Preload next two slides in background
-    preloadImage(items[nextIdx].backdrop!).catch(() => {});
-    preloadImage(items[nextNext].backdrop!).catch(() => {});
+    const next1 = (currentIndex + 1) % items.length;
+    const next2 = (currentIndex + 2) % items.length;
+    preloadImage(items[next1].backdrop).catch(() => {});
+    preloadImage(items[next2].backdrop).catch(() => {});
   }, [currentIndex, isReady, items]);
 
-  // Auto-cycle slides
+  // Auto-cycle
   useEffect(() => {
     if (!isReady || items.length <= 1) return;
-
     intervalRef.current = setInterval(() => {
       setIsTransitioning(true);
       window.setTimeout(() => {
@@ -123,10 +211,7 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
         setIsTransitioning(false);
       }, TRANSITION_DURATION);
     }, SLIDE_DURATION);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isReady, items.length]);
 
   // Clock
@@ -138,22 +223,18 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
   // Dismiss on interaction
   useEffect(() => {
     if (!isReady) return;
-
     const handleInteraction = () => handleDismiss();
     const events = ['mousedown', 'touchstart', 'keydown', 'wheel'];
     const timer = window.setTimeout(() => {
       events.forEach((ev) => window.addEventListener(ev, handleInteraction, { passive: true, capture: true }));
     }, 300);
-
     return () => {
       clearTimeout(timer);
       events.forEach((ev) => window.removeEventListener(ev, handleInteraction, true));
     };
   }, [handleDismiss, isReady]);
 
-  if (!isReady || items.length === 0) {
-    return null;
-  }
+  if (!isReady || items.length === 0) return null;
 
   const current = items[currentIndex];
   const next = items[(currentIndex + 1) % items.length];
@@ -177,20 +258,19 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
           }`}
         >
           <img
-            src={current.backdrop!}
+            src={current.backdrop}
             alt={current.title}
             className="h-full w-full animate-screensaver-zoom object-cover"
             key={`bg-${currentIndex}`}
           />
         </div>
-
         <div
           className={`absolute inset-0 transition-opacity duration-[1500ms] ease-in-out ${
             isTransitioning ? 'opacity-100' : 'opacity-0'
           }`}
         >
           <img
-            src={next.backdrop!}
+            src={next.backdrop}
             alt={next.title}
             className="h-full w-full object-cover"
             key={`bg-next-${(currentIndex + 1) % items.length}`}
@@ -202,31 +282,30 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
       <div className="absolute left-0 right-0 top-0 h-32 bg-gradient-to-b from-black/50 to-transparent" />
-      <div
-        className="absolute inset-0"
-        style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%)' }}
-      />
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%)' }} />
 
       {/* Exit button */}
       <button
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDismiss();
-        }}
+        onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
         className="absolute right-6 top-6 z-10 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/40 px-4 py-2 text-sm font-medium text-white backdrop-blur-md transition-opacity duration-500"
       >
         <X className="h-4 w-4" />
         Exit
       </button>
 
-      {/* Content info — synced fade with image */}
+      {/* Content info */}
       <div
         className={`absolute bottom-0 left-0 right-0 p-8 transition-all duration-[1500ms] ease-in-out md:p-12 ${
           isTransitioning ? 'translate-y-4 opacity-0' : 'translate-y-0 opacity-100'
         }`}
       >
         <div className="mb-3 flex items-center gap-2">
+          {current.source === 'provider' && (
+            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-3 py-1 backdrop-blur-sm">
+              <span className="text-xs font-semibold text-emerald-300">ARABIC</span>
+            </div>
+          )}
           {current.mediaType === 'tv' ? (
             <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1 backdrop-blur-sm">
               <Tv className="h-3.5 w-3.5 text-primary" />
@@ -262,18 +341,20 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
         )}
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectItem?.(current);
-              handleDismiss();
-            }}
-            className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur-md transition-colors hover:bg-white/20"
-          >
-            <Play className="h-4 w-4 fill-white/70 text-white/70" />
-            Open details
-          </button>
+          {current.tmdbItem && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectItem?.(current.tmdbItem!);
+                handleDismiss();
+              }}
+              className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-5 py-2.5 text-sm font-medium text-white/80 backdrop-blur-md transition-colors hover:bg-white/20"
+            >
+              <Play className="h-4 w-4 fill-white/70 text-white/70" />
+              Open details
+            </button>
+          )}
           <span className="text-sm text-white/40">Tap anywhere to exit</span>
         </div>
       </div>
@@ -294,9 +375,7 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
           <div
             key={i}
             className={`rounded-full transition-all duration-500 ${
-              i === currentIndex % Math.min(items.length, 10)
-                ? 'h-1.5 w-6 bg-primary'
-                : 'h-1.5 w-1.5 bg-white/20'
+              i === currentIndex % Math.min(items.length, 10) ? 'h-1.5 w-6 bg-primary' : 'h-1.5 w-1.5 bg-white/20'
             }`}
           />
         ))}
