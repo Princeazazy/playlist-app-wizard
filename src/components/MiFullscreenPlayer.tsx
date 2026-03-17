@@ -855,10 +855,10 @@ export const MiFullscreenPlayer = ({
               >
                 <div className="bg-black/90 rounded-lg p-1 shadow-2xl border border-white/20">
                   {previewImage ? (
-                    <img src={previewImage} alt="Preview" className="w-48 h-28 object-cover rounded" />
+                    <img src={previewImage} alt="Preview" className="w-60 h-[135px] object-cover rounded" />
                   ) : (
-                    <div className="w-48 h-28 bg-card/80 rounded flex items-center justify-center">
-                      <span className="text-white/50 text-sm">Preview</span>
+                    <div className="w-60 h-[135px] bg-card/80 rounded flex items-center justify-center">
+                      <span className="text-muted-foreground text-sm">Preview</span>
                     </div>
                   )}
                   <div className="text-center mt-1">
