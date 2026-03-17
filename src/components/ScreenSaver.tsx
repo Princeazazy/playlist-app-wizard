@@ -42,7 +42,7 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
     };
 
     loadContent();
-  }, [fetchTMDB]);
+  }, [getTrending]);
 
   // Auto-cycle slides
   useEffect(() => {
