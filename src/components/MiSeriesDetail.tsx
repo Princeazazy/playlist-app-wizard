@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { ChevronLeft, Play, Star, Clock, Globe, Calendar, User, Search, Tv, Loader2, RefreshCw } from 'lucide-react';
+import { RatingBadge } from '@/components/shared/RatingBadge';
 import { Channel } from '@/hooks/useIPTV';
 import { useWeather } from '@/hooks/useWeather';
 import { supabase } from '@/integrations/supabase/client';
