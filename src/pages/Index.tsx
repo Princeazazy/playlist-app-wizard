@@ -98,6 +98,10 @@ const Index = () => {
   const [useMobileBrowse, setUseMobileBrowse] = useState(true);
   const isMobile = useIsMobile();
 
+  // Screensaver - activates after 5 min of inactivity when nothing is playing
+  const isContentPlaying = !!(nav.isFullscreen && nav.currentChannel);
+  const { isInactive: showScreenSaver, dismiss: dismissScreenSaver } = useInactivityDetector(isContentPlaying);
+
   const nav = useAppNavigation();
 
   // Fetch accounts from DB once authenticated & restore active account
