@@ -26,8 +26,7 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
 
     const loadContent = async () => {
       try {
-        // Fetch trending content from TMDB
-        const trending = await fetchTMDB('trending', { category: 'all', page: 1 });
+        const trending = await getTrending(1);
         
         // Filter to items with backdrops for cinematic display
         const withBackdrops = (trending || []).filter(
