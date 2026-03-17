@@ -429,15 +429,20 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const isArabicGroup = /عرب|مسلسلات|مصر|خليج|سعود|لبنان|سوري|arabic|^ar[\s|:\-]/i.test(group);
       if (!isArabicGroup) return false;
 
-      // Remove obvious non-Arabic/subbed entries
+      // Remove obvious non-Arabic/subbed/dubbed entries
       if (/\bsubs?\b|subbed|subtitle|vostfr|english|eng\b|foreign/i.test(nameLower)) return false;
+
+      // Exclude Turkish-dubbed Arabic (TAR = Turkish Arabic), translated content, and non-Arabic originals
+      if (/\btar\b/i.test(name)) return false;
+      if (/مترجم/i.test(name)) return false;
+      if (/dubbed|dub\b/i.test(nameLower)) return false;
 
       // Exclude sports and kids/cartoon content
       if (isSportsContent(ch)) return false;
       if (/cartoon|كرتون|رسوم|animat|kids|children|disney|pixar|cuphead/i.test(`${nameLower} ${groupLower}`)) return false;
 
       // STRICT: Title itself must contain Arabic script to avoid English titles in Arabic groups
-      const cleanedName = name.replace(/^\s*[A-Z]{2,4}\s*[:\-|]\s*/i, '').replace(/^\s*subs?\s*[:\-|]?\s*/i, '').trim();
+      const cleanedName = name.replace(/^\s*[A-Z]{2,4}\s*[:\-|]\s*/i, '').replace(/^\s*subs?\s*[:\-|]?\s*/i, '').replace(/\s*\bTAR\b\s*/gi, '').trim();
       if (!containsArabicText(cleanedName)) return false;
 
       return true;
