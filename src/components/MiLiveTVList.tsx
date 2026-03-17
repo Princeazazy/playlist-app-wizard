@@ -839,6 +839,10 @@ export const MiLiveTVList = ({
                     alt={group.displayName} 
                     className="w-full h-full object-cover scale-110" 
                   />
+                ) : aiGroupLogosFetchedRef.current.has(group.displayName) && !aiGroupLogos[group.displayName] ? (
+                  <Tv className="w-5 h-5 text-primary/60" />
+                ) : !aiGroupLogosFetchedRef.current.has(group.displayName) ? (
+                  <Loader2 className="w-5 h-5 text-primary/40 animate-spin" />
                 ) : (
                   <Tv className="w-5 h-5 text-primary/60" />
                 )}
