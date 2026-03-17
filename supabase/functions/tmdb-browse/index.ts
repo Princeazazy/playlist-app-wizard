@@ -21,6 +21,7 @@ interface TMDBContent {
   first_air_date?: string;
   genre_ids?: number[];
   media_type?: string;
+  original_language?: string;
 }
 
 interface TMDBResponse {
