@@ -166,6 +166,7 @@ export const MiFullscreenPlayer = ({
     error: playbackError,
     retryCount,
     retryPlayback,
+    activeSource,
   } = useResilientPlayback({
     videoRef,
     channel,
