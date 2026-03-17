@@ -422,7 +422,7 @@ export const MiLiveTVList = ({
     return normalizeGroupName(ch.group || 'Other') || 'Other';
   }, []);
 
-  // Sports-specific logo/flag for categories
+  // Sports-specific logo for categories - brand logos for services, flags only for real countries
   const SPORTS_GROUP_META: Record<string, { flagUrl: string; priority: number; isService?: boolean }> = {
     'Egypt': { flagUrl: 'https://flagcdn.com/w80/eg.png', priority: 1 },
     'Saudi Arabia': { flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 2 },
@@ -447,13 +447,13 @@ export const MiLiveTVList = ({
     'MBC': { flagUrl: '/images/mbc-logo.png', priority: 22, isService: true },
     'OSN': { flagUrl: '/images/osn-logo.png', priority: 23, isService: true },
     'Rotana': { flagUrl: '/images/rotana-logo.png', priority: 24, isService: true },
-    'Sky Sports': { flagUrl: '', priority: 30, isService: true },
-    'ESPN': { flagUrl: '', priority: 31, isService: true },
-    'DAZN': { flagUrl: '', priority: 32, isService: true },
-    'Fox Sports': { flagUrl: '', priority: 33, isService: true },
-    'Eurosport': { flagUrl: '', priority: 34, isService: true },
-    'BT Sport': { flagUrl: '', priority: 35, isService: true },
-    'StarzPlay': { flagUrl: '', priority: 36, isService: true },
+    'Sky Sports': { flagUrl: matchBrandLogo('sky sports') || '', priority: 30, isService: true },
+    'ESPN': { flagUrl: matchBrandLogo('espn') || '', priority: 31, isService: true },
+    'DAZN': { flagUrl: matchBrandLogo('dazn') || '', priority: 32, isService: true },
+    'Fox Sports': { flagUrl: matchBrandLogo('fox sports') || '', priority: 33, isService: true },
+    'Eurosport': { flagUrl: matchBrandLogo('eurosport') || '', priority: 34, isService: true },
+    'BT Sport': { flagUrl: matchBrandLogo('bt sport') || '', priority: 35, isService: true },
+    'StarzPlay': { flagUrl: matchBrandLogo('starz') || '', priority: 36, isService: true },
     'PPV': { flagUrl: '', priority: 37, isService: true },
   };
 
