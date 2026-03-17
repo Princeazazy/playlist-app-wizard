@@ -71,6 +71,10 @@ export const MiFullscreenPlayer = ({
   const [hasResumed, setHasResumed] = useState(false);
   const lastSaveTimeRef = useRef(0);
   
+  // Auto-next episode countdown
+  const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(null);
+  const autoNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  
   // Subtitle track states
   const [subtitleTracks, setSubtitleTracks] = useState<{ id: number; name: string; lang: string; url?: string }[]>([]);
   const [activeSubtitleTrack, setActiveSubtitleTrack] = useState(-1);
