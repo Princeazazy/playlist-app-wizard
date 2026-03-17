@@ -128,11 +128,14 @@ import serDeutschLogo from '@/assets/category-logos/ser-deutsch.png';
 import serFrActionLogo from '@/assets/category-logos/ser-fr-action.png';
 import serFrEnfantsLogo from '@/assets/category-logos/ser-fr-enfants.png';
 import serGermanVodLogo from '@/assets/category-logos/ser-german-vod.png';
+import ppvDaznLogo from '@/assets/category-logos/ppv-dazn.png';
 
 // Series-specific category logo matcher
 const getSeriesCategoryLogo = (groupName: string): string | null => {
   const g = (groupName + ' ' + translateGroupName(groupName)).toLowerCase();
   
+  // PPV
+  if (g.includes('ppv') || g.includes('pay per view') || g.includes('pay-per-view')) return ppvDaznLogo;
   // Ramadan - Specific Regions (2026 only) - also check Arabic numerals ٢٠٢٦
   const isRamadan = g.includes('ramadan') || g.includes('رمضان');
   const is2026 = g.includes('2026') || g.includes('٢٠٢٦');
@@ -285,6 +288,8 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
 const getMovieCategoryLogo = (groupName: string): string | null => {
   const g = (groupName + ' ' + translateGroupName(groupName)).toLowerCase();
   
+  // PPV
+  if (g.includes('ppv') || g.includes('pay per view') || g.includes('pay-per-view')) return ppvDaznLogo;
   // Arabic Movies by Year/Era
   if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2026')) return arabicMovies2026Logo;
   if ((g.includes('arabic') || g.includes('عربي')) && g.includes('2025')) return arabicMovies2025Logo;
