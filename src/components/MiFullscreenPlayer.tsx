@@ -189,6 +189,7 @@ export const MiFullscreenPlayer = ({
   hlsRefLocal.current = hlsRef.current;
 
   useEffect(() => {
+    if (playbackError) {
       setError(playbackError);
       setIsPlaying(false);
       return;
