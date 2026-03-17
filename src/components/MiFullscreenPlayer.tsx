@@ -412,28 +412,48 @@ export const MiFullscreenPlayer = ({
     setProgress(percentage * 100);
   };
 
-  // Capture current frame from the playing video for preview
-  const captureCurrentFrame = useCallback(() => {
-    const video = videoRef.current;
-    const canvas = previewCanvasRef.current;
-    if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0) return;
-    try {
-      canvas.width = 192;
-      canvas.height = 108;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, 192, 108);
-        setPreviewImage(canvas.toDataURL('image/jpeg', 0.6));
+  // Initialize hidden preview video when source is available
+  useEffect(() => {
+    const mainVideo = videoRef.current;
+    if (!mainVideo || !isVOD || !activeSource) return;
+
+    // Create a hidden video element for thumbnail generation
+    const pv = document.createElement('video');
+    pv.preload = 'metadata';
+    pv.muted = true;
+    pv.playsInline = true;
+    pv.style.display = 'none';
+    pv.src = activeSource;
+    document.body.appendChild(pv);
+    previewVideoRef.current = pv;
+
+    const onSeeked = () => {
+      const canvas = previewCanvasRef.current;
+      if (!canvas || pv.videoWidth === 0) return;
+      try {
+        canvas.width = 240;
+        canvas.height = 135;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(pv, 0, 0, 240, 135);
+          setPreviewImage(canvas.toDataURL('image/jpeg', 0.7));
+        }
+      } catch {
+        setPreviewImage(null);
       }
-    } catch {
-      setPreviewImage(null);
-    }
-  }, []);
+    };
+    pv.addEventListener('seeked', onSeeked);
+
+    return () => {
+      pv.removeEventListener('seeked', onSeeked);
+      pv.remove();
+      previewVideoRef.current = null;
+    };
+  }, [activeSource, isVOD]);
 
   // Generate preview thumbnail when hovering over progress bar
   const handleProgressHover = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const video = videoRef.current;
-    if (!video || !duration) return;
+    if (!duration) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const hoverX = e.clientX - rect.left;
@@ -444,23 +464,16 @@ export const MiFullscreenPlayer = ({
     setHoverPosition(hoverX);
     setShowPreview(true);
 
-    // Seek the actual video to the hovered time to show preview frame
-    // We save current time so we can restore if user doesn't click
-    video.currentTime = time;
-  }, [duration]);
+    // Throttle seeks to prevent overwhelming the preview video
+    const now = Date.now();
+    if (now - lastPreviewSeekRef.current < 200) return;
+    lastPreviewSeekRef.current = now;
 
-  // When video seeks (from hover), capture the frame
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    const onSeeked = () => {
-      if (showPreview) {
-        captureCurrentFrame();
-      }
-    };
-    video.addEventListener('seeked', onSeeked);
-    return () => video.removeEventListener('seeked', onSeeked);
-  }, [showPreview, captureCurrentFrame]);
+    const pv = previewVideoRef.current;
+    if (pv && pv.readyState >= 1) {
+      pv.currentTime = time;
+    }
+  }, [duration]);
 
   const handleProgressLeave = useCallback(() => {
     setShowPreview(false);
