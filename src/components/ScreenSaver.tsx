@@ -15,7 +15,7 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const { fetchTMDB } = useTMDB();
+  const { getTrending } = useTMDB();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadedRef = useRef(false);
 
