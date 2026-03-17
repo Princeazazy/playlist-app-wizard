@@ -77,6 +77,17 @@ const isExcludedTitle = (name: string): boolean => {
   return EXCLUDED_TITLES.some((t) => lower.includes(t.toLowerCase()));
 };
 
+// Clean provider title: remove prefixes like "AR -", "TAR", "- AR", country codes
+const cleanProviderTitle = (name: string): string => {
+  return name
+    .replace(/^\s*[A-Z]{2,4}\s*[:\-|]\s*/i, '') // Leading prefix "AR -", "TAR |"
+    .replace(/\s*[:\-|]\s*[A-Z]{2,4}\s*$/i, '') // Trailing suffix "- AR", "- TAR"
+    .replace(/\s+\bTAR\b\s*/gi, ' ')             // "TAR" anywhere
+    .replace(/\s+\bAR\b\s*/gi, ' ')              // "AR" anywhere
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectItem, channels = [] }) => {
   const [items, setItems] = useState<ScreenSaverItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
