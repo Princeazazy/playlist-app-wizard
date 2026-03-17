@@ -819,17 +819,34 @@ Deno.serve(async (req) => {
     const rawFetch = (body as Record<string, unknown>)?.rawFetch === true;
     if (rawFetch) {
       try {
-        const res = await fetch(url, {
-          headers: getStbHeaders(0),
-          redirect: 'follow',
-        });
-        if (!res.ok) {
+        const headerProfiles = [0, 5, 7, 8, 9];
+        let response: Response | null = null;
+        let lastStatus: number | null = null;
+
+        for (const profile of headerProfiles) {
+          try {
+            const candidate = await fetch(url, {
+              headers: getStbHeaders(profile, url),
+              redirect: 'follow',
+            });
+            lastStatus = candidate.status;
+            if (candidate.ok) {
+              response = candidate;
+              break;
+            }
+          } catch {
+            // continue rotating headers
+          }
+        }
+
+        if (!response) {
           return new Response(
-            JSON.stringify({ error: `Upstream returned ${res.status}` }),
+            JSON.stringify({ error: `Upstream returned ${lastStatus ?? 'request failure'}` }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        const text = await res.text();
+
+        const text = await response.text();
         try {
           const json = JSON.parse(text);
           return new Response(
