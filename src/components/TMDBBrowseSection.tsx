@@ -574,15 +574,15 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       
       <div className="space-y-6">
         {ramadanShows.length > 0 && (
-          <PlaylistRow title="Ramadan 2026 Series" icon={Moon} channels={ramadanShows} onChannelSelect={onChannelSelect} />
+          <PlaylistRow title="Ramadan 2026 Series" icon={Moon} channels={ramadanShows} onChannelSelect={onChannelSelect} mediaTypeHint="tv" />
         )}
         
         {arabicSeries.length > 0 && (
-          <PlaylistRow title="Top Rated Arabic Series" icon={Tv} channels={arabicSeries} onChannelSelect={onChannelSelect} />
+          <PlaylistRow title="Top Rated Arabic Series" icon={Tv} channels={arabicSeries} onChannelSelect={onChannelSelect} mediaTypeHint="tv" />
         )}
         
         {arabicMovies.length > 0 && (
-          <PlaylistRow title="Latest Arabic Movies" icon={Film} channels={arabicMovies} onChannelSelect={onChannelSelect} />
+          <PlaylistRow title="Latest Arabic Movies" icon={Film} channels={arabicMovies} onChannelSelect={onChannelSelect} mediaTypeHint="movie" />
         )}
         
         <CategoryRow title="Trending Now" icon={TrendingUp} items={trending} onSelectItem={onSelectItem} loading={loadingState.trending} />
