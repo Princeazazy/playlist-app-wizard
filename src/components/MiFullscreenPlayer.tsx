@@ -188,7 +188,7 @@ export const MiFullscreenPlayer = ({
   // Keep local ref in sync for skip handlers defined before hlsRef
   hlsRefLocal.current = hlsRef.current;
 
-    if (playbackError) {
+  useEffect(() => {
       setError(playbackError);
       setIsPlaying(false);
       return;
