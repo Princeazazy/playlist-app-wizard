@@ -410,11 +410,28 @@ export const MiFullscreenPlayer = ({
     setProgress(percentage * 100);
   };
 
+  // Capture current frame from the playing video for preview
+  const captureCurrentFrame = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = previewCanvasRef.current;
+    if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0) return;
+    try {
+      canvas.width = 192;
+      canvas.height = 108;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, 192, 108);
+        setPreviewImage(canvas.toDataURL('image/jpeg', 0.6));
+      }
+    } catch {
+      setPreviewImage(null);
+    }
+  }, []);
+
   // Generate preview thumbnail when hovering over progress bar
   const handleProgressHover = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const video = videoRef.current;
-    const canvas = previewCanvasRef.current;
-    if (!video || !duration || !canvas) return;
+    if (!video || !duration) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const hoverX = e.clientX - rect.left;
@@ -425,28 +442,23 @@ export const MiFullscreenPlayer = ({
     setHoverPosition(hoverX);
     setShowPreview(true);
 
-    // Create preview thumbnail from video
-    try {
-      const tempVideo = document.createElement('video');
-      tempVideo.crossOrigin = 'anonymous';
-      tempVideo.src = video.src;
-      tempVideo.currentTime = time;
-      
-      tempVideo.onseeked = () => {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          canvas.width = 192;
-          canvas.height = 108;
-          ctx.drawImage(tempVideo, 0, 0, 192, 108);
-          setPreviewImage(canvas.toDataURL());
-        }
-        tempVideo.remove();
-      };
-    } catch {
-      // Fallback for CORS-restricted videos
-      setPreviewImage(null);
-    }
+    // Seek the actual video to the hovered time to show preview frame
+    // We save current time so we can restore if user doesn't click
+    video.currentTime = time;
   }, [duration]);
+
+  // When video seeks (from hover), capture the frame
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onSeeked = () => {
+      if (showPreview) {
+        captureCurrentFrame();
+      }
+    };
+    video.addEventListener('seeked', onSeeked);
+    return () => video.removeEventListener('seeked', onSeeked);
+  }, [showPreview, captureCurrentFrame]);
 
   const handleProgressLeave = useCallback(() => {
     setShowPreview(false);
