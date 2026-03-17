@@ -58,6 +58,10 @@ import formula1Logo from '@/assets/category-logos/formula1-movies.png';
 import enNetflixLogo from '@/assets/category-logos/en-netflix.png';
 import marvelMoviesLogo from '@/assets/category-logos/marvel-movies.png';
 import netflixMoviesLogo from '@/assets/category-logos/netflix-movies.png';
+import primeVideoCustomLogo from '@/assets/category-logos/prime-video-custom.png';
+import hboMaxCustomLogo from '@/assets/category-logos/hbo-max-custom.png';
+import paramountPlusCustomLogo from '@/assets/category-logos/paramount-plus-custom.png';
+import netflixCustomLogo from '@/assets/category-logos/netflix-custom.png';
 import englishMoviesLogo from '@/assets/category-logos/english-movies.png';
 import albaniaMoviesLogo from '@/assets/category-logos/albania-movies.png';
 import frComedieMoviesLogo from '@/assets/category-logos/fr-comedie-movies.png';
@@ -226,14 +230,16 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   // Drama & Romance
   if ((g.includes('drama') || g.includes('romance') || g.includes('رومانسي') || g.includes('دراما'))) return serDramaRomanceLogo;
   
-  // HBO / Amazon Prime
-  if (g.includes('hbo') || g.includes('amazon') || g.includes('prime')) return serHboAmazonLogo;
+  // HBO / Amazon / Paramount streaming brands
+  if (g.includes('paramount')) return paramountPlusCustomLogo;
+  if (g.includes('hbo') || g.includes('max')) return hboMaxCustomLogo;
+  if (g.includes('amazon') || g.includes('prime')) return primeVideoCustomLogo;
   
   // Kids & Family
   if (g.includes('kids') || g.includes('family') || g.includes('اطفال') || g.includes('عائلي') || g.includes('أطفال')) return serKidsFamilyLogo;
   
   // Netflix
-  if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return serNetflixLogo;
+  if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return netflixCustomLogo;
   
   // Disney
   if (g.includes('disney')) return serDisneyLogo;
@@ -336,8 +342,10 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   // Drama & Romance
   if ((g.includes('drama') || g.includes('romance') || g.includes('رومانسي') || g.includes('دراما')) && !g.includes('arabic')) return enDramaRomanceLogo;
   
-  // HBO / Amazon Prime
-  if (g.includes('hbo') || g.includes('amazon') || g.includes('prime')) return enHboAmazonLogo;
+  // HBO / Amazon / Paramount streaming brands
+  if (g.includes('paramount')) return paramountPlusCustomLogo;
+  if (g.includes('hbo') || g.includes('max')) return hboMaxCustomLogo;
+  if (g.includes('amazon') || g.includes('prime')) return primeVideoCustomLogo;
   
   // Kids & Family
   if (g.includes('kids') || g.includes('family') || g.includes('اطفال') || g.includes('عائلي') || g.includes('أطفال')) return enKidsFamilyLogo;
@@ -349,7 +357,7 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   if (g.includes('formula') || g.includes('f1') || g.includes('فورمولا')) return formula1Logo;
   
   // Netflix
-  if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return enNetflixLogo;
+  if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return netflixCustomLogo;
   
   // Latest English/Movies - includes "EN MOV 2025" style groups
   if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي') || g.includes('movie') || g.includes('film')) || g.includes('أفلام اجنبية جديدة')) return englishMoviesLogo;
