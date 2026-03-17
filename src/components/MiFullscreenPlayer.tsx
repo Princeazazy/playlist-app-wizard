@@ -947,10 +947,10 @@ export const MiFullscreenPlayer = ({
           )}
         </div>
 
-        {/* Back Button - Top left corner */}
+        {/* Back Button - Bottom right corner */}
         <button
           onClick={(e) => { e.stopPropagation(); onClose(); }}
-          className="absolute top-6 left-28 flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+          className="absolute bottom-8 right-6 flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
         >
           <ChevronLeft className="w-5 h-5 text-white" />
           <span className="text-white font-medium">Back</span>
