@@ -263,7 +263,6 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
   if (!isReady || items.length === 0) return null;
 
   const current = items[currentIndex];
-  const next = items[(currentIndex + 1) % items.length];
 
   return (
     <div
