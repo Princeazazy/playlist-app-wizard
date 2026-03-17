@@ -70,6 +70,7 @@ const isLatestArabic = (ch: Channel): boolean => {
 const EXCLUDED_TITLES = [
   'ramadan premiere', 'بريميير رمضان', 'جرس إنذار',
   'المداح', 'سواها البخت', 'روضة القرآن', 'قصص الأنبياء',
+  'الذراري الحمر',
 ];
 
 const isExcludedTitle = (name: string): boolean => {
@@ -77,13 +78,15 @@ const isExcludedTitle = (name: string): boolean => {
   return EXCLUDED_TITLES.some((t) => lower.includes(t.toLowerCase()));
 };
 
-// Clean provider title: remove prefixes like "AR -", "TAR", "- AR", country codes
+// Clean provider title: remove prefixes/suffixes like "AR -", "- AR", "TAR", etc.
 const cleanProviderTitle = (name: string): string => {
   return name
-    .replace(/^\s*[A-Z]{2,4}\s*[:\-|]\s*/i, '') // Leading prefix "AR -", "TAR |"
-    .replace(/\s*[:\-|]\s*[A-Z]{2,4}\s*$/i, '') // Trailing suffix "- AR", "- TAR"
-    .replace(/\s+\bTAR\b\s*/gi, ' ')             // "TAR" anywhere
-    .replace(/\s+\bAR\b\s*/gi, ' ')              // "AR" anywhere
+    .replace(/^\s*[A-Z]{2,4}\s*[:\-|]+\s*/i, '')   // Leading "AR -", "TAR |"
+    .replace(/\s*[:\-|]+\s*[A-Z]{2,4}\s*$/i, '')    // Trailing "- AR", "- TAR"
+    .replace(/\bTAR\b/gi, '')                         // "TAR" anywhere
+    .replace(/\bAR\b/gi, '')                          // "AR" anywhere  
+    .replace(/\s*[-|:]+\s*$/g, '')                    // Leftover trailing separators
+    .replace(/^\s*[-|:]+\s*/g, '')                    // Leftover leading separators
     .replace(/\s+/g, ' ')
     .trim();
 };
