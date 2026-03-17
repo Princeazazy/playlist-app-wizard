@@ -138,7 +138,7 @@ export function useProviderContent(account: ProviderAccount | null) {
     console.log('[Provider] Manual refresh triggered');
     setLoading(true);
     setError(null);
-    setChannels([]);
+    // Keep existing channels visible while refreshing (don't clear to [])
     cacheLoaded.current = false;
     fetchInProgress.current = false;
 
