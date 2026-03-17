@@ -381,6 +381,11 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       const combinedText = nameLower + ' ' + groupLower;
       if (/cartoon|كرتون|رسوم|animat|أطفال|kids|children|طيور الجنة|سبيس تون|spacetoon|disney|سعود وسارة|روضة القرآن|قصص الأنبياء|قصص القران|حكايات|مغامرات.*للأطفال|براعم|جنى|كراميش|toyor|baby|junior|nick|cn |boomerang|قناة ماجد|majid|مرح|قصص اطفال|نون|noon kids|baraem|jeem|jeemtv/i.test(combinedText)) return false;
 
+      // Exclude Turkish-dubbed (TAR), translated, dubbed content
+      if (/\btar\b/i.test(ch.name)) return false;
+      if (/مترجم/i.test(ch.name)) return false;
+      if (/dubbed|dub\b/i.test(nameLower)) return false;
+
       // Blacklist specific titles
       const titleBlacklist = [
         'هكذا اسماء الله الحسنى', 'hakatha asmaa', 'كابتن شديد', 'captain shedeed',
