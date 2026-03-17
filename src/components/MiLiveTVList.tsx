@@ -5,6 +5,7 @@ import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getCountryInfo, getCountryFlagUrl, getCategoryEmoji, mergeAndSortGroups, normalizeGroupName, translateGroupName } from '@/lib/countryUtils';
+import { matchBrandLogo } from '@/lib/brandLogoService';
 import { EPGGuide } from './EPGGuide';
 import Hls from 'hls.js';
 import { supabase } from '@/integrations/supabase/client';
@@ -421,7 +422,7 @@ export const MiLiveTVList = ({
     return normalizeGroupName(ch.group || 'Other') || 'Other';
   }, []);
 
-  // Sports-specific logo/flag for categories
+  // Sports-specific logo for categories - brand logos for services, flags only for real countries
   const SPORTS_GROUP_META: Record<string, { flagUrl: string; priority: number; isService?: boolean }> = {
     'Egypt': { flagUrl: 'https://flagcdn.com/w80/eg.png', priority: 1 },
     'Saudi Arabia': { flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 2 },
@@ -446,13 +447,13 @@ export const MiLiveTVList = ({
     'MBC': { flagUrl: '/images/mbc-logo.png', priority: 22, isService: true },
     'OSN': { flagUrl: '/images/osn-logo.png', priority: 23, isService: true },
     'Rotana': { flagUrl: '/images/rotana-logo.png', priority: 24, isService: true },
-    'Sky Sports': { flagUrl: '', priority: 30, isService: true },
-    'ESPN': { flagUrl: '', priority: 31, isService: true },
-    'DAZN': { flagUrl: '', priority: 32, isService: true },
-    'Fox Sports': { flagUrl: '', priority: 33, isService: true },
-    'Eurosport': { flagUrl: '', priority: 34, isService: true },
-    'BT Sport': { flagUrl: '', priority: 35, isService: true },
-    'StarzPlay': { flagUrl: '', priority: 36, isService: true },
+    'Sky Sports': { flagUrl: matchBrandLogo('sky sports') || '', priority: 30, isService: true },
+    'ESPN': { flagUrl: matchBrandLogo('espn') || '', priority: 31, isService: true },
+    'DAZN': { flagUrl: matchBrandLogo('dazn') || '', priority: 32, isService: true },
+    'Fox Sports': { flagUrl: matchBrandLogo('fox sports') || '', priority: 33, isService: true },
+    'Eurosport': { flagUrl: matchBrandLogo('eurosport') || '', priority: 34, isService: true },
+    'BT Sport': { flagUrl: matchBrandLogo('bt sport') || '', priority: 35, isService: true },
+    'StarzPlay': { flagUrl: matchBrandLogo('starz') || '', priority: 36, isService: true },
     'PPV': { flagUrl: '', priority: 37, isService: true },
   };
 
@@ -607,24 +608,38 @@ export const MiLiveTVList = ({
   // Preview channel (hovered or current)
   const previewChannel = hoveredChannel || currentChannel;
 
-  // Get logo for groups - use country flag for countries, first channel logo for streaming services and others
+  // Get logo for groups - brand logos for services, country flags for countries, neutral icon for generic
   const getGroupLogo = (group: { name: string; displayName: string; firstLogo?: string; originalNames: string[] }): string | null => {
     // Sports mode: use sports-specific meta
     if (category === 'sports') {
       const meta = SPORTS_GROUP_META[group.name];
       if (meta?.flagUrl) return meta.flagUrl;
+      // Try brand matching for unrecognized sports groups
+      const brandLogo = matchBrandLogo(group.name);
+      if (brandLogo) return brandLogo;
       return group.firstLogo || null;
+    }
+
+    // 1. Try brand logo matching first (highest priority for streaming/brand groups)
+    const brandLogo = matchBrandLogo(group.displayName);
+    if (brandLogo) return brandLogo;
+    
+    // Also check original names for brand matches
+    for (const origName of group.originalNames) {
+      const origBrand = matchBrandLogo(origName);
+      if (origBrand) return origBrand;
     }
 
     const countryInfo = getCountryInfo(group.displayName);
     
-    // For streaming services, use explicit flagUrl if set (e.g., MBC logo), otherwise first channel logo
+    // For streaming services with explicit logos (local assets like MBC, beIN)
     if (countryInfo?.isStreamingService) {
       if (countryInfo.flagUrl) return countryInfo.flagUrl;
-      return group.firstLogo || null;
+      // No logo found for this service - return null for neutral icon fallback
+      return null;
     }
     
-    // For countries, ALWAYS return the flag URL - never use channel logos for countries
+    // For countries, use the flag URL
     if (countryInfo && countryInfo.flagUrl) {
       return countryInfo.flagUrl;
     }
@@ -635,11 +650,8 @@ export const MiLiveTVList = ({
       if (flag) return flag;
     }
     
-    // For non-country groups, use the first channel's logo
-    if (group.firstLogo) {
-      return group.firstLogo;
-    }
-    
+    // For non-country, non-brand groups: return null → neutral icon fallback
+    // Do NOT use first channel logo for category groups to avoid mismatches
     return null;
   };
 
@@ -757,7 +769,9 @@ export const MiLiveTVList = ({
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${
+                getGroupLogo(group) ? 'bg-muted' : 'bg-primary/10'
+              }`}>
                 {getGroupLogo(group) ? (
                   <img 
                     src={getGroupLogo(group)!} 
@@ -765,7 +779,7 @@ export const MiLiveTVList = ({
                     className="w-full h-full object-cover scale-110" 
                   />
                 ) : (
-                  <span className="text-base">{getCategoryEmoji(group.displayName)}</span>
+                  <Tv className="w-5 h-5 text-primary/60" />
                 )}
               </div>
               {(!sidebarCollapsed || isMobile) && (

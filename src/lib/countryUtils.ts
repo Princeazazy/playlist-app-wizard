@@ -30,40 +30,45 @@ export const EXCLUDED_COUNTRY_CODES = new Set([
   'is',  // Iceland (Nordic)
 ]);
 
+// Import brand logo service for accurate logo matching
+import { matchBrandLogo } from './brandLogoService';
+
+// Helper to get brand logo or empty string
+const bl = (name: string): string => matchBrandLogo(name) || '';
+
 // Streaming services - these should NEVER be mixed with countries (priority 1000+ to appear at bottom)
 const STREAMING_SERVICES: Record<string, CountryInfo> = {
-  'amazon': { name: 'Amazon', code: 'amazon', flagUrl: '', priority: 1000, isStreamingService: true },
-  'amazon prime': { name: 'Amazon Prime', code: 'amazon', flagUrl: '', priority: 1000, isStreamingService: true },
-  'prime video': { name: 'Prime Video', code: 'amazon', flagUrl: '', priority: 1000, isStreamingService: true },
-  'netflix': { name: 'Netflix', code: 'netflix', flagUrl: '', priority: 1001, isStreamingService: true },
-  'disney': { name: 'Disney+', code: 'disney', flagUrl: '', priority: 1002, isStreamingService: true },
-  'disney+': { name: 'Disney+', code: 'disney', flagUrl: '', priority: 1002, isStreamingService: true },
-  'hbo': { name: 'HBO', code: 'hbo', flagUrl: '', priority: 1003, isStreamingService: true },
-  'hbo max': { name: 'HBO Max', code: 'hbo', flagUrl: '', priority: 1003, isStreamingService: true },
-  'apple tv': { name: 'Apple TV+', code: 'appletv', flagUrl: '', priority: 1004, isStreamingService: true },
-  'apple tv+': { name: 'Apple TV+', code: 'appletv', flagUrl: '', priority: 1004, isStreamingService: true },
-  'hulu': { name: 'Hulu', code: 'hulu', flagUrl: '', priority: 1005, isStreamingService: true },
-  'paramount': { name: 'Paramount+', code: 'paramount', flagUrl: '', priority: 1006, isStreamingService: true },
-  'paramount+': { name: 'Paramount+', code: 'paramount', flagUrl: '', priority: 1006, isStreamingService: true },
+  'amazon': { name: 'Amazon', code: 'amazon', flagUrl: bl('amazon prime'), priority: 1000, isStreamingService: true },
+  'amazon prime': { name: 'Amazon Prime', code: 'amazon', flagUrl: bl('amazon prime'), priority: 1000, isStreamingService: true },
+  'prime video': { name: 'Prime Video', code: 'amazon', flagUrl: bl('amazon prime'), priority: 1000, isStreamingService: true },
+  'netflix': { name: 'Netflix', code: 'netflix', flagUrl: bl('netflix'), priority: 1001, isStreamingService: true },
+  'disney': { name: 'Disney+', code: 'disney', flagUrl: bl('disney+'), priority: 1002, isStreamingService: true },
+  'disney+': { name: 'Disney+', code: 'disney', flagUrl: bl('disney+'), priority: 1002, isStreamingService: true },
+  'hbo': { name: 'HBO', code: 'hbo', flagUrl: bl('hbo'), priority: 1003, isStreamingService: true },
+  'hbo max': { name: 'HBO Max', code: 'hbo', flagUrl: bl('hbo'), priority: 1003, isStreamingService: true },
+  'apple tv': { name: 'Apple TV+', code: 'appletv', flagUrl: bl('apple tv'), priority: 1004, isStreamingService: true },
+  'apple tv+': { name: 'Apple TV+', code: 'appletv', flagUrl: bl('apple tv'), priority: 1004, isStreamingService: true },
+  'hulu': { name: 'Hulu', code: 'hulu', flagUrl: bl('hulu'), priority: 1005, isStreamingService: true },
+  'paramount': { name: 'Paramount+', code: 'paramount', flagUrl: bl('paramount'), priority: 1006, isStreamingService: true },
+  'paramount+': { name: 'Paramount+', code: 'paramount', flagUrl: bl('paramount'), priority: 1006, isStreamingService: true },
   'peacock': { name: 'Peacock', code: 'peacock', flagUrl: '/images/peacock-logo.png', priority: 1007, isStreamingService: true },
-  'max': { name: 'Max', code: 'max', flagUrl: '', priority: 1008, isStreamingService: true },
-  'starz': { name: 'Starz', code: 'starz', flagUrl: '', priority: 1009, isStreamingService: true },
-  'showtime': { name: 'Showtime', code: 'showtime', flagUrl: '', priority: 1010, isStreamingService: true },
-  // Sports leagues - separate from countries
-  'uefa': { name: 'UEFA', code: 'uefa', flagUrl: '', priority: 1020, isStreamingService: true },
-  'premier league': { name: 'Premier League', code: 'premierleague', flagUrl: '', priority: 1021, isStreamingService: true },
-  'serie a': { name: 'Serie A', code: 'seriea', flagUrl: '', priority: 1022, isStreamingService: true },
+  'max': { name: 'Max', code: 'max', flagUrl: bl('max'), priority: 1008, isStreamingService: true },
+  'starz': { name: 'Starz', code: 'starz', flagUrl: bl('starz'), priority: 1009, isStreamingService: true },
+  'showtime': { name: 'Showtime', code: 'showtime', flagUrl: bl('showtime'), priority: 1010, isStreamingService: true },
+  // Sports leagues
+  'uefa': { name: 'UEFA', code: 'uefa', flagUrl: bl('uefa'), priority: 1020, isStreamingService: true },
+  'premier league': { name: 'Premier League', code: 'premierleague', flagUrl: bl('premier league'), priority: 1021, isStreamingService: true },
+  'serie a': { name: 'Serie A', code: 'seriea', flagUrl: bl('serie a'), priority: 1022, isStreamingService: true },
   'la liga': { name: 'La Liga', code: 'laliga', flagUrl: '/images/laliga-logo.png', priority: 1023, isStreamingService: true },
   'laliga': { name: 'La Liga', code: 'laliga', flagUrl: '/images/laliga-logo.png', priority: 1023, isStreamingService: true },
-  // (bundesliga merged into shahid below)
-  // Arabic streaming services - priority 23-27 (right after Islamic/Arabic countries)
+  // Arabic streaming services - priority 23-27
   'mbc': { name: 'MBC', code: 'mbc', flagUrl: '/images/mbc-logo.png', priority: 23, isStreamingService: true },
   'mbc hd': { name: 'MBC', code: 'mbc', flagUrl: '/images/mbc-logo.png', priority: 23, isStreamingService: true },
   'rotana': { name: 'Rotana', code: 'rotana', flagUrl: '/images/rotana-logo.png', priority: 24, isStreamingService: true },
   'shahid': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png?v=2', priority: 25, isStreamingService: true },
   'shahid vip': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png?v=2', priority: 25, isStreamingService: true },
   'شاهد': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png?v=2', priority: 25, isStreamingService: true },
-  'bundesliga': { name: 'Bundesliga', code: 'bundesliga', flagUrl: '', priority: 1024, isStreamingService: true },
+  'bundesliga': { name: 'Bundesliga', code: 'bundesliga', flagUrl: bl('bundesliga'), priority: 1024, isStreamingService: true },
   'bein': { name: 'beIN', code: 'bein', flagUrl: '/images/bein-logo.png', priority: 26, isStreamingService: true },
   'bein sport': { name: 'beIN Sports', code: 'bein', flagUrl: '/images/bein-logo.png', priority: 26, isStreamingService: true },
   'bein sports': { name: 'beIN Sports', code: 'bein', flagUrl: '/images/bein-logo.png', priority: 26, isStreamingService: true },
@@ -80,10 +85,22 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'اطفال': { name: 'Kids', code: 'kids', flagUrl: '', priority: 31, isStreamingService: true },
   // Western streaming services (priority 1000+)
   'relax tv': { name: 'Relax TV', code: 'relaxtv', flagUrl: '', priority: 1029, isStreamingService: true },
-  'marvel': { name: 'Marvel', code: 'marvel', flagUrl: '', priority: 1030, isStreamingService: true },
-  'pixar': { name: 'Pixar', code: 'pixar', flagUrl: '', priority: 1031, isStreamingService: true },
-  'star wars': { name: 'Star Wars', code: 'starwars', flagUrl: '', priority: 1032, isStreamingService: true },
-  'crunchyroll': { name: 'Crunchyroll', code: 'crunchyroll', flagUrl: '', priority: 1033, isStreamingService: true },
+  'marvel': { name: 'Marvel', code: 'marvel', flagUrl: bl('marvel'), priority: 1030, isStreamingService: true },
+  'pixar': { name: 'Pixar', code: 'pixar', flagUrl: bl('pixar'), priority: 1031, isStreamingService: true },
+  'star wars': { name: 'Star Wars', code: 'starwars', flagUrl: bl('star wars'), priority: 1032, isStreamingService: true },
+  'crunchyroll': { name: 'Crunchyroll', code: 'crunchyroll', flagUrl: bl('crunchyroll'), priority: 1033, isStreamingService: true },
+  'dazn': { name: 'DAZN', code: 'dazn', flagUrl: bl('dazn'), priority: 1034, isStreamingService: true },
+  'espn': { name: 'ESPN', code: 'espn', flagUrl: bl('espn'), priority: 1035, isStreamingService: true },
+  'sky sports': { name: 'Sky Sports', code: 'skysports', flagUrl: bl('sky sports'), priority: 1036, isStreamingService: true },
+  'fox sports': { name: 'Fox Sports', code: 'foxsports', flagUrl: bl('fox sports'), priority: 1037, isStreamingService: true },
+  'eurosport': { name: 'Eurosport', code: 'eurosport', flagUrl: bl('eurosport'), priority: 1038, isStreamingService: true },
+  'bt sport': { name: 'BT Sport', code: 'btsport', flagUrl: bl('bt sport'), priority: 1039, isStreamingService: true },
+  'pluto tv': { name: 'Pluto TV', code: 'plutotv', flagUrl: bl('pluto tv'), priority: 1040, isStreamingService: true },
+  'pluto': { name: 'Pluto TV', code: 'plutotv', flagUrl: bl('pluto tv'), priority: 1040, isStreamingService: true },
+  'wwe': { name: 'WWE', code: 'wwe', flagUrl: bl('wwe'), priority: 1041, isStreamingService: true },
+  'ufc': { name: 'UFC', code: 'ufc', flagUrl: bl('ufc'), priority: 1042, isStreamingService: true },
+  'formula 1': { name: 'Formula 1', code: 'f1', flagUrl: bl('formula 1'), priority: 1043, isStreamingService: true },
+  'f1': { name: 'Formula 1', code: 'f1', flagUrl: bl('formula 1'), priority: 1043, isStreamingService: true },
 };
 
 // Arabic-speaking countries (priority 1-20)
