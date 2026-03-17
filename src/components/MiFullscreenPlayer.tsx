@@ -71,6 +71,10 @@ export const MiFullscreenPlayer = ({
   const [hasResumed, setHasResumed] = useState(false);
   const lastSaveTimeRef = useRef(0);
   
+  // Auto-next episode countdown
+  const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(null);
+  const autoNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  
   // Subtitle track states
   const [subtitleTracks, setSubtitleTracks] = useState<{ id: number; name: string; lang: string; url?: string }[]>([]);
   const [activeSubtitleTrack, setActiveSubtitleTrack] = useState(-1);
@@ -281,6 +285,15 @@ export const MiFullscreenPlayer = ({
     fetchSubs();
   }, [channel.url, isVOD, functionConfig.streamProxyUrl]);
 
+  // Clear auto-next timer on unmount or channel change
+  useEffect(() => {
+    setAutoNextCountdown(null);
+    if (autoNextTimerRef.current) {
+      clearInterval(autoNextTimerRef.current);
+      autoNextTimerRef.current = null;
+    }
+  }, [channel.id]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -288,14 +301,35 @@ export const MiFullscreenPlayer = ({
     const onPlaying = () => { setIsPlaying(true); setError(null); };
     const onPause = () => setIsPlaying(false);
 
+    const onEnded = () => {
+      if (isSeries && hasNextEpisode) {
+        // Start 10-second countdown to next episode
+        setAutoNextCountdown(10);
+        if (autoNextTimerRef.current) clearInterval(autoNextTimerRef.current);
+        autoNextTimerRef.current = setInterval(() => {
+          setAutoNextCountdown(prev => {
+            if (prev === null || prev <= 1) {
+              if (autoNextTimerRef.current) clearInterval(autoNextTimerRef.current);
+              autoNextTimerRef.current = null;
+              onNextEpisode?.();
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+    };
+
     video.addEventListener('playing', onPlaying);
     video.addEventListener('pause', onPause);
+    video.addEventListener('ended', onEnded);
 
     return () => {
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('pause', onPause);
+      video.removeEventListener('ended', onEnded);
     };
-  }, []);
+  }, [isSeries, hasNextEpisode, onNextEpisode]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -690,7 +724,57 @@ export const MiFullscreenPlayer = ({
         </div>
       )}
 
-      {/* Now Playing Banner - auto-dismisses after 5 seconds */}
+      {/* Auto-Next Episode Countdown */}
+      {autoNextCountdown !== null && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/85 z-20" onClick={(e) => e.stopPropagation()}>
+          <div className="text-center max-w-md px-6">
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="hsl(var(--muted))" strokeWidth="4" />
+                <circle
+                  cx="50" cy="50" r="45" fill="none"
+                  stroke="hsl(var(--primary))" strokeWidth="4" strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 45}`}
+                  strokeDashoffset={`${2 * Math.PI * 45 * (1 - autoNextCountdown / 10)}`}
+                  className="transition-all duration-1000 ease-linear"
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-3xl font-bold text-foreground">
+                {autoNextCountdown}
+              </span>
+            </div>
+            <h3 className="text-foreground text-xl font-bold mb-2">Next Episode</h3>
+            <p className="text-muted-foreground mb-6">Starting in {autoNextCountdown} seconds...</p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (autoNextTimerRef.current) clearInterval(autoNextTimerRef.current);
+                  autoNextTimerRef.current = null;
+                  setAutoNextCountdown(null);
+                }}
+                className="px-6 py-3 rounded-xl bg-muted text-foreground hover:bg-muted/80 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (autoNextTimerRef.current) clearInterval(autoNextTimerRef.current);
+                  autoNextTimerRef.current = null;
+                  setAutoNextCountdown(null);
+                  onNextEpisode?.();
+                }}
+                className="px-6 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-medium transition-colors"
+              >
+                Play Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {!isVOD && showNowPlaying && !error && (
         <div 
           className="absolute top-20 left-1/2 -translate-x-1/2 z-20 animate-in fade-in slide-in-from-top-4 duration-500"
