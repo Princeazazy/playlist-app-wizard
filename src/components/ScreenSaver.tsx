@@ -77,6 +77,17 @@ const isExcludedTitle = (name: string): boolean => {
   return EXCLUDED_TITLES.some((t) => lower.includes(t.toLowerCase()));
 };
 
+// Clean provider title: remove prefixes like "AR -", "TAR", "- AR", country codes
+const cleanProviderTitle = (name: string): string => {
+  return name
+    .replace(/^\s*[A-Z]{2,4}\s*[:\-|]\s*/i, '') // Leading prefix "AR -", "TAR |"
+    .replace(/\s*[:\-|]\s*[A-Z]{2,4}\s*$/i, '') // Trailing suffix "- AR", "- TAR"
+    .replace(/\s+\bTAR\b\s*/gi, ' ')             // "TAR" anywhere
+    .replace(/\s+\bAR\b\s*/gi, ' ')              // "AR" anywhere
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectItem, channels = [] }) => {
   const [items, setItems] = useState<ScreenSaverItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -128,6 +139,10 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
         const eligibleChannels = channels.filter((ch) => {
           if (!ch.logo || isExcludedTitle(ch.name)) return false;
           if (ch.type !== 'series' && ch.type !== 'movies') return false;
+          // Exclude TAR (Turkish Arabic-dubbed) and dubbed/translated content
+          if (/\bTAR\b/i.test(ch.name)) return false;
+          if (/مترجم/i.test(ch.name)) return false;
+          if (/dubbed|dub\b/i.test(ch.name)) return false;
           return isRamadan2026(ch) || isLatestArabic(ch);
         });
 
@@ -145,7 +160,7 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
 
           arabicProviderItems.push({
             id: `provider-${ch.id}`,
-            title: ch.name,
+            title: cleanProviderTitle(ch.name),
             backdrop,
             overview: ch.plot,
             rating: ch.rating ? parseFloat(String(ch.rating)) : undefined,
@@ -259,10 +274,21 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
             isTransitioning ? 'opacity-0' : 'opacity-100'
           }`}
         >
+          {/* Blurred background fill for provider poster images */}
+          {current.source === 'provider' && (
+            <img
+              src={current.backdrop}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover blur-3xl scale-110 opacity-60"
+              key={`bg-blur-${currentIndex}`}
+            />
+          )}
           <img
             src={current.backdrop}
             alt={current.title}
-            className="h-full w-full animate-screensaver-zoom object-cover"
+            className={`h-full w-full animate-screensaver-zoom ${
+              current.source === 'provider' ? 'object-contain' : 'object-cover'
+            }`}
             key={`bg-${currentIndex}`}
           />
         </div>
@@ -271,10 +297,20 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
             isTransitioning ? 'opacity-100' : 'opacity-0'
           }`}
         >
+          {next.source === 'provider' && (
+            <img
+              src={next.backdrop}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover blur-3xl scale-110 opacity-60"
+              key={`bg-blur-next-${(currentIndex + 1) % items.length}`}
+            />
+          )}
           <img
             src={next.backdrop}
             alt={next.title}
-            className="h-full w-full object-cover"
+            className={`h-full w-full ${
+              next.source === 'provider' ? 'object-contain' : 'object-cover'
+            }`}
             key={`bg-next-${(currentIndex + 1) % items.length}`}
           />
         </div>
