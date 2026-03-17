@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { ChevronLeft, Play, Star, Clock, Globe, Calendar, User, Search, Tv, Loader2, RefreshCw } from 'lucide-react';
+import { RatingBadge } from '@/components/shared/RatingBadge';
 import { Channel } from '@/hooks/useIPTV';
 import { useWeather } from '@/hooks/useWeather';
 import { supabase } from '@/integrations/supabase/client';
@@ -392,19 +393,14 @@ export const MiSeriesDetail = ({
             <h2 className="text-2xl font-bold text-foreground">{item.name}</h2>
             
             <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">{metadata.rating}/10</span>
-              <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={`w-4 h-4 ${
-                      star <= Math.round(parseFloat(metadata.rating) / 2)
-                        ? 'mi-star-filled'
-                        : 'text-muted-foreground'
-                    }`}
-                  />
-                ))}
-              </div>
+              <RatingBadge
+                title={item.name}
+                year={metadata.year}
+                mediaType="tv"
+                fallbackRating={tmdbData?.rating}
+                size="md"
+                showSource
+              />
             </div>
 
             <div className="flex items-center gap-3 flex-wrap text-sm">

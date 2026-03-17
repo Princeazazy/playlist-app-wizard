@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Play, Star, Film, Tv, X } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
 import { Channel } from '@/hooks/useIPTV';
+import { RatingBadge } from '@/components/shared/RatingBadge';
 
 interface ScreenSaverItem {
   id: string;
@@ -364,10 +365,14 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
             </div>
           )}
           {current.rating && current.rating > 0 && (
-            <div className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/20 px-3 py-1 backdrop-blur-sm">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              <span className="text-xs font-bold text-amber-300">{current.rating.toFixed(1)}</span>
-            </div>
+            <RatingBadge
+              title={current.title}
+              year={current.year}
+              mediaType={current.mediaType}
+              fallbackRating={current.rating}
+              size="md"
+              showSource
+            />
           )}
         </div>
 

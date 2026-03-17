@@ -4,6 +4,7 @@ import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
 import { useTMDBPosters } from '@/hooks/useTMDBPosters';
 import { Channel } from '@/hooks/useIPTV';
+import { RatingBadge } from '@/components/shared/RatingBadge';
 
 interface TMDBBrowseSectionProps {
   onSelectItem?: (item: TMDBItem) => void;
@@ -70,12 +71,16 @@ const MediaCard = ({ item, onClick }: { item: TMDBItem; onClick?: () => void }) 
         </div>
       </div>
       
-      {item.rating && item.rating > 0 && (
-        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm">
-          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-          <span className="text-xs font-medium text-white">{item.rating.toFixed(1)}</span>
-        </div>
-      )}
+      <div className="absolute top-2 right-2">
+        <RatingBadge
+          title={item.title}
+          year={item.year}
+          mediaType={item.mediaType}
+          fallbackRating={item.rating}
+          size="sm"
+          showSource
+        />
+      </div>
       
       <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-primary/80 backdrop-blur-sm">
         <span className="text-[10px] font-bold text-primary-foreground uppercase">

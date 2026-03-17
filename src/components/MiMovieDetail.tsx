@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Play, Star, Clock, Globe, Calendar, User, Search, Film, X } from 'lucide-react';
+import { RatingBadge } from '@/components/shared/RatingBadge';
 import { Channel } from '@/hooks/useIPTV';
 import { useWeather } from '@/hooks/useWeather';
 import { useTMDB, TMDBDetailedItem } from '@/hooks/useTMDB';
@@ -206,21 +207,16 @@ export const MiMovieDetail = ({
             {/* Title */}
             <h1 className="text-4xl font-bold text-foreground mt-2">{item.name}</h1>
             
-            {/* Rating */}
+            {/* Rating - Multi-source */}
             <div className="flex items-center gap-4 mt-4">
-              <span className="text-lg text-muted-foreground">{metadata.rating}/10</span>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={`w-5 h-5 ${
-                      star <= Math.round(parseFloat(metadata.rating) / 2)
-                        ? 'mi-star-filled'
-                        : 'text-muted-foreground'
-                    }`}
-                  />
-                ))}
-              </div>
+              <RatingBadge
+                title={item.name}
+                year={metadata.year}
+                mediaType="movie"
+                fallbackRating={tmdbData?.rating}
+                size="lg"
+                showSource
+              />
             </div>
 
             {/* Metadata Row */}
