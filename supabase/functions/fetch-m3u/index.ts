@@ -35,7 +35,6 @@ const corsHeaders = {
 
 // STB (Set-Top Box) headers to mimic legitimate STB devices
 const stbHeaders = {
-  'User-Agent': 'MAG250 MAG254 MAG256 Aura/1.0.0',
   'Accept': '*/*',
   'Accept-Language': 'en-US,en;q=0.9',
   'Connection': 'keep-alive',
@@ -43,7 +42,7 @@ const stbHeaders = {
   'X-Device-Model': 'MAG256',
 };
 
-// Alternative STB user agents for rotation
+// Alternative user agents for rotation
 const stbUserAgents = [
   'MAG250 MAG254 MAG256 Aura/1.0.0',
   'Formuler Z8 Pro/1.0 (Linux; Android 9)',
@@ -52,15 +51,52 @@ const stbUserAgents = [
   'DreamLink T2/1.0.0',
   'IPTV Smarters Pro/3.0.0 (Linux; STB)',
   'TiviMate/4.7.0 (STB)',
-  'STB Emulator/1.2.0',
+  'Dalvik/2.1.0 (Linux; U; Android 13; Pixel 7 Pro Build/TQ3A.230805.001)',
+  'okhttp/4.12.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
 ];
 
-// Get STB headers with rotated user agent
-function getStbHeaders(index: number = 0): Record<string, string> {
-  return {
+function getStbHeaders(index: number = 0, url?: string): Record<string, string> {
+  const headers: Record<string, string> = {
     ...stbHeaders,
     'User-Agent': stbUserAgents[index % stbUserAgents.length],
+    'Accept-Encoding': 'identity',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
   };
+
+  if (url) {
+    try {
+      const origin = new URL(url).origin;
+      headers['Referer'] = `${origin}/`;
+      headers['Origin'] = origin;
+      headers['Host'] = new URL(url).host;
+    } catch {
+      // ignore malformed urls here; upstream fetch will fail later if invalid
+    }
+  }
+
+  return headers;
+}
+
+async function fetchJsonWithHeaderRotation(url: string, headerIndexes: number[], timeoutMs: number): Promise<{ data: any; status: number } | null> {
+  for (const headerIndex of headerIndexes) {
+    try {
+      const res = await fetchWithTimeout(url, { headers: getStbHeaders(headerIndex, url) }, timeoutMs);
+      if (!res.ok) {
+        console.warn(`Upstream ${res.status} for ${url} with header profile ${headerIndex}`);
+        continue;
+      }
+
+      const text = await res.text();
+      const data = JSON.parse(text);
+      return { data, status: res.status };
+    } catch (error) {
+      console.warn(`Header profile ${headerIndex} failed for ${url}:`, error);
+    }
+  }
+
+  return null;
 }
 
 // Fix HTTP logo URLs → HTTPS (browsers block mixed content on HTTPS pages)
@@ -783,17 +819,34 @@ Deno.serve(async (req) => {
     const rawFetch = (body as Record<string, unknown>)?.rawFetch === true;
     if (rawFetch) {
       try {
-        const res = await fetch(url, {
-          headers: getStbHeaders(0),
-          redirect: 'follow',
-        });
-        if (!res.ok) {
+        const headerProfiles = [0, 5, 7, 8, 9];
+        let response: Response | null = null;
+        let lastStatus: number | null = null;
+
+        for (const profile of headerProfiles) {
+          try {
+            const candidate = await fetch(url, {
+              headers: getStbHeaders(profile, url),
+              redirect: 'follow',
+            });
+            lastStatus = candidate.status;
+            if (candidate.ok) {
+              response = candidate;
+              break;
+            }
+          } catch {
+            // continue rotating headers
+          }
+        }
+
+        if (!response) {
           return new Response(
-            JSON.stringify({ error: `Upstream returned ${res.status}` }),
+            JSON.stringify({ error: `Upstream returned ${lastStatus ?? 'request failure'}` }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        const text = await res.text();
+
+        const text = await response.text();
         try {
           const json = JSON.parse(text);
           return new Response(
