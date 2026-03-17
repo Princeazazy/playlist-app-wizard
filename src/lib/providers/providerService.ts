@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // Provider Service — Unified API for all provider types
-// Uses edge functions for actual fetching (CORS-safe)
+// Uses direct client-side fetch first, edge functions as fallback
 // ═══════════════════════════════════════════════════════════════
 
 import { Capacitor } from '@capacitor/core';
@@ -21,6 +21,7 @@ import {
 } from '@/lib/playback/urlResolver';
 import { isNativeOrWebView } from '@/lib/platformDetect';
 import { fetchDirectPlaylistChannels } from './m3uDirectFetch';
+import { fetchXtreamDirectFromClient, probeXtreamDirect } from './xtreamDirectClient';
 
 // ── Xtream API Authentication ───────────────────────────────
 
@@ -31,33 +32,34 @@ export async function authenticateXtream(config: XtreamConfig): Promise<{
   providerName?: string;
 }> {
   try {
-    // Normalize server URL
     const serverUrl = config.serverUrl.replace(/\/+$/, '');
     const apiUrl = `${serverUrl}/player_api.php?username=${encodeURIComponent(config.username)}&password=${encodeURIComponent(config.password)}`;
 
-    // Use edge function to avoid CORS
-    const { data, error } = await supabase.functions.invoke('fetch-m3u', {
-      body: {
-        url: apiUrl,
-        rawFetch: true,
-      },
-    });
+    // Try direct fetch first (works in native APK and when provider allows CORS)
+    let accountData: any = null;
 
-    if (error) throw new Error(error.message);
-
-    // The edge function may return the raw JSON or we parse it
-    let accountData: any;
-    if (data?.rawResponse) {
-      accountData = typeof data.rawResponse === 'string' ? JSON.parse(data.rawResponse) : data.rawResponse;
-    } else if (data?.user_info) {
-      accountData = data;
-    } else {
-      // Try direct fetch as fallback
+    try {
       const res = await fetch(apiUrl, {
         headers: { 'User-Agent': 'IPTV Smarters Pro/3.0.0' },
-      }).catch(() => null);
-      if (res?.ok) {
+      });
+      if (res.ok) {
         accountData = await res.json();
+      }
+    } catch {
+      // CORS blocked or network error — try edge function
+    }
+
+    if (!accountData?.user_info) {
+      const { data, error } = await supabase.functions.invoke('fetch-m3u', {
+        body: { url: apiUrl, rawFetch: true },
+      });
+
+      if (error) throw new Error(error.message);
+
+      if (data?.rawResponse) {
+        accountData = typeof data.rawResponse === 'string' ? JSON.parse(data.rawResponse) : data.rawResponse;
+      } else if (data?.user_info) {
+        accountData = data;
       }
     }
 
@@ -94,11 +96,7 @@ export async function authenticateXtream(config: XtreamConfig): Promise<{
       } : undefined,
     };
 
-    return {
-      success: true,
-      accountInfo,
-      providerName: si?.url || serverUrl,
-    };
+    return { success: true, accountInfo, providerName: si?.url || serverUrl };
   } catch (err: any) {
     console.error('[ProviderService] Xtream auth failed:', err);
     return { success: false, error: err.message || 'Connection failed' };
@@ -142,16 +140,8 @@ export async function validateM3UUrl(config: M3UConfig): Promise<{
 
   const validateViaBackend = async (playlistUrl: string): Promise<number> => {
     const { data, error } = await supabase.functions.invoke('fetch-m3u', {
-      body: {
-        url: playlistUrl,
-        maxChannels: 100,
-        maxBytesMB: 5,
-        maxReturnPerType: 50,
-        preferXtreamApi: false,
-        forceXtreamApi: false,
-      },
+      body: { url: playlistUrl, maxChannels: 100, maxBytesMB: 5, maxReturnPerType: 50, preferXtreamApi: false, forceXtreamApi: false },
     });
-
     if (error) throw new Error(error.message);
     if (data?.error) throw new Error(data.error);
     return Array.isArray(data?.channels) ? data.channels.length : 0;
@@ -159,12 +149,7 @@ export async function validateM3UUrl(config: M3UConfig): Promise<{
 
   const validateDirectOnDevice = async (playlistUrl: string): Promise<number> => {
     if (!isNativeOrWebView()) return 0;
-
-    const channels = await fetchDirectPlaylistChannels(playlistUrl, {
-      maxChannels: 100,
-      maxBytesMB: 5,
-    });
-
+    const channels = await fetchDirectPlaylistChannels(playlistUrl, { maxChannels: 100, maxBytesMB: 5 });
     return channels.length;
   };
 
@@ -172,18 +157,14 @@ export async function validateM3UUrl(config: M3UConfig): Promise<{
     for (const playlistUrl of playlistUrls) {
       try {
         const directCount = await validateDirectOnDevice(playlistUrl);
-        if (directCount > 0) {
-          return { success: true, channelCount: directCount };
-        }
+        if (directCount > 0) return { success: true, channelCount: directCount };
       } catch (error) {
         lastError = error;
       }
 
       try {
         const backendCount = await validateViaBackend(playlistUrl);
-        if (backendCount > 0) {
-          return { success: true, channelCount: backendCount };
-        }
+        if (backendCount > 0) return { success: true, channelCount: backendCount };
       } catch (error) {
         lastError = error;
       }
@@ -191,13 +172,45 @@ export async function validateM3UUrl(config: M3UConfig): Promise<{
 
     return {
       success: false,
-      error: lastError instanceof Error
-        ? lastError.message
-        : 'No channels found in playlist. Check the URL.',
+      error: lastError instanceof Error ? lastError.message : 'No channels found in playlist. Check the URL.',
     };
   } catch (err: any) {
     return { success: false, error: err.message || 'Failed to fetch playlist' };
   }
+}
+
+// ── Extract Xtream credentials from any config ──────────────
+
+function extractXtreamCredentials(config: ProviderConfig): { baseUrl: string; username: string; password: string } | null {
+  if (config.type === 'xtream') {
+    return {
+      baseUrl: config.serverUrl.replace(/\/+$/, ''),
+      username: config.username,
+      password: config.password,
+    };
+  }
+
+  if (config.type === 'access_code') {
+    return {
+      baseUrl: config.serverUrl.replace(/\/+$/, ''),
+      username: config.accessCode,
+      password: config.accessCode,
+    };
+  }
+
+  // Check if M3U URL is actually an Xtream get.php URL
+  if (config.type === 'm3u') {
+    try {
+      const url = new URL(config.m3uUrl);
+      const username = url.searchParams.get('username');
+      const password = url.searchParams.get('password');
+      if (username && password && url.pathname.includes('get.php')) {
+        return { baseUrl: `${url.protocol}//${url.host}`, username, password };
+      }
+    } catch { /* not xtream */ }
+  }
+
+  return null;
 }
 
 // ── Fetch Content ───────────────────────────────────────────
@@ -225,70 +238,50 @@ export async function fetchProviderContent(
     throw new Error('Unknown provider type');
   }
 
-  const fallbackToStandardM3U = async (): Promise<NormalizedChannel[]> => {
-    let lastError: unknown;
-
-    for (const playlistUrl of playlistUrls) {
-      try {
-        const { data, error } = await supabase.functions.invoke('fetch-m3u', {
-          body: {
-            url: playlistUrl,
-            maxChannels,
-            maxBytesMB,
-            maxReturnPerType,
-            preferXtreamApi: false,
-            forceXtreamApi: false,
-          },
-        });
-
-        if (error) throw new Error(error.message);
-        if (data?.error) throw new Error(data.error);
-        if (!Array.isArray(data?.channels) || data.channels.length === 0) continue;
-
-        const normalized = normalizeChannels(data.channels, providerId);
-        return applyPlaybackUrlPreferences(normalized, config);
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    if (lastError instanceof Error) throw lastError;
-    return [];
-  };
-
-  const fetchDirectOnDevice = async (): Promise<NormalizedChannel[] | null> => {
-    if (!isNativeOrWebView()) return null;
-
+  // ── Strategy 1: Direct on-device M3U fetch (native APK) ──
+  if (isNativeOrWebView()) {
     for (const playlistUrl of playlistUrls) {
       try {
         console.log(`[ProviderService] Attempting direct device playlist fetch: ${playlistUrl}`);
-        const channels = await fetchDirectPlaylistChannels(playlistUrl, {
-          maxChannels,
-          maxBytesMB,
-        });
-
-        if (channels.length === 0) continue;
-
-        const normalized = normalizeChannels(channels, providerId);
-        console.log(`[ProviderService] Direct device fetch loaded ${normalized.length} items`);
-        return applyPlaybackUrlPreferences(normalized, config);
+        const channels = await fetchDirectPlaylistChannels(playlistUrl, { maxChannels, maxBytesMB });
+        if (channels.length > 0) {
+          const normalized = normalizeChannels(channels, providerId);
+          console.log(`[ProviderService] Direct device fetch loaded ${normalized.length} items`);
+          return applyPlaybackUrlPreferences(normalized, config);
+        }
       } catch (error) {
-        console.warn('[ProviderService] Direct device playlist fetch failed for one URL, trying next fallback', error);
+        console.warn('[ProviderService] Direct device playlist fetch failed:', error);
       }
     }
-
-    return null;
-  };
-
-  const directDeviceChannels = await fetchDirectOnDevice();
-  if (directDeviceChannels && directDeviceChannels.length > 0) {
-    return directDeviceChannels;
   }
 
+  // ── Strategy 2: Direct Xtream JSON API from client ────────
+  // This uses the user's IP, bypassing cloud IP blocks
+  const xtreamCreds = extractXtreamCredentials(config);
+  if (xtreamCreds) {
+    try {
+      console.log('[ProviderService] Trying direct client-side Xtream API fetch...');
+      const directChannels = await fetchXtreamDirectFromClient(
+        xtreamCreds.baseUrl,
+        xtreamCreds.username,
+        xtreamCreds.password,
+        providerId,
+      );
+
+      if (directChannels.length > 0) {
+        console.log(`[ProviderService] ✅ Direct Xtream fetch succeeded: ${directChannels.length} items`);
+        return applyPlaybackUrlPreferences(directChannels, config);
+      }
+    } catch (err) {
+      console.warn('[ProviderService] Direct Xtream fetch failed, falling back to edge function:', err);
+    }
+  }
+
+  // ── Strategy 3: Edge function Xtream API (server-side) ────
   const isXtreamCompatible = config.type === 'xtream' || config.type === 'access_code' || primaryPlaylistUrl.includes('get.php');
 
   if (isXtreamCompatible) {
-    console.log('[ProviderService] Fetching via 3 parallel Xtream calls (live/movies/series)...');
+    console.log('[ProviderService] Fetching via 3 parallel Xtream calls (edge function)...');
     const baseBody = {
       url: primaryPlaylistUrl,
       maxChannels,
@@ -330,16 +323,42 @@ export async function fetchProviderContent(
       return applyPlaybackUrlPreferences(normalized, config);
     }
 
-    const providerBlocked = errors.some((entry) => entry.includes('451'));
-    if (providerBlocked || errors.length === 0) {
-      console.warn('[ProviderService] Xtream API returned no content, falling back to standard M3U parsing');
-      return fallbackToStandardM3U();
-    }
-
-    throw new Error(`Failed to fetch content: ${errors.join('; ')}`);
+    // If edge function also returned nothing, try M3U fallback
+    console.warn('[ProviderService] Xtream API returned no content, falling back to standard M3U parsing');
   }
 
-  return fallbackToStandardM3U();
+  // ── Strategy 4: Standard M3U parsing via edge function ────
+  return fallbackToStandardM3U(playlistUrls, providerId, config, maxChannels, maxBytesMB, maxReturnPerType);
+}
+
+async function fallbackToStandardM3U(
+  playlistUrls: string[],
+  providerId: string,
+  config: ProviderConfig,
+  maxChannels: number,
+  maxBytesMB: number,
+  maxReturnPerType: number,
+): Promise<NormalizedChannel[]> {
+  let lastError: unknown;
+
+  for (const playlistUrl of playlistUrls) {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-m3u', {
+        body: { url: playlistUrl, maxChannels, maxBytesMB, maxReturnPerType, preferXtreamApi: false, forceXtreamApi: false },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      if (!Array.isArray(data?.channels) || data.channels.length === 0) continue;
+
+      const normalized = normalizeChannels(data.channels, providerId);
+      return applyPlaybackUrlPreferences(normalized, config);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError instanceof Error) throw lastError;
+  throw new Error('No channels found in playlist');
 }
 
 /** Normalize raw channel data into our common model */
@@ -378,8 +397,28 @@ export async function fetchSeriesInfo(
   seriesId: number,
   config: ProviderConfig
 ): Promise<SeriesDetail | null> {
-  let playlistUrl: string;
+  const creds = extractXtreamCredentials(config);
+  if (!creds) return null;
 
+  // Try direct client-side fetch first
+  try {
+    const apiUrl = `${creds.baseUrl}/player_api.php?username=${encodeURIComponent(creds.username)}&password=${encodeURIComponent(creds.password)}&action=get_series_info&series_id=${seriesId}`;
+    const res = await fetch(apiUrl, {
+      headers: { 'User-Agent': 'IPTV Smarters Pro/3.1.5' },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.info || data?.episodes) {
+        console.log('[ProviderService] Series info loaded via direct client fetch');
+        return mapSeriesResponse(data, creds);
+      }
+    }
+  } catch {
+    console.warn('[ProviderService] Direct series info fetch failed, trying edge function');
+  }
+
+  // Fallback to edge function
+  let playlistUrl: string;
   if (config.type === 'xtream') {
     const serverUrl = config.serverUrl.replace(/\/+$/, '');
     playlistUrl = `${serverUrl}/get.php?username=${encodeURIComponent(config.username)}&password=${encodeURIComponent(config.password)}&type=m3u_plus&output=ts`;
@@ -393,10 +432,8 @@ export async function fetchSeriesInfo(
     body: { playlistUrl, seriesId: String(seriesId) },
   });
 
-  if (error || !data) return null;
-  if (data.error) return null;
+  if (error || !data || data.error) return null;
 
-  // Map to our normalized format
   return {
     info: {
       name: data.info?.name || '',
@@ -421,6 +458,60 @@ export async function fetchSeriesInfo(
         info: e.info,
       })),
     })),
+  };
+}
+
+function mapSeriesResponse(data: any, creds: { baseUrl: string; username: string; password: string }): SeriesDetail {
+  const info = data.info || {};
+  const episodesMap = data.episodes || {};
+
+  const seasons: SeriesDetail['seasons'] = [];
+
+  for (const [seasonNum, episodes] of Object.entries(episodesMap)) {
+    if (!Array.isArray(episodes)) continue;
+
+    const NON_WEB = /^(mkv|avi|wmv|flv|mov|divx|rmvb|3gp)$/i;
+
+    seasons.push({
+      seasonNumber: parseInt(seasonNum),
+      name: `Season ${seasonNum}`,
+      episodes: episodes.map((ep: any) => {
+        const rawExt = ep.container_extension || 'mp4';
+        const ext = NON_WEB.test(rawExt) ? 'mp4' : rawExt;
+        return {
+          id: String(ep.id),
+          episodeNum: parseInt(ep.episode_num || '0'),
+          title: ep.title || `Episode ${ep.episode_num}`,
+          containerExtension: ext,
+          url: `${creds.baseUrl}/series/${creds.username}/${creds.password}/${ep.id}.${ext}`,
+          info: ep.info ? {
+            duration: ep.info.duration,
+            plot: ep.info.plot,
+            releaseDate: ep.info.releasedate || ep.info.air_date,
+            rating: ep.info.rating,
+            movieImage: ep.info.movie_image,
+          } : undefined,
+        };
+      }),
+    });
+  }
+
+  // Sort seasons
+  seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
+
+  return {
+    info: {
+      name: info.name || '',
+      cover: info.cover || '',
+      plot: info.plot || '',
+      cast: info.cast || '',
+      director: info.director || '',
+      genre: info.genre || '',
+      releaseDate: info.releaseDate || '',
+      rating: info.rating || '',
+      backdropPath: Array.isArray(info.backdrop_path) ? info.backdrop_path : [],
+    },
+    seasons,
   };
 }
 
@@ -455,7 +546,7 @@ export function buildStreamUrl(channel: NormalizedChannel, config: ProviderConfi
   return normalizePlaybackUrl(channel.url, config);
 }
 
-// ── Name cleaning (moved from useIPTV) ──────────────────────
+// ── Name cleaning ───────────────────────────────────────────
 
 function cleanChannelName(name: string): string {
   let cleaned = name;
