@@ -246,17 +246,19 @@ const PlaylistRow = ({
   title, 
   icon: Icon, 
   channels, 
-  onChannelSelect 
+  onChannelSelect,
+  mediaTypeHint,
 }: { 
   title: string; 
   icon: typeof Film;
   channels: Channel[]; 
   onChannelSelect?: (channel: Channel) => void;
+  mediaTypeHint?: 'movie' | 'tv';
 }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const totalPages = Math.ceil(channels.length / ITEMS_PER_PAGE);
-  const { getPosterForChannel } = useTMDBPosters(channels);
+  const { getPosterForChannel } = useTMDBPosters(channels, mediaTypeHint);
 
   const visibleItems = getFilledPageItems(channels, currentPage, ITEMS_PER_PAGE);
 
