@@ -125,10 +125,6 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     logo: '/images/laliga-logo.png',
     aliases: ['laliga', 'لاليغا', 'لا ليغا'],
   },
-  'premier league': {
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/200px-Premier_League_Logo.svg.png',
-    aliases: ['epl', 'الدوري الانجليزي', 'البريميرليج'],
-  },
   'serie a': {
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Serie_A_logo_2022.svg/200px-Serie_A_logo_2022.svg.png',
     aliases: ['سيري ا', 'الدوري الايطالي'],
