@@ -141,9 +141,9 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
         const seenNames = new Set<string>();
 
         const eligibleChannels = channels.filter((ch) => {
-          if (!ch.logo || isExcludedTitle(ch.name)) return false;
+          // ONLY use channels with a real landscape backdrop — never posters/logos
+          if (!ch.backdrop_path || isExcludedTitle(ch.name)) return false;
           if (ch.type !== 'series' && ch.type !== 'movies') return false;
-          // Exclude TAR (Turkish Arabic-dubbed) and dubbed/translated content
           if (/\bTAR\b/i.test(ch.name)) return false;
           if (/مترجم/i.test(ch.name)) return false;
           if (/dubbed|dub\b/i.test(ch.name)) return false;
@@ -156,10 +156,7 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
           if (seenNames.has(normalName)) continue;
           seenNames.add(normalName);
 
-          // Use the provider logo/cover as backdrop
-          const rawBackdrop = ch.backdrop_path || ch.logo;
-          if (!rawBackdrop) continue;
-          const backdrop = Array.isArray(rawBackdrop) ? rawBackdrop[0] : rawBackdrop;
+          const backdrop = Array.isArray(ch.backdrop_path) ? ch.backdrop_path[0] : ch.backdrop_path;
           if (!backdrop) continue;
 
           arabicProviderItems.push({
