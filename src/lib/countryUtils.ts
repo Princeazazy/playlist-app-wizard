@@ -661,7 +661,18 @@ export const getDisplayName = (group: string): string => {
   let cleaned = group.trim();
   cleaned = cleaned.replace(/^(?:[A-Za-z]{2,4}\s*[\|:\-]\s*)+/gi, '').trim();
   // Also handle "AR Sports", "UK General", "AM Music" style (2-3 letter code + space + word)
-  cleaned = cleaned.replace(/^[A-Za-z]{2,3}\s+(?=\w)/i, '').trim();
+  const prefixStripped = cleaned.replace(/^[A-Za-z]{2,3}\s+(?=\w)/i, '').trim();
+  
+  // If the cleaned result is a generic word like "General", "All", "Mix", etc.
+  // AND we detected a country, use the country name instead
+  const genericWords = ['general', 'all', 'mix', 'other', 'misc', 'various', 'channels'];
+  const isGeneric = genericWords.includes(prefixStripped.toLowerCase());
+  
+  if (isGeneric && countryInfo && !countryInfo.isStreamingService) {
+    return countryInfo.name;
+  }
+  
+  cleaned = prefixStripped;
   
   // If we got a meaningful cleaned name, use it
   if (cleaned.length > 1) {
