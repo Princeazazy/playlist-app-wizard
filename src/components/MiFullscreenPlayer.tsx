@@ -70,6 +70,8 @@ export const MiFullscreenPlayer = ({
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [hasResumed, setHasResumed] = useState(false);
   const lastSaveTimeRef = useRef(0);
+  const resumeCheckedRef = useRef(false);
+  const playbackStartedRef = useRef(false);
   
   // Auto-next episode countdown
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(null);
