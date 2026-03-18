@@ -292,7 +292,7 @@ export const MiLiveTVList = ({
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [hoveredChannel, setHoveredChannel] = useState<Channel | null>(null);
-  const [showEPG, setShowEPG] = useState(false);
+  
   const [localShowFavoritesOnly, setLocalShowFavoritesOnly] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isListening, setIsListening] = useState(false);
