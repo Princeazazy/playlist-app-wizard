@@ -583,6 +583,13 @@ export const MiLiveTVList = ({
         return `US-${firstToken.toUpperCase()}`;
       };
 
+      // Predefined logos for known US networks
+      const US_NETWORK_LOGOS: Record<string, string> = {
+        'HBO': '/images/hbo-logo.png',
+        'FOX': '/images/fox-news-logo.png',
+        'PBS': '/images/pbs-logo.png',
+      };
+
       for (const [normKey, data] of groupData.entries()) {
         if (!normKey.startsWith('us_') || normKey === 'us') continue;
 
@@ -594,8 +601,14 @@ export const MiLiveTVList = ({
         const networkName = cleanUsNetworkName(sourceChannel.name);
         if (networkName) {
           data.displayNameOverride = networkName;
-        }
-        if (sourceChannel.logo) {
+          // Use predefined logo if available for this network
+          const networkKey = networkName.replace(/^US-/, '');
+          if (US_NETWORK_LOGOS[networkKey]) {
+            data.firstLogo = US_NETWORK_LOGOS[networkKey];
+          } else if (sourceChannel.logo) {
+            data.firstLogo = sourceChannel.logo;
+          }
+        } else if (sourceChannel.logo) {
           data.firstLogo = sourceChannel.logo;
         }
       }
