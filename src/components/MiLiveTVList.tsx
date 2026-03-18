@@ -475,7 +475,7 @@ export const MiLiveTVList = ({
 
   // Build groups with first channel logo AND normalized group map in a single pass
   const { groupsWithLogos, normalizedGroupMap } = useMemo(() => {
-    const groupData = new Map<string, { count: number; firstLogo?: string; originalNames: string[] }>();
+    const groupData = new Map<string, { count: number; firstLogo?: string; secondLogo?: string; originalNames: string[] }>();
     const normMap = new Map<string, string[]>();
 
     if (category === 'sports') {
@@ -488,6 +488,9 @@ export const MiLiveTVList = ({
           normMap.set(sportsGroup, [sportsGroup]);
         } else {
           existing.count++;
+          if (existing.count === 2 && ch.logo && !existing.secondLogo) {
+            existing.secondLogo = ch.logo;
+          }
         }
       }
     } else {
@@ -500,6 +503,9 @@ export const MiLiveTVList = ({
           normMap.set(normalizedKey, [group]);
         } else {
           existing.count++;
+          if (existing.count === 2 && ch.logo && !existing.secondLogo) {
+            existing.secondLogo = ch.logo;
+          }
           if (!existing.originalNames.includes(group)) {
             existing.originalNames.push(group);
             const normList = normMap.get(normalizedKey)!;
@@ -508,6 +514,48 @@ export const MiLiveTVList = ({
         }
       }
     }
+
+    // Post-process: detect service-specific groups by sampling channel names
+    if (category !== 'sports') {
+      const SERVICE_PATTERNS: { regex: RegExp; name: string; logoKey: 'first' | 'second' | 'predefined'; predefinedLogo?: string }[] = [
+        { regex: /\bjawy\b|جوي/i, name: 'Jawy', logoKey: 'first' },
+        { regex: /\bmbc\b/i, name: 'MBC', logoKey: 'predefined', predefinedLogo: '/images/mbc-logo.png' },
+        { regex: /\btod\b/i, name: 'TOD', logoKey: 'first' },
+      ];
+
+      for (const [normKey, data] of groupData.entries()) {
+        // Only process groups that resolved to generic Arabic/unknown
+        const info = getCountryInfo(data.originalNames[0] || normKey);
+        const isGenericArabic = info?.code === 'arabic' || info?.code === 'gulf' || (!info?.isStreamingService && !info);
+        if (!isGenericArabic) continue;
+
+        // Sample first 10 channels to detect dominant service
+        const groupOrigNames = normMap.get(normKey) || [];
+        const sampleChannels = channels
+          .filter(ch => groupOrigNames.includes(ch.group || 'Uncategorized'))
+          .slice(0, 10);
+
+        for (const pattern of SERVICE_PATTERNS) {
+          const matchCount = sampleChannels.filter(ch => pattern.regex.test(ch.name)).length;
+          if (matchCount >= Math.min(3, sampleChannels.length * 0.3)) {
+            // Rename this group to the detected service
+            const newKey = pattern.name.toLowerCase();
+            // Only rename if not already a group with that name
+            if (!groupData.has(newKey)) {
+              groupData.delete(normKey);
+              const logo = pattern.logoKey === 'predefined' ? pattern.predefinedLogo : 
+                           pattern.logoKey === 'second' ? (data.secondLogo || data.firstLogo) : 
+                           data.firstLogo;
+              groupData.set(newKey, { ...data, firstLogo: logo });
+              normMap.delete(normKey);
+              normMap.set(newKey, groupOrigNames);
+            }
+            break;
+          }
+        }
+      }
+    }
+
     return { groupsWithLogos: groupData, normalizedGroupMap: normMap };
   }, [channels, category, sportsChannelGroupMap]);
 
