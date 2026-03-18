@@ -706,15 +706,27 @@ export const MiLiveTVList = ({
     
     if (countryInfo?.isStreamingService) {
       if (countryInfo.flagUrl) return countryInfo.flagUrl;
+      // Use first channel logo for services without a defined logo (TOD, Jawy, etc.)
+      if (group.firstLogo) return group.firstLogo;
       return aiGroupLogos[group.displayName] || null;
     }
     
-    if (countryInfo && countryInfo.flagUrl) return countryInfo.flagUrl;
+    // For country sub-groups (e.g., "USA Premium"), use first channel logo instead of country flag
+    // Exception: "Premium" sub-groups keep the country flag
+    const isMainCountryGroup = countryInfo && countryInfo.name === group.displayName;
+    const isPremiumGroup = group.displayName.toLowerCase().includes('premium');
+    if ((isMainCountryGroup || isPremiumGroup) && countryInfo?.flagUrl) return countryInfo.flagUrl;
+    
+    // For other sub-groups like "USA Entertainment", use first channel logo
+    if (countryInfo && !isMainCountryGroup && group.firstLogo) return group.firstLogo;
     
     for (const origName of group.originalNames) {
       const flag = getCountryFlagUrl(origName);
       if (flag) return flag;
     }
+    
+    // Use first channel's logo as fallback (e.g., for US sub-groups)
+    if (group.firstLogo) return group.firstLogo;
     
     // AI-resolved logo fallback
     return aiGroupLogos[group.displayName] || null;
