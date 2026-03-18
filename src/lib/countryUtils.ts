@@ -77,6 +77,8 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'jawy tv': { name: 'Jawwy', code: 'jawwy', flagUrl: '/images/jawwy-logo.png', priority: 23, isStreamingService: true },
   'mbc': { name: 'MBC', code: 'mbc', flagUrl: '/images/mbc-group-logo.png', priority: 22, isStreamingService: true },
   'mbc hd': { name: 'MBC', code: 'mbc', flagUrl: '/images/mbc-group-logo.png', priority: 22, isStreamingService: true },
+  'myhd': { name: 'MBC', code: 'mbc', flagUrl: '/images/mbc-group-logo.png', priority: 22, isStreamingService: true },
+  'myhd premium': { name: 'MBC', code: 'mbc', flagUrl: '/images/mbc-group-logo.png', priority: 22, isStreamingService: true },
   'rotana': { name: 'Rotana', code: 'rotana', flagUrl: '/images/rotana-logo.png', priority: 24, isStreamingService: true },
   'shahid': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png?v=2', priority: 25, isStreamingService: true },
   'shahid vip': { name: 'Shahid', code: 'shahid', flagUrl: '/images/shahid-logo.png?v=2', priority: 25, isStreamingService: true },
