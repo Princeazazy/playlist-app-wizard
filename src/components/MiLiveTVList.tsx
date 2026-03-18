@@ -845,7 +845,7 @@ export const MiLiveTVList = ({
                     <img
                       src={groupLogo}
                       alt={group.displayName}
-                      className={useContainedLogo ? 'w-full h-full object-contain p-1.5' : 'w-full h-full object-cover scale-110'}
+                      className="w-full h-full object-cover scale-110"
                     />
                   ) : aiGroupLogosFetchedRef.current.has(group.displayName) && !aiGroupLogos[group.displayName] ? (
                     <Tv className="w-5 h-5 text-primary/60" />
