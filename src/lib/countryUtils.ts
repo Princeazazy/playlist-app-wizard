@@ -703,6 +703,22 @@ export const getDisplayName = (group: string): string => {
   
   cleaned = prefixStripped;
   
+  // Check if this is a sub-category within a country (e.g., "AM | USA | PREMIUM" → "USA Premium")
+  // Generic suffixes that should just use the country name
+  const genericSuffixes = ['tv', 'iptv', 'hd', 'sd', 'fhd', 'hevc', 'h265', 'h.265'];
+  const isGenericSuffix = genericSuffixes.includes(cleaned.toLowerCase());
+  
+  if (countryInfo && !countryInfo.isStreamingService && cleaned.length > 1 && !isGenericSuffix) {
+    // Check if it's a known country name (USA, UK, etc.) — just return the country
+    const knownCountryWords = [countryInfo.name.toLowerCase(), countryInfo.code, 'usa', 'us', 'uk', 'gb'];
+    if (knownCountryWords.includes(cleaned.toLowerCase())) {
+      return countryInfo.name;
+    }
+    // It's a sub-category — prepend country name
+    const suffix = cleaned.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    return `${countryInfo.name} ${suffix}`;
+  }
+  
   // If we got a meaningful cleaned name, use it
   if (cleaned.length > 1) {
     return cleaned.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
