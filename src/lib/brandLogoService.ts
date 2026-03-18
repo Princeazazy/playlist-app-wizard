@@ -48,7 +48,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     aliases: ['بيكوك'],
   },
   starz: {
-    logo: '/images/starz-logo.png',
+    logo: '/images/starzplay-logo.png',
     aliases: ['starzplay', 'ستارز'],
   },
   jawwy: {
