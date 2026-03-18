@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 1 minute
+const INACTIVITY_TIMEOUT = 4 * 60 * 1000; // 4 minutes
 
 export const useInactivityDetector = (isPlaying: boolean) => {
   const [isInactive, setIsInactive] = useState(false);
