@@ -572,96 +572,13 @@ const shortenGroupName = (name: string): string => {
   }
   if (lower.includes('foreign') && lower.includes('sub')) return 'Foreign Subtitled';
   
-  // English movies with year - "EN MOV 2025", "EN MOV 2026", etc.
-  if ((/\ben\b/i.test(lower) || lower.includes('english')) && (/mov|film|movie/i.test(lower))) {
-    if (year) return `English ${year}`;
-    if (lower.includes('dub')) return 'English Dubbed';
-    return 'English Movies';
-  }
-  // "Latest English" explicit label
-  if (lower.includes('latest') && (lower.includes('english') || lower.includes('movie') || lower.includes('film')) || lower.includes('أحدث') && lower.includes('انجليزي') || lower.includes('أفلام اجنبية جديدة')) return 'Latest English';
-  if (lower.includes('english') && lower.includes('dub')) return 'English Dubbed';
-  if (lower.includes('english') && lower.includes('series')) return 'English Series';
-
-  // Cartoons
-  if (lower.includes('cartoon') && lower.includes('dub')) return 'Cartoon Dubbed';
-  if (lower.includes('cartoon') && lower.includes('sub')) return 'Cartoon Subbed';
-  if (lower.includes('cartoon')) return 'Cartoons';
-
-  // Weekend
-  if (lower.includes('thursday') || lower.includes('weekend') || nameLower.includes('الخميس') || nameLower.includes('سهرة')) return 'Weekend';
-
-  // Genres
-  if (lower.includes('documentary') || lower.includes('docu') || nameLower.includes('وثائقي')) return 'Documentaries';
-  if (lower.includes('christmas') || nameLower.includes('كريسماس')) return 'Christmas';
-  if (lower.includes('indian') || lower.includes('bollywood') || nameLower.includes('هندي')) return 'Indian';
-  if (lower.includes('turkish') || lower.includes('turk') || nameLower.includes('ترك')) return 'Turkish';
-  if (lower.includes('korean') || lower.includes('kdrama')) return 'Korean';
-  if (lower.includes('comedy') || nameLower.includes('كوميدي')) return 'Comedy';
-  if (lower.includes('action') || lower.includes('adventure')) return 'Action';
-  if (lower.includes('horror') || lower.includes('thriller')) return 'Horror & Thriller';
-  if (lower.includes('crime') || lower.includes('mystery')) return 'Crime & Mystery';
-  if ((lower.includes('sci') && lower.includes('fi')) || lower.includes('fantasy')) return 'Sci-Fi & Fantasy';
-  if (lower.includes('drama') || lower.includes('romance')) return 'Drama & Romance';
-  if (lower.includes('war') || lower.includes('military')) return 'War & Military';
-  if (lower.includes('history') || lower.includes('biography')) return 'Historical';
-  
-  // Anime
-  if (lower.includes('anime') && (lower.includes('fr') || lower.includes('french'))) return 'FR Anime';
-  if (lower.includes('anime') && (lower.includes('en') || lower.includes('english'))) return 'EN Anime';
-  if (lower.includes('anime')) return 'Anime';
-  
-  // French
-  if ((lower.includes('fr') || lower.includes('french')) && lower.includes('comed')) return 'FR Comédie';
-  if ((lower.includes('fr') || lower.includes('french')) && lower.includes('drame')) return 'FR Drame';
-  if ((lower.includes('fr') || lower.includes('french')) && (lower.includes('enfant') || lower.includes('kids'))) return 'FR Enfants';
-  if ((lower.includes('fr') || lower.includes('french')) && lower.includes('action')) return 'FR Action';
-  if ((lower.includes('fr') || lower.includes('french')) && (lower.includes('sci') || lower.includes('fiction'))) return 'FR Sci-Fi';
-  if ((lower.includes('fr ') || lower.includes('french')) && !lower.includes('foreign')) return 'French';
-  
-  // German
-  if (lower.includes('german') && lower.includes('vod')) return 'German VOD';
-  if (lower.includes('deutsch') || lower.includes('german')) return 'German';
-  
-  // Platforms
-  if (lower.includes('netflix') || lower.includes('نتفليكس') || lower.includes('نتفلكس')) return 'Netflix';
-  if (lower.includes('disney')) return 'Disney';
-  if (lower.includes('hbo') || lower.includes('amazon') || lower.includes('prime')) return 'HBO & Amazon';
-  
-  // Sports
-  if (lower.includes('wwe') || lower.includes('wrestling')) return 'WWE';
-  if (lower.includes('ufc')) return 'UFC';
-  if (lower.includes('formula') || lower.includes('f1')) return 'Formula 1';
-  if (lower.includes('sport')) return 'Sports';
-  
-  // Star collections
-  if (lower.includes('pacino')) return 'Al Pacino';
-  if (lower.includes('dicaprio') || lower.includes('di caprio') || lower.includes('كابريو') || lower.includes('ليوناردو')) return 'Leonardo Di Caprio';
-  if (lower.includes('marvel') || lower.includes('مارفيل') || lower.includes('مارفل')) return 'Marvel';
-  if (lower.includes('adel') && lower.includes('imam')) return 'Adel Imam';
-  if (lower.includes('samir') && lower.includes('ghanem')) return 'Samir Ghanem';
-  
-  // Regions
-  if (lower.includes('asia') || lower.includes('asian')) return 'Asian';
-  if (lower.includes('world') || lower.includes('international')) return 'World';
-  if (lower.includes('albania')) return 'Albanian';
-  
-  // Tech
-  if (lower.includes('4k')) return '4K';
-  if (lower.includes('3d')) return '3D';
-  if (lower.includes('star wars')) return 'Star Wars';
-  if (lower.includes('dc ') || lower.includes('dc-')) return 'DC Comics';
-  if (lower.includes('multi') && (lower.includes('lang') || lower.includes('sub')) || lower.includes('ملتي') || lower.includes('متعدد')) return 'Multi-Sub';
-  if (lower.includes('kids') || lower.includes('family')) return 'Kids & Family';
-
-  // General Cleanup
+  // === For everything else, do LIGHT cleanup only — preserve original M3U group distinctions ===
+  // Strip common prefixes like "SRS |", "MOV |", "VOD |" etc. but keep the rest
   clean = clean
-    .replace(/\b(Movies|Films|Series|Season|Complete|Full|HD|FHD|HEVC|New|Latest|Update|Library|Collection|Pack|Box|Set|From|By|VOD|Vod|AR|EN|SER|MOV)\b/gi, '')
-    .replace(/(مكتبة|أفلام|مسلسلات|افلام)/g, '')
-    .replace(/[|•\-–_]/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/^(SRS|SER|MOV|VOD|MOVIES?|SERIES|FILM)\s*[|•\-–]\s*/i, '')
+    .replace(/^[|•\-–]\s*/, '')
     .trim();
-    
+  
   return clean || name;
 };
 
