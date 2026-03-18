@@ -449,6 +449,10 @@ export const MiLiveTVList = ({
     'MBC': { flagUrl: '/images/mbc-logo.png', priority: 22, isService: true },
     'OSN': { flagUrl: '/images/osn-logo.png', priority: 23, isService: true },
     'Rotana': { flagUrl: '/images/rotana-logo.png', priority: 24, isService: true },
+    'UEFA': { flagUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b7/UEFA_logo.svg/200px-UEFA_logo.svg.png', priority: 25, isService: true },
+    'League One': { flagUrl: '/images/league-one-logo-v2.png', priority: 26, isService: true },
+    'League Two': { flagUrl: '/images/league-two-logo-v2.png', priority: 27, isService: true },
+    'La Liga': { flagUrl: '/images/laliga-logo.png', priority: 28, isService: true },
     'Sky Sports': { flagUrl: matchBrandLogo('sky sports') || '', priority: 30, isService: true },
     'ESPN': { flagUrl: matchBrandLogo('espn') || '', priority: 31, isService: true },
     'DAZN': { flagUrl: matchBrandLogo('dazn') || '', priority: 32, isService: true },
@@ -820,45 +824,50 @@ export const MiLiveTVList = ({
             </button>
           )}
 
-          {groups.map((group) => (
-            <button
-              key={group.name}
-              onClick={() => handleGroupSelect(group.name)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
-                selectedGroup === group.name
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
-              }`}
-            >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${
-                getGroupLogo(group) ? 'bg-muted' : 'bg-primary/10'
-              }`}>
-                {getGroupLogo(group) ? (
-                  <img 
-                    src={getGroupLogo(group)!} 
-                    alt={group.displayName} 
-                    className="w-full h-full object-cover scale-110" 
-                  />
-                ) : aiGroupLogosFetchedRef.current.has(group.displayName) && !aiGroupLogos[group.displayName] ? (
-                  <Tv className="w-5 h-5 text-primary/60" />
-                ) : !aiGroupLogosFetchedRef.current.has(group.displayName) ? (
-                  <Loader2 className="w-5 h-5 text-primary/40 animate-spin" />
-                ) : (
-                  <Tv className="w-5 h-5 text-primary/60" />
-                )}
-              </div>
-              {(!sidebarCollapsed || isMobile) && (
-                <div className="flex-1 text-left min-w-0">
-                  <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
-                    {translateGroupName(group.displayName)}
-                  </p>
-                  {selectedGroup === group.name && (
-                    <p className="text-xs text-muted-foreground">{group.count} Channels</p>
+          {groups.map((group) => {
+            const groupLogo = getGroupLogo(group);
+            const useContainedLogo = !!groupLogo && !groupLogo.includes('flagcdn.com');
+
+            return (
+              <button
+                key={`${group.name}-${groupLogo ?? 'none'}`}
+                onClick={() => handleGroupSelect(group.name)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                  selectedGroup === group.name
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
+                }`}
+              >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${
+                  groupLogo ? 'bg-muted' : 'bg-primary/10'
+                }`}>
+                  {groupLogo ? (
+                    <img
+                      src={groupLogo}
+                      alt={group.displayName}
+                      className={useContainedLogo ? 'w-full h-full object-contain p-1.5' : 'w-full h-full object-cover scale-110'}
+                    />
+                  ) : aiGroupLogosFetchedRef.current.has(group.displayName) && !aiGroupLogos[group.displayName] ? (
+                    <Tv className="w-5 h-5 text-primary/60" />
+                  ) : !aiGroupLogosFetchedRef.current.has(group.displayName) ? (
+                    <Loader2 className="w-5 h-5 text-primary/40 animate-spin" />
+                  ) : (
+                    <Tv className="w-5 h-5 text-primary/60" />
                   )}
                 </div>
-              )}
-            </button>
-          ))}
+                {(!sidebarCollapsed || isMobile) && (
+                  <div className="flex-1 text-left min-w-0">
+                    <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
+                      {translateGroupName(group.displayName)}
+                    </p>
+                    {selectedGroup === group.name && (
+                      <p className="text-xs text-muted-foreground">{group.count} Channels</p>
+                    )}
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Bottom Nav - Favorites Filter */}
