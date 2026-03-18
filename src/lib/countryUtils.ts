@@ -829,8 +829,10 @@ export const mergeAndSortGroups = (
       }
     } else {
       // Create new entry
+      // Check for US network name override from channel-based detection
+      const usNetworkName = (data as any)?._usNetworkName;
       mergedGroups.set(normalizedKey, {
-        displayName: countryInfo?.name || getDisplayName(sourceName),
+        displayName: usNetworkName || countryInfo?.name || getDisplayName(sourceName),
         count: data.count,
         firstLogo: data.firstLogo,
         originalNames: [...data.originalNames],
