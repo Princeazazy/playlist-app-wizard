@@ -855,20 +855,6 @@ export const MiLiveTVList = ({
 
   return (
     <div className="h-full flex flex-col bg-background relative overflow-x-hidden">
-      {/* EPG Guide Overlay */}
-      {showEPG && (
-        <div className="absolute inset-0 z-50 bg-background">
-          <EPGGuide
-            channels={channels}
-            currentChannel={currentChannel}
-            onChannelSelect={(channel) => {
-              onChannelSelect(channel);
-              setShowEPG(false);
-            }}
-            onClose={() => setShowEPG(false)}
-          />
-        </div>
-      )}
 
       <div className="flex-1 flex overflow-hidden">
       {/* Mobile Sidebar Overlay */}
