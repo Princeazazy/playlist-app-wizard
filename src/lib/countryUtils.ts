@@ -105,9 +105,9 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'الاخبار': { name: 'Arabic News', code: 'news', flagUrl: '/images/news-logo.png', priority: 29.7, isStreamingService: true },
   'أخبار': { name: 'Arabic News', code: 'news', flagUrl: '/images/news-logo.png', priority: 29.7, isStreamingService: true },
   'kids': { name: 'Kids', code: 'kids', flagUrl: '/images/kids-logo.png', priority: 31, isStreamingService: true },
-  'jlkids': { name: 'Kids', code: 'kids', flagUrl: '/images/kids-logo.png', priority: 31, isStreamingService: true },
-  'kids jlkids': { name: 'Kids', code: 'kids', flagUrl: '/images/kids-logo.png', priority: 31, isStreamingService: true },
-  'اطفال': { name: 'Kids', code: 'kids', flagUrl: '/images/kids-logo.png', priority: 31, isStreamingService: true },
+  'jlkids': { name: 'AR-Kids', code: 'arkids', flagUrl: '/images/kids-logo.png', priority: 31.1, isStreamingService: true },
+  'kids jlkids': { name: 'AR-Kids', code: 'arkids', flagUrl: '/images/kids-logo.png', priority: 31.1, isStreamingService: true },
+  'اطفال': { name: 'AR-Kids', code: 'arkids', flagUrl: '/images/kids-logo.png', priority: 31.1, isStreamingService: true },
   // Remaining western services
   'relax tv': { name: 'Relax TV', code: 'relaxtv', flagUrl: '', priority: 1029, isStreamingService: true },
   'marvel': { name: 'Marvel', code: 'marvel', flagUrl: bl('marvel'), priority: 1030, isStreamingService: true },
