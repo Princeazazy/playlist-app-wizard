@@ -714,9 +714,11 @@ export const getDisplayName = (group: string): string => {
     if (knownCountryWords.includes(cleaned.toLowerCase())) {
       return countryInfo.name;
     }
-    // It's a sub-category — prepend country name
+    // It's a sub-category — prepend short country name
     const suffix = cleaned.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-    return `${countryInfo.name} ${suffix}`;
+    // Use short forms for long country names
+    const shortName = countryInfo.name === 'United States' ? 'USA' : countryInfo.name === 'United Kingdom' ? 'UK' : countryInfo.name;
+    return `${shortName} ${suffix}`;
   }
   
   // If we got a meaningful cleaned name, use it
