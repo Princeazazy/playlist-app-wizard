@@ -468,12 +468,12 @@ const OTHER_COUNTRIES: Record<string, CountryInfo> = {
   'africa': { name: 'Africa', code: 'za', flagUrl: 'https://flagcdn.com/w80/za.png', priority: 164 },
   'scandinavian': { name: 'Scandinavian', code: 'se', flagUrl: 'https://flagcdn.com/w80/se.png', priority: 165 },
   'asia': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 166 },
-  'asian': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 146 },
-  'آسيا': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 146 },
-  'christian': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 147 },
-  'مسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 147 },
-  'المسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 147 },
-  'لمسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 147 },
+  'asian': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 166 },
+  'آسيا': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 166 },
+  'christian': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 167 },
+  'مسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 167 },
+  'المسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 167 },
+  'لمسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 167 },
 };
 
 // Merged all countries (not including streaming services - checked separately)
