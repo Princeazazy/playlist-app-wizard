@@ -60,8 +60,12 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     aliases: ['كرانشي رول'],
   },
   'pluto tv': {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Pluto_TV_2020_logo.svg/200px-Pluto_TV_2020_logo.svg.png',
-    aliases: ['pluto', 'بلوتو'],
+    logo: '/images/pluto-tv-logo.png',
+    aliases: ['pluto', 'بلوتو', 'plutotv'],
+  },
+  'premier league': {
+    logo: '/images/premier-league-logo.png',
+    aliases: ['epl', 'بريميير ليغ', 'بريمير ليج', 'الدوري الانجليزي', 'الدوري الإنجليزي'],
   },
   dazn: {
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/DAZN_logo.svg/200px-DAZN_logo.svg.png',
