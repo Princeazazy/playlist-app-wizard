@@ -926,13 +926,6 @@ export const MiFullscreenPlayer = ({
           {!isVOD && (
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 bg-primary text-primary-foreground text-[10px] font-semibold rounded">Live</span>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowEPGOverlay(true); }}
-                className="px-2 py-0.5 bg-white/20 hover:bg-white/30 text-white text-[10px] font-medium rounded flex items-center gap-1 transition-colors"
-              >
-                <Calendar className="w-3 h-3" />
-                TV Guide
-              </button>
             </div>
           )}
 

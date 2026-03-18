@@ -1018,16 +1018,6 @@ export const MiLiveTVList = ({
               </SelectContent>
             </Select>
             
-            {/* EPG Button */}
-            {category === 'live' && (
-              <button
-                onClick={() => setShowEPG(true)}
-                className="flex items-center gap-2 px-4 h-10 bg-card border border-border/30 rounded-xl hover:bg-card/80 transition-colors"
-              >
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground text-sm">EPG</span>
-              </button>
-            )}
           </div>
 
           {/* Time & Weather */}
