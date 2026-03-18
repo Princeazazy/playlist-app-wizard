@@ -449,7 +449,7 @@ export const MiLiveTVList = ({
     'MBC': { flagUrl: '/images/mbc-logo.png', priority: 22, isService: true },
     'OSN': { flagUrl: '/images/osn-logo.png', priority: 23, isService: true },
     'Rotana': { flagUrl: '/images/rotana-logo.png', priority: 24, isService: true },
-    'UEFA': { flagUrl: '/images/uefa-logo-v2.png', priority: 25, isService: true },
+    'UEFA': { flagUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b7/UEFA_logo.svg/200px-UEFA_logo.svg.png', priority: 25, isService: true },
     'League One': { flagUrl: '/images/league-one-logo-v2.png', priority: 26, isService: true },
     'League Two': { flagUrl: '/images/league-two-logo-v2.png', priority: 27, isService: true },
     'La Liga': { flagUrl: '/images/laliga-logo.png', priority: 28, isService: true },
