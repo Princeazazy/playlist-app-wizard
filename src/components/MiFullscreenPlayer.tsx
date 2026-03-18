@@ -70,6 +70,8 @@ export const MiFullscreenPlayer = ({
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [hasResumed, setHasResumed] = useState(false);
   const lastSaveTimeRef = useRef(0);
+  const resumeCheckedRef = useRef(false);
+  const playbackStartedRef = useRef(false);
   
   // Auto-next episode countdown
   const [autoNextCountdown, setAutoNextCountdown] = useState<number | null>(null);
@@ -288,6 +290,11 @@ export const MiFullscreenPlayer = ({
   // Clear auto-next timer on unmount or channel change
   useEffect(() => {
     setAutoNextCountdown(null);
+    setShowResumePrompt(false);
+    setHasResumed(false);
+    lastSaveTimeRef.current = 0;
+    resumeCheckedRef.current = false;
+    playbackStartedRef.current = false;
     if (autoNextTimerRef.current) {
       clearInterval(autoNextTimerRef.current);
       autoNextTimerRef.current = null;
@@ -298,7 +305,11 @@ export const MiFullscreenPlayer = ({
     const video = videoRef.current;
     if (!video) return;
 
-    const onPlaying = () => { setIsPlaying(true); setError(null); };
+    const onPlaying = () => {
+      playbackStartedRef.current = true;
+      setIsPlaying(true);
+      setError(null);
+    };
     const onPause = () => setIsPlaying(false);
 
     const onEnded = () => {
@@ -337,6 +348,8 @@ export const MiFullscreenPlayer = ({
 
     const updateTime = () => {
       const t = video.currentTime || 0;
+      if (t > 1) playbackStartedRef.current = true;
+
       const hours = Math.floor(t / 3600);
       const minutes = Math.floor((t % 3600) / 60);
       const seconds = Math.floor(t % 60);
@@ -381,15 +394,21 @@ export const MiFullscreenPlayer = ({
     };
   }, [isVOD, saveProgress, saveInterval]);
 
-  // Show resume prompt only once at the very beginning before playback starts
-  const resumeCheckedRef = useRef(false);
+  // Show resume prompt only before playback starts, never mid-stream
   useEffect(() => {
-    if (isVOD && hasSavedProgress && !hasResumed && !resumeCheckedRef.current) {
-      resumeCheckedRef.current = true;
-      setShowResumePrompt(true);
-      // Pause immediately so the movie doesn't play behind the prompt
-      const video = videoRef.current;
-      if (video) video.pause();
+    const video = videoRef.current;
+    const currentPlaybackTime = video?.currentTime || 0;
+    const playbackAlreadyStarted = playbackStartedRef.current || currentPlaybackTime > 1;
+
+    if (!isVOD || !hasSavedProgress || hasResumed || resumeCheckedRef.current || playbackAlreadyStarted) {
+      return;
+    }
+
+    resumeCheckedRef.current = true;
+    setShowResumePrompt(true);
+
+    if (video && currentPlaybackTime <= 1) {
+      video.pause();
     }
   }, [isVOD, hasSavedProgress, hasResumed]);
 
