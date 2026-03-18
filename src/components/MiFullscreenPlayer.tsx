@@ -822,20 +822,6 @@ export const MiFullscreenPlayer = ({
         </div>
       )}
 
-      {/* EPG Guide Overlay */}
-      {showEPGOverlay && (
-        <div className="absolute inset-0 z-30 bg-background/95 backdrop-blur-sm overflow-auto" onClick={(e) => e.stopPropagation()}>
-          <EPGGuide
-            channels={allChannels.length > 0 ? allChannels : [channel]}
-            currentChannel={channel}
-            onChannelSelect={(ch) => {
-              setShowEPGOverlay(false);
-              onSelectChannel?.(ch);
-            }}
-            onClose={() => setShowEPGOverlay(false)}
-          />
-        </div>
-      )}
 
       {/* Controls Overlay - Mi Player Pro Style */}
       <div className={`absolute inset-0 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
