@@ -787,10 +787,29 @@ export const MiMediaGrid = ({
   // Build a mapping from raw group names to shortened display names
   const groupDisplayNameMap = useMemo(() => {
     const map = new Map<string, string>();
+    const displayNameCounts = new Map<string, string[]>();
     items.forEach((item) => {
       const group = getEffectiveGroup(item);
       if (!map.has(group) && !isIrrelevantGroup(group)) {
-        map.set(group, shortenGroupName(group));
+        const shortened = shortenGroupName(group);
+        map.set(group, shortened);
+        const existing = displayNameCounts.get(shortened) || [];
+        existing.push(group);
+        displayNameCounts.set(shortened, existing);
+      }
+    });
+    // If multiple raw groups map to the same display name, use the raw group name instead (with light cleanup)
+    displayNameCounts.forEach((rawNames, displayName) => {
+      if (rawNames.length > 1) {
+        console.log(`[GROUP MERGE WARNING] "${displayName}" merges ${rawNames.length} raw groups:`, rawNames);
+        rawNames.forEach(raw => {
+          // Use the raw name with only basic prefix stripping
+          const lightClean = raw
+            .replace(/^(SRS|SER|MOV|VOD|MOVIES?|SERIES|FILM)\s*[|•\-–]\s*/i, '')
+            .replace(/^[|•\-–]\s*/, '')
+            .trim() || raw;
+          map.set(raw, lightClean);
+        });
       }
     });
     return map;
