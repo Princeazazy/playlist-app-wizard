@@ -712,11 +712,12 @@ export const MiLiveTVList = ({
     }
     
     // For country sub-groups (e.g., "USA Premium"), use first channel logo instead of country flag
-    // Only use country flag for the main country group (displayName === country name)
+    // Exception: "Premium" sub-groups keep the country flag
     const isMainCountryGroup = countryInfo && countryInfo.name === group.displayName;
-    if (isMainCountryGroup && countryInfo.flagUrl) return countryInfo.flagUrl;
+    const isPremiumGroup = group.displayName.toLowerCase().includes('premium');
+    if ((isMainCountryGroup || isPremiumGroup) && countryInfo?.flagUrl) return countryInfo.flagUrl;
     
-    // For sub-groups like "USA Premium", "USA Entertainment", use first channel logo
+    // For other sub-groups like "USA Entertainment", use first channel logo
     if (countryInfo && !isMainCountryGroup && group.firstLogo) return group.firstLogo;
     
     for (const origName of group.originalNames) {
