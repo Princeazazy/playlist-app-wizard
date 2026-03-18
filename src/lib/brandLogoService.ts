@@ -12,15 +12,15 @@
 const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   // ── Streaming Platforms ──
   netflix: {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/200px-Netflix_2015_logo.svg.png',
+    logo: '/images/netflix-custom.png',
     aliases: ['نتفلكس', 'نتفليكس', 'nflx'],
   },
   hbo: {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/HBO_logo.svg/200px-HBO_logo.svg.png',
+    logo: '/images/hbo-max-custom.png',
     aliases: ['hbo max', 'اتش بي او', 'hbomax'],
   },
   max: {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Max_logo.svg/200px-Max_logo.svg.png',
+    logo: '/images/hbo-max-custom.png',
     aliases: ['max tv'],
   },
   'disney+': {
@@ -32,7 +32,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     aliases: ['هولو'],
   },
   'amazon prime': {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Amazon_Prime_Video_logo.svg/200px-Amazon_Prime_Video_logo.svg.png',
+    logo: '/images/prime-video-custom.png',
     aliases: ['prime video', 'amazon', 'أمازون', 'امازون', 'برايم'],
   },
   'apple tv': {
@@ -40,7 +40,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     aliases: ['apple tv+', 'appletv', 'ابل تي في'],
   },
   paramount: {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Paramount%2B_logo.svg/200px-Paramount%2B_logo.svg.png',
+    logo: '/images/paramount-plus-custom.png',
     aliases: ['paramount+', 'paramount plus', 'باراماونت'],
   },
   peacock: {
@@ -136,6 +136,14 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   uefa: {
     logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b7/UEFA_logo.svg/200px-UEFA_logo.svg.png',
     aliases: ['يويفا', 'champions league', 'دوري الابطال'],
+  },
+  'league one': {
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/53/EFL_League_One.svg/200px-EFL_League_One.svg.png',
+    aliases: ['efl league one', 'الدوري الأول'],
+  },
+  'league two': {
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/1/12/EFL_League_Two.svg/200px-EFL_League_Two.svg.png',
+    aliases: ['efl league two', 'الدوري الثاني'],
   },
 
   // ── General TV Networks ──
