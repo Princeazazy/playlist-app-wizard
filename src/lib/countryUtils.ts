@@ -223,7 +223,7 @@ const ARABIC_COUNTRIES: Record<string, CountryInfo> = {
   'اسلامية': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
   'quran': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
   'قرآن': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
-  'religious': { name: 'Islamic', code: 'islamic', flagUrl: '/images/islamic-logo.png', priority: 22 },
+  
   // News channels - right after Islamic
   'news': { name: 'News', code: 'news', flagUrl: '/images/news-logo.png', priority: 23 },
   'اخبار': { name: 'News', code: 'news', flagUrl: '/images/news-logo.png', priority: 23 },
