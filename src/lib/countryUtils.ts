@@ -636,15 +636,44 @@ const _getCountryInfoUncached = (group: string): CountryInfo | null => {
 };
 
 // Normalize a group name to a canonical country key for merging duplicates
-// Returns the country code if it's a recognized country, otherwise the original group name
+// Returns the country code as canonical key, with suffix for sub-categories
+// e.g., "AM | USA | PREMIUM" → "us_premium", "UK General" → "gb_general"
 export const normalizeGroupName = (group: string): string => {
   const countryInfo = getCountryInfo(group);
-  if (countryInfo) {
-    // Return the country code as the canonical key
+  if (!countryInfo) {
+    // Not a country - return the original group name lowercased for consistency
+    return group.toLowerCase().trim();
+  }
+
+  // Extract suffix after stripping country/region prefixes
+  // e.g., "AM | USA | PREMIUM" → "PREMIUM", "UK General" → "General"
+  let cleaned = group.trim();
+  // Strip leading 2-4 letter codes separated by pipes/colons/dashes
+  cleaned = cleaned.replace(/^(?:[A-Za-z]{2,4}\s*[\|:\-]\s*)+/gi, '').trim();
+  // Strip leading 2-3 letter code + space (e.g., "UK General")
+  cleaned = cleaned.replace(/^[A-Za-z]{2,3}\s+(?=\w)/i, '').trim();
+  
+  // Check if the remainder is just the country name itself or empty
+  const cleanedLower = cleaned.toLowerCase();
+  const countryNameLower = countryInfo.name.toLowerCase();
+  const isJustCountry = !cleaned || 
+    cleanedLower === countryNameLower ||
+    cleanedLower === countryInfo.code ||
+    // Common short forms
+    cleanedLower === 'usa' || cleanedLower === 'us' || cleanedLower === 'uk' || cleanedLower === 'gb';
+  
+  if (isJustCountry) {
     return countryInfo.code;
   }
-  // Not a country - return the original group name lowercased for consistency
-  return group.toLowerCase().trim();
+
+  // Has a meaningful suffix - create a sub-group key
+  // Generic words merge into the main country group
+  const genericSuffixes = ['channels', 'tv', 'iptv', 'hd', 'sd', 'fhd', 'hevc', 'h265', 'h.265'];
+  if (genericSuffixes.includes(cleanedLower)) {
+    return countryInfo.code;
+  }
+
+  return `${countryInfo.code}_${cleanedLower.replace(/\s+/g, '_')}`;
 };
 
 // Helper to properly capitalize words
@@ -673,6 +702,24 @@ export const getDisplayName = (group: string): string => {
   }
   
   cleaned = prefixStripped;
+  
+  // Check if this is a sub-category within a country (e.g., "AM | USA | PREMIUM" → "USA Premium")
+  // Generic suffixes that should just use the country name
+  const genericSuffixes = ['tv', 'iptv', 'hd', 'sd', 'fhd', 'hevc', 'h265', 'h.265'];
+  const isGenericSuffix = genericSuffixes.includes(cleaned.toLowerCase());
+  
+  if (countryInfo && !countryInfo.isStreamingService && cleaned.length > 1 && !isGenericSuffix) {
+    // Check if it's a known country name (USA, UK, etc.) — just return the country
+    const knownCountryWords = [countryInfo.name.toLowerCase(), countryInfo.code, 'usa', 'us', 'uk', 'gb'];
+    if (knownCountryWords.includes(cleaned.toLowerCase())) {
+      return countryInfo.name;
+    }
+    // It's a sub-category — prepend short country name
+    const suffix = cleaned.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    // Use short forms for long country names
+    const shortName = countryInfo.name === 'United States' ? 'USA' : countryInfo.name === 'United Kingdom' ? 'UK' : countryInfo.name;
+    return `${shortName} ${suffix}`;
+  }
   
   // If we got a meaningful cleaned name, use it
   if (cleaned.length > 1) {
