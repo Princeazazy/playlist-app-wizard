@@ -790,7 +790,9 @@ export const MiMediaGrid = ({
     items.forEach((item) => {
       const group = getEffectiveGroup(item);
       if (!map.has(group) && !isIrrelevantGroup(group)) {
-        map.set(group, shortenGroupName(group));
+        const shortened = shortenGroupName(group);
+        console.log('[GROUP MAP]', JSON.stringify({ raw: group, display: shortened }));
+        map.set(group, shortened);
       }
     });
     return map;
