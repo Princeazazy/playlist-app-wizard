@@ -786,6 +786,11 @@ export const MiLiveTVList = ({
       return aiGroupLogos[group.displayName] || null;
     }
 
+    // US sub-groups: prioritize channel-derived logo over flag
+    if (group.name.startsWith('us_') && group.firstLogo) {
+      return group.firstLogo;
+    }
+
     // 1. Try brand logo matching first
     const brandLogo = matchBrandLogo(group.displayName);
     if (brandLogo) return brandLogo;
