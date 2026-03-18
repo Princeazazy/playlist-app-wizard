@@ -803,7 +803,7 @@ export const getCategoryEmoji = (group: string): string => {
 
 // Merge and sort groups, combining duplicate countries
 export const mergeAndSortGroups = (
-  groupData: Map<string, { count: number; firstLogo?: string; originalNames: string[] }>
+  groupData: Map<string, { count: number; firstLogo?: string; originalNames: string[]; displayNameOverride?: string }>
 ): { name: string; displayName: string; count: number; firstLogo?: string; originalNames: string[] }[] => {
   // Merge groups by normalized name
   const mergedGroups = new Map<string, { 
@@ -818,21 +818,21 @@ export const mergeAndSortGroups = (
     const normalizedKey = normalizeGroupName(originalName);
     const sourceName = data.originalNames[0] || originalName;
     const countryInfo = getCountryInfo(sourceName);
+    const resolvedDisplayName = data.displayNameOverride || countryInfo?.name || getDisplayName(sourceName);
     
     const existing = mergedGroups.get(normalizedKey);
     if (existing) {
-      // Merge with existing
       existing.count += data.count;
       existing.originalNames.push(originalName);
       if (!existing.firstLogo && data.firstLogo) {
         existing.firstLogo = data.firstLogo;
       }
+      if (existing.displayName === 'United States' && data.displayNameOverride) {
+        existing.displayName = data.displayNameOverride;
+      }
     } else {
-      // Create new entry
-      // Check for US network name override from channel-based detection
-      const usNetworkName = (data as any)?._usNetworkName;
       mergedGroups.set(normalizedKey, {
-        displayName: usNetworkName || countryInfo?.name || getDisplayName(sourceName),
+        displayName: resolvedDisplayName,
         count: data.count,
         firstLogo: data.firstLogo,
         originalNames: [...data.originalNames],
