@@ -518,7 +518,7 @@ export const MiLiveTVList = ({
     // Post-process: detect service-specific groups by sampling channel names
     if (category !== 'sports') {
       const SERVICE_PATTERNS: { regex: RegExp; name: string; logoKey: 'first' | 'second' | 'predefined'; predefinedLogo?: string }[] = [
-        { regex: /\bstarz\b|ستارز/i, name: 'Starz', logoKey: 'predefined', predefinedLogo: '/images/starz-logo.png' },
+        { regex: /\bstarz\b|ستارز/i, name: 'Starzplay', logoKey: 'predefined', predefinedLogo: '/images/starz-logo.png' },
         { regex: /\bmbc\b/i, name: 'MBC', logoKey: 'predefined', predefinedLogo: '/images/mbc-group-logo.png' },
         { regex: /\bjawy\b|\bjawwy\b|جوي/i, name: 'Jawwy', logoKey: 'predefined', predefinedLogo: '/images/jawwy-logo.png' },
         { regex: /\btod\b/i, name: 'TOD', logoKey: 'first' },
