@@ -734,7 +734,9 @@ export const MiMediaGrid = ({
     const yearMatch = g.match(/\b(19|20)\d{2}\b/);
     const year = yearMatch ? parseInt(yearMatch[0]) : 0;
     
-    // === 1. RAMADAN 2026 at absolute top (already categorized by shortenGroupName) ===
+    // === 1. RAMADAN 2026 EGYPTIAN at absolute top ===
+    if (g.includes('ramadan 2026 egyptian')) return 0;
+    // Other Ramadan 2026 variants right after
     if (g.includes('ramadan 2026')) return 1;
     // Ramadan Pre-2026 right after
     if (g.includes('ramadan pre-2026')) return 5;
