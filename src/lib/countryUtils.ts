@@ -751,7 +751,8 @@ export const mergeAndSortGroups = (
 
   for (const [originalName, data] of groupData.entries()) {
     const normalizedKey = normalizeGroupName(originalName);
-    const countryInfo = getCountryInfo(originalName);
+    const sourceName = data.originalNames[0] || originalName;
+    const countryInfo = getCountryInfo(sourceName);
     
     const existing = mergedGroups.get(normalizedKey);
     if (existing) {
@@ -764,10 +765,10 @@ export const mergeAndSortGroups = (
     } else {
       // Create new entry
       mergedGroups.set(normalizedKey, {
-        displayName: countryInfo?.name || getDisplayName(originalName),
+        displayName: countryInfo?.name || getDisplayName(sourceName),
         count: data.count,
         firstLogo: data.firstLogo,
-        originalNames: [originalName],
+        originalNames: [...data.originalNames],
         priority: countryInfo?.priority || 999,
       });
     }
