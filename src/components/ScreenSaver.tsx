@@ -294,15 +294,6 @@ export const ScreenSaver: React.FC<ScreenSaverProps> = ({ onDismiss, onSelectIte
       <div className="absolute left-0 right-0 top-0 h-32 bg-gradient-to-b from-black/50 to-transparent" />
       <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%)' }} />
 
-      {/* Exit button */}
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-        className="absolute right-6 top-6 z-10 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/40 px-4 py-2 text-sm font-medium text-white backdrop-blur-md transition-opacity duration-500"
-      >
-        <X className="h-4 w-4" />
-        Exit
-      </button>
 
       {/* Content info */}
       <div
