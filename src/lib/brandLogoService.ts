@@ -137,6 +137,14 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b7/UEFA_logo.svg/200px-UEFA_logo.svg.png',
     aliases: ['يويفا', 'champions league', 'دوري الابطال'],
   },
+  'league one': {
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/53/EFL_League_One.svg/200px-EFL_League_One.svg.png',
+    aliases: ['efl league one', 'الدوري الأول'],
+  },
+  'league two': {
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/1/12/EFL_League_Two.svg/200px-EFL_League_Two.svg.png',
+    aliases: ['efl league two', 'الدوري الثاني'],
+  },
 
   // ── General TV Networks ──
   bbc: {
