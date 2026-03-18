@@ -475,7 +475,13 @@ export const MiLiveTVList = ({
 
   // Build groups with first channel logo AND normalized group map in a single pass
   const { groupsWithLogos, normalizedGroupMap } = useMemo(() => {
-    const groupData = new Map<string, { count: number; firstLogo?: string; secondLogo?: string; originalNames: string[] }>();
+    const groupData = new Map<string, {
+      count: number;
+      firstLogo?: string;
+      secondLogo?: string;
+      originalNames: string[];
+      displayNameOverride?: string;
+    }>();
     const normMap = new Map<string, string[]>();
 
     if (category === 'sports') {
@@ -525,12 +531,10 @@ export const MiLiveTVList = ({
       ];
 
       for (const [normKey, data] of groupData.entries()) {
-        // Only process groups that resolved to generic Arabic/unknown
         const info = getCountryInfo(data.originalNames[0] || normKey);
         const isGenericArabic = info?.code === 'arabic' || info?.code === 'gulf' || (!info?.isStreamingService && !info);
         if (!isGenericArabic) continue;
 
-        // Sample first 10 channels to detect dominant service
         const groupOrigNames = normMap.get(normKey) || [];
         const sampleChannels = channels
           .filter(ch => groupOrigNames.includes(ch.group || 'Uncategorized'))
@@ -539,15 +543,15 @@ export const MiLiveTVList = ({
         for (const pattern of SERVICE_PATTERNS) {
           const matchCount = sampleChannels.filter(ch => pattern.regex.test(ch.name)).length;
           if (matchCount >= Math.min(3, sampleChannels.length * 0.3)) {
-            // Rename this group to the detected service
             const newKey = pattern.name.toLowerCase();
-            // Only rename if not already a group with that name
             if (!groupData.has(newKey)) {
               groupData.delete(normKey);
-              const logo = pattern.logoKey === 'predefined' ? pattern.predefinedLogo : 
-                           pattern.logoKey === 'second' ? (data.secondLogo || data.firstLogo) : 
-                           data.firstLogo;
-              groupData.set(newKey, { ...data, firstLogo: logo });
+              const logo = pattern.logoKey === 'predefined'
+                ? pattern.predefinedLogo
+                : pattern.logoKey === 'second'
+                  ? (data.secondLogo || data.firstLogo)
+                  : data.firstLogo;
+              groupData.set(newKey, { ...data, firstLogo: logo, displayNameOverride: pattern.name });
               normMap.delete(normKey);
               normMap.set(newKey, groupOrigNames);
             }
@@ -555,48 +559,44 @@ export const MiLiveTVList = ({
           }
         }
       }
-      // Post-process: For US sub-groups, use the 2nd channel's network name & logo
+
+      // Post-process: for US sub-groups, use the 2nd channel as the source of truth for name + logo
+      const cleanUsNetworkName = (rawName: string): string | null => {
+        let cleaned = rawName
+          .replace(/^[#\-\s|]+/, '')
+          .replace(/^(?:MYHD\s*-\s*|AM\s*\|\s*|AR\s*\|\s*|US\s*\|\s*)/i, '')
+          .trim();
+
+        const explicitMatch = cleaned.match(/\b(?:US[\s-]*)?(ABC|CBS|NBC|FOX|CW|PBS|ION|MYTV|MYTV9|TELEMUNDO|UNIVISION|UNI|TBS|TNT|AMC|A&E|FX|FXX|USA|SYFY|HBO|SHOWTIME|STARZ|DISCOVERY|HISTORY|LIFETIME|BRAVO|E!|HGTV|FOOD|TRUTV|COMEDY\s*CENTRAL|NICK|DISNEY|CARTOON\s*NETWORK)\b/i);
+        if (explicitMatch) {
+          const network = explicitMatch[1].toUpperCase().replace(/\s+/g, '');
+          return `US-${network}`;
+        }
+
+        const prefixMatch = cleaned.match(/^(US[\s-]*[A-Z0-9&+]{2,15})\b/i);
+        if (prefixMatch) {
+          return prefixMatch[1].toUpperCase().replace(/\s+/g, '-');
+        }
+
+        const firstToken = cleaned.split(/\s+/)[0]?.replace(/[^A-Za-z0-9&+\-]/g, '');
+        if (!firstToken || /^\d+$/.test(firstToken) || firstToken.length < 2) return null;
+        return `US-${firstToken.toUpperCase()}`;
+      };
+
       for (const [normKey, data] of groupData.entries()) {
-        // Only process US sub-groups (e.g., "us_abc", "us_cbs") but not the main "us" group
         if (!normKey.startsWith('us_') || normKey === 'us') continue;
-        
+
         const groupOrigNames = normMap.get(normKey) || [];
         const groupChannels = channels.filter(ch => groupOrigNames.includes(ch.group || 'Uncategorized'));
-        
-        // Use the 2nd channel (index 1), fall back to 3rd, then 1st
-        const sourceChannel = groupChannels[1] || groupChannels[2] || groupChannels[0];
+        const sourceChannel = groupChannels[1] || groupChannels.find(ch => ch.logo || ch.name?.trim()) || groupChannels[0];
         if (!sourceChannel) continue;
-        
-        // Extract clean network name from channel name
-        // e.g., "US-ABC 13 Panama City FL" → "US-ABC"
-        const cleanNetworkName = (name: string): string => {
-          // Strip common prefixes like "MYHD - ", "AM | ", etc.
-          let cleaned = name.replace(/^(?:MYHD\s*-\s*|AM\s*\|\s*)/i, '').trim();
-          // Match pattern: optional "US-" or "US " prefix + network letters, strip numbers/location after
-          const networkMatch = cleaned.match(/^(US[\s\-]?[A-Z]{2,10})/i);
-          if (networkMatch) return networkMatch[1].toUpperCase().replace(/\s+/g, '-');
-          // Fallback: take first 2 words, strip numbers and locations
-          const words = cleaned.split(/\s+/);
-          let result = words[0];
-          // If first word is very short (US, HD), include second word
-          if (result.length <= 3 && words.length > 1 && !/^\d+$/.test(words[1])) {
-            result += '-' + words[1];
-          }
-          // Remove trailing numbers and state codes
-          result = result.replace(/[\s\-]*\d+.*$/, '').replace(/\s+[A-Z]{2}$/, '');
-          return result;
-        };
-        
-        const networkName = cleanNetworkName(sourceChannel.name);
-        if (networkName && networkName.length >= 3) {
-          // Override the group's display data
-          // Use 2nd channel's logo if available
-          if (sourceChannel.logo) {
-            data.firstLogo = sourceChannel.logo;
-          }
-          // Store the network name — will be used as displayName in mergeAndSortGroups
-          // We'll set it via a custom property
-          (data as any)._usNetworkName = networkName;
+
+        const networkName = cleanUsNetworkName(sourceChannel.name);
+        if (networkName) {
+          data.displayNameOverride = networkName;
+        }
+        if (sourceChannel.logo) {
+          data.firstLogo = sourceChannel.logo;
         }
       }
     }
