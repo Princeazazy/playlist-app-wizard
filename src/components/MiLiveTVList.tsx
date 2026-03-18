@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect, useRef, memo, useCallback } from 'react';
 import { LiveMatchesTicker } from './LiveMatchesTicker';
-import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Calendar, Heart, Loader2, Mic, MicOff, Trophy } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Star, Tv, Menu, X, Play, Heart, Loader2, Mic, MicOff, Trophy } from 'lucide-react';
 import { Channel } from '@/hooks/useIPTV';
 import { useProgressiveList } from '@/hooks/useProgressiveList';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getCountryInfo, getCountryFlagUrl, getCategoryEmoji, mergeAndSortGroups, normalizeGroupName, translateGroupName } from '@/lib/countryUtils';
 import { matchBrandLogo } from '@/lib/brandLogoService';
-import { EPGGuide } from './EPGGuide';
+
 import Hls from 'hls.js';
 import { supabase } from '@/integrations/supabase/client';
 import { useBulkChannelLogos } from '@/hooks/useBulkChannelLogos';
@@ -292,7 +292,7 @@ export const MiLiveTVList = ({
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [hoveredChannel, setHoveredChannel] = useState<Channel | null>(null);
-  const [showEPG, setShowEPG] = useState(false);
+  
   const [localShowFavoritesOnly, setLocalShowFavoritesOnly] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -855,20 +855,6 @@ export const MiLiveTVList = ({
 
   return (
     <div className="h-full flex flex-col bg-background relative overflow-x-hidden">
-      {/* EPG Guide Overlay */}
-      {showEPG && (
-        <div className="absolute inset-0 z-50 bg-background">
-          <EPGGuide
-            channels={channels}
-            currentChannel={currentChannel}
-            onChannelSelect={(channel) => {
-              onChannelSelect(channel);
-              setShowEPG(false);
-            }}
-            onClose={() => setShowEPG(false)}
-          />
-        </div>
-      )}
 
       <div className="flex-1 flex overflow-hidden">
       {/* Mobile Sidebar Overlay */}
@@ -1032,16 +1018,6 @@ export const MiLiveTVList = ({
               </SelectContent>
             </Select>
             
-            {/* EPG Button */}
-            {category === 'live' && (
-              <button
-                onClick={() => setShowEPG(true)}
-                className="flex items-center gap-2 px-4 h-10 bg-card border border-border/30 rounded-xl hover:bg-card/80 transition-colors"
-              >
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground text-sm">EPG</span>
-              </button>
-            )}
           </div>
 
           {/* Time & Weather */}
