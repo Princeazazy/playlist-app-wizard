@@ -68,7 +68,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     aliases: ['epl', 'بريميير ليغ', 'بريمير ليج', 'الدوري الانجليزي', 'الدوري الإنجليزي'],
   },
   dazn: {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/DAZN_logo.svg/200px-DAZN_logo.svg.png',
+    logo: '/images/ppv-dazn.png',
     aliases: ['دازن'],
   },
   ppv: {
