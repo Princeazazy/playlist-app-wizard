@@ -12,16 +12,16 @@
 const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   // ── Streaming Platforms ──
   netflix: {
-    logo: '/images/netflix-custom.png',
+    logo: '/images/netflix-custom-v2.png',
     aliases: ['نتفلكس', 'نتفليكس', 'nflx'],
   },
   hbo: {
-    logo: '/images/hbo-max-custom.png',
+    logo: '/images/hbo-max-custom-v2.png',
     aliases: ['hbo max', 'اتش بي او', 'hbomax'],
   },
   max: {
-    logo: '/images/hbo-max-custom.png',
-    aliases: ['max tv'],
+    logo: '/images/hbo-max-custom-v2.png',
+    aliases: ['max tv', 'hbo max'],
   },
   'disney+': {
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Disney%2B_logo.svg/200px-Disney%2B_logo.svg.png',
@@ -32,16 +32,16 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     aliases: ['هولو'],
   },
   'amazon prime': {
-    logo: '/images/prime-video-custom.png',
-    aliases: ['prime video', 'amazon', 'أمازون', 'امازون', 'برايم'],
+    logo: '/images/prime-video-custom-v2.png',
+    aliases: ['prime video', 'amazon', 'amazon prime video', 'أمازون', 'امازون', 'برايم'],
   },
   'apple tv': {
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Apple_TV_Plus_Logo.svg/200px-Apple_TV_Plus_Logo.svg.png',
     aliases: ['apple tv+', 'appletv', 'ابل تي في'],
   },
   paramount: {
-    logo: '/images/paramount-plus-custom.png',
-    aliases: ['paramount+', 'paramount plus', 'باراماونت'],
+    logo: '/images/paramount-plus-custom-v2.png',
+    aliases: ['paramount+', 'paramount plus', 'paramountplus', 'باراماونت'],
   },
   peacock: {
     logo: '/images/peacock-logo.png',
@@ -134,16 +134,16 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     aliases: ['بوندسليغا', 'الدوري الالماني'],
   },
   uefa: {
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b7/UEFA_logo.svg/200px-UEFA_logo.svg.png',
-    aliases: ['يويفا', 'champions league', 'دوري الابطال'],
+    logo: '/images/uefa-logo-v2.png',
+    aliases: ['يويفا', 'champions league', 'uefa champions league', 'ucl', 'دوري الابطال'],
   },
   'league one': {
-    logo: '/images/league-one-logo.png',
-    aliases: ['efl league one', 'الدوري الأول'],
+    logo: '/images/league-one-logo-v2.png',
+    aliases: ['league 1', 'efl league one', 'efl league 1', 'efl1', 'الدوري الأول'],
   },
   'league two': {
-    logo: '/images/league-two-logo.png',
-    aliases: ['efl league two', 'الدوري الثاني'],
+    logo: '/images/league-two-logo-v2.png',
+    aliases: ['league 2', 'efl league two', 'efl league 2', 'efl2', 'الدوري الثاني'],
   },
 
   // ── General TV Networks ──
