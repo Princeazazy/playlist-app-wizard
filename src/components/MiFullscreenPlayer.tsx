@@ -20,7 +20,7 @@ import { useWeather } from '@/hooks/useWeather';
 import { useWatchProgress, saveLastPlayed } from '@/hooks/useWatchProgress';
 import { isNativeOrWebView } from '@/lib/platformDetect';
 import { useResilientPlayback } from '@/hooks/useResilientPlayback';
-import { EPGGuide } from './EPGGuide';
+
 import { WeatherIcon } from './shared/WeatherIcon';
 
 interface MiFullscreenPlayerProps {
