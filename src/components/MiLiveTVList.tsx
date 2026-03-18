@@ -920,9 +920,6 @@ export const MiLiveTVList = ({
                     <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
                       {translateGroupName(group.displayName)}
                     </p>
-                    {selectedGroup === group.name && (
-                      <p className="text-xs text-muted-foreground">{group.count} Channels</p>
-                    )}
                   </div>
                 )}
               </button>
