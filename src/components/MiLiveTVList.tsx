@@ -716,6 +716,9 @@ export const MiLiveTVList = ({
       if (flag) return flag;
     }
     
+    // Use first channel's logo as fallback (e.g., for US sub-groups)
+    if (group.firstLogo) return group.firstLogo;
+    
     // AI-resolved logo fallback
     return aiGroupLogos[group.displayName] || null;
   };
