@@ -19,34 +19,55 @@ interface EPGGuideProps {
   onClose: () => void;
 }
 
-// Generate mock EPG data (in real app, this would come from an EPG API)
-const generateMockPrograms = (channel: Channel): Program[] => {
-  const now = new Date();
-  const programs: Program[] = [];
-  const startOfDay = new Date(now);
-  startOfDay.setHours(0, 0, 0, 0);
+// Simple seeded random for stable program generation
+function seededRandom(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
 
-  const programTitles = [
-    'Morning News', 'Breakfast Show', 'Talk Show', 'Documentary',
-    'Movie: Action', 'Series Episode', 'Sports Highlights', 'Evening News',
-    'Prime Time Movie', 'Late Night Show', 'Music Hour', 'Weather Report',
-    'Kids Show', 'Drama Series', 'Comedy Hour', 'News Update'
-  ];
+function hashString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+  }
+  return Math.abs(hash);
+}
+
+const programTitles = [
+  'Morning News', 'Breakfast Show', 'Talk Show', 'Documentary',
+  'Movie: Action', 'Series Episode', 'Sports Highlights', 'Evening News',
+  'Prime Time Movie', 'Late Night Show', 'Music Hour', 'Weather Report',
+  'Kids Show', 'Drama Series', 'Comedy Hour', 'News Update'
+];
+
+const categories = ['News', 'Entertainment', 'Sports', 'Documentary'];
+
+const generateMockPrograms = (channel: Channel, date: Date): Program[] => {
+  const rand = seededRandom(hashString(channel.id + date.toDateString()));
+  const programs: Program[] = [];
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
   let currentStart = new Date(startOfDay);
   let programIndex = 0;
 
-  while (currentStart < new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)) {
-    const duration = Math.floor(Math.random() * 60 + 30) * 60 * 1000; // 30-90 mins
-    const end = new Date(currentStart.getTime() + duration);
+  while (currentStart < endOfDay) {
+    const duration = (Math.floor(rand() * 4 + 1) * 30) * 60 * 1000; // 30, 60, 90, or 120 mins
+    const end = new Date(Math.min(currentStart.getTime() + duration, endOfDay.getTime()));
+    const titleIdx = Math.floor(rand() * programTitles.length);
+    const catIdx = Math.floor(rand() * categories.length);
 
     programs.push({
       id: `${channel.id}-${programIndex}`,
-      title: programTitles[programIndex % programTitles.length],
+      title: programTitles[titleIdx],
       start: new Date(currentStart),
       end,
-      description: `${programTitles[programIndex % programTitles.length]} on ${channel.name}`,
-      category: ['News', 'Entertainment', 'Sports', 'Documentary'][Math.floor(Math.random() * 4)],
+      description: `${programTitles[titleIdx]} on ${channel.name}`,
+      category: categories[catIdx],
     });
 
     currentStart = end;
@@ -56,38 +77,41 @@ const generateMockPrograms = (channel: Channel): Program[] => {
   return programs;
 };
 
+const SLOT_WIDTH = 120; // px per 30 min
+
 export const EPGGuide = ({
   channels,
   currentChannel,
   onChannelSelect,
   onClose,
 }: EPGGuideProps) => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
   const [now, setNow] = useState(new Date());
   const timelineRef = useRef<HTMLDivElement>(null);
   const [hoveredProgram, setHoveredProgram] = useState<Program | null>(null);
 
-  // Update current time every minute
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
 
-  // Generate EPG data for visible channels
+  const visibleChannels = useMemo(() => channels.slice(0, 20), [channels]);
+
   const channelPrograms = useMemo(() => {
     const programs = new Map<string, Program[]>();
-    channels.slice(0, 20).forEach((channel) => {
-      programs.set(channel.id, generateMockPrograms(channel));
+    visibleChannels.forEach((channel) => {
+      programs.set(channel.id, generateMockPrograms(channel, selectedDate));
     });
     return programs;
-  }, [channels]);
+  }, [visibleChannels, selectedDate]);
 
-  // Time slots for the timeline (24 hours in 30-min increments)
   const timeSlots = useMemo(() => {
     const slots: Date[] = [];
     const start = new Date(selectedDate);
-    start.setHours(0, 0, 0, 0);
-
     for (let i = 0; i < 48; i++) {
       slots.push(new Date(start.getTime() + i * 30 * 60 * 1000));
     }
@@ -97,41 +121,39 @@ export const EPGGuide = ({
   // Scroll to current time on mount
   useEffect(() => {
     if (timelineRef.current) {
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      const scrollPosition = (nowMinutes / 30) * 120 - 200; // 120px per 30 min slot
-      timelineRef.current.scrollLeft = Math.max(0, scrollPosition);
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      const scrollPos = (nowMins / 30) * SLOT_WIDTH - 200;
+      timelineRef.current.scrollLeft = Math.max(0, scrollPos);
     }
   }, []);
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  const getProgramWidth = (program: Program) => {
-    const durationMs = program.end.getTime() - program.start.getTime();
-    const durationMins = durationMs / (1000 * 60);
-    return (durationMins / 30) * 120; // 120px per 30 min
-  };
-
-  const getProgramOffset = (program: Program) => {
+  const getProgramStyle = (program: Program) => {
     const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
     const offsetMs = program.start.getTime() - startOfDay.getTime();
-    const offsetMins = offsetMs / (1000 * 60);
-    return (offsetMins / 30) * 120;
+    const durationMs = program.end.getTime() - program.start.getTime();
+    const offsetMins = offsetMs / 60000;
+    const durationMins = durationMs / 60000;
+    const left = (offsetMins / 30) * SLOT_WIDTH;
+    const width = Math.max((durationMins / 30) * SLOT_WIDTH - 4, 40);
+    return { left, width };
   };
 
-  const isCurrentProgram = (program: Program) => {
-    return now >= program.start && now < program.end;
-  };
+  const isCurrentProgram = (program: Program) =>
+    now >= program.start && now < program.end;
 
-  const getCurrentTimeOffset = () => {
+  const isToday = selectedDate.toDateString() === new Date().toDateString();
+
+  const getCurrentTimeLeft = () => {
+    if (!isToday) return -999;
     const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const offsetMs = now.getTime() - startOfDay.getTime();
-    const offsetMins = offsetMs / (1000 * 60);
-    return (offsetMins / 30) * 120;
+    const offsetMins = (now.getTime() - startOfDay.getTime()) / 60000;
+    return (offsetMins / 30) * SLOT_WIDTH;
   };
+
+  const totalWidth = 48 * SLOT_WIDTH;
 
   return (
     <motion.div
@@ -152,10 +174,9 @@ export const EPGGuide = ({
           <h2 className="text-lg font-semibold text-foreground">Program Guide</h2>
         </div>
 
-        {/* Date Navigation */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setSelectedDate(new Date(selectedDate.getTime() - 24 * 60 * 60 * 1000))}
+            onClick={() => setSelectedDate(new Date(selectedDate.getTime() - 86400000))}
             className="w-8 h-8 rounded-full bg-card flex items-center justify-center hover:bg-card/80"
           >
             <ChevronLeft className="w-4 h-4 text-muted-foreground" />
@@ -164,14 +185,13 @@ export const EPGGuide = ({
             {selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
           </span>
           <button
-            onClick={() => setSelectedDate(new Date(selectedDate.getTime() + 24 * 60 * 60 * 1000))}
+            onClick={() => setSelectedDate(new Date(selectedDate.getTime() + 86400000))}
             className="w-8 h-8 rounded-full bg-card flex items-center justify-center hover:bg-card/80"
           >
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
 
-        {/* Current Time */}
         <div className="flex items-center gap-2 text-muted-foreground">
           <Clock className="w-4 h-4" />
           <span>{formatTime(now)}</span>
@@ -179,14 +199,11 @@ export const EPGGuide = ({
       </div>
 
       {/* EPG Grid */}
-      <div className="flex">
+      <div className="flex max-h-[400px]">
         {/* Channel Column */}
-        <div className="w-48 flex-shrink-0 border-r border-border/30">
-          {/* Time header spacer */}
+        <div className="w-48 flex-shrink-0 border-r border-border/30 overflow-hidden">
           <div className="h-10 border-b border-border/30 bg-card/50" />
-
-          {/* Channel list */}
-          {channels.slice(0, 20).map((channel) => (
+          {visibleChannels.map((channel) => (
             <button
               key={channel.id}
               onClick={() => onChannelSelect(channel)}
@@ -207,72 +224,71 @@ export const EPGGuide = ({
         </div>
 
         {/* Timeline */}
-        <div ref={timelineRef} className="flex-1 overflow-x-auto mi-scrollbar">
-          {/* Time slots header */}
-          <div className="flex h-10 border-b border-border/30 bg-card/50 sticky top-0">
-            {timeSlots.map((slot, idx) => (
+        <div ref={timelineRef} className="flex-1 overflow-x-auto overflow-y-hidden mi-scrollbar">
+          <div className="relative" style={{ width: totalWidth }}>
+            {/* Time slots header */}
+            <div className="flex h-10 border-b border-border/30 bg-card/50 sticky top-0 z-20">
+              {timeSlots.map((slot, idx) => (
+                <div
+                  key={idx}
+                  className="flex-shrink-0 px-2 flex items-center border-r border-border/20 text-xs text-muted-foreground"
+                  style={{ width: SLOT_WIDTH }}
+                >
+                  {formatTime(slot)}
+                </div>
+              ))}
+            </div>
+
+            {/* Current time indicator */}
+            {isToday && (
               <div
-                key={idx}
-                className="w-[120px] flex-shrink-0 px-2 flex items-center border-r border-border/20 text-xs text-muted-foreground"
+                className="absolute top-0 bottom-0 w-0.5 bg-primary z-10 pointer-events-none"
+                style={{ left: getCurrentTimeLeft() }}
               >
-                {formatTime(slot)}
+                <div className="w-3 h-3 rounded-full bg-primary -ml-[5px] -mt-0.5" />
               </div>
-            ))}
+            )}
+
+            {/* Program rows */}
+            {visibleChannels.map((channel) => {
+              const programs = channelPrograms.get(channel.id) || [];
+              return (
+                <div key={channel.id} className="relative h-16 border-b border-border/20">
+                  {programs.map((program) => {
+                    const { left, width } = getProgramStyle(program);
+                    const isCurrent = isCurrentProgram(program);
+
+                    return (
+                      <button
+                        key={program.id}
+                        onClick={() => onChannelSelect(channel)}
+                        onMouseEnter={() => setHoveredProgram(program)}
+                        onMouseLeave={() => setHoveredProgram(null)}
+                        className={`absolute top-1 bottom-1 rounded-lg px-2 py-1 text-left transition-all overflow-hidden ${
+                          isCurrent
+                            ? 'bg-primary/20 border border-primary/40 hover:bg-primary/30'
+                            : 'bg-card/80 border border-border/30 hover:bg-card'
+                        }`}
+                        style={{ left, width }}
+                      >
+                        <p className={`text-xs font-medium truncate ${isCurrent ? 'text-primary' : 'text-foreground'}`}>
+                          {program.title}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {formatTime(program.start)} - {formatTime(program.end)}
+                        </p>
+                        {isCurrent && (
+                          <div className="absolute top-1 right-1">
+                            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
-
-          {/* Current time indicator */}
-          <div
-            className="absolute top-10 bottom-0 w-0.5 bg-primary z-10"
-            style={{ left: `${192 + getCurrentTimeOffset()}px` }}
-          />
-
-          {/* Program rows */}
-          {channels.slice(0, 20).map((channel) => {
-            const programs = channelPrograms.get(channel.id) || [];
-            return (
-              <div key={channel.id} className="relative h-16 border-b border-border/20">
-                {programs.map((program) => {
-                  const width = getProgramWidth(program);
-                  const offset = getProgramOffset(program);
-                  const isCurrent = isCurrentProgram(program);
-
-                  if (offset + width < 0 || offset > timeSlots.length * 120) return null;
-
-                  return (
-                    <button
-                      key={program.id}
-                      onClick={() => onChannelSelect(channel)}
-                      onMouseEnter={() => setHoveredProgram(program)}
-                      onMouseLeave={() => setHoveredProgram(null)}
-                      className={`absolute top-1 bottom-1 rounded-lg px-2 py-1 text-left transition-all overflow-hidden ${
-                        isCurrent
-                          ? 'bg-primary/20 border border-primary/40 hover:bg-primary/30'
-                          : 'bg-card/80 border border-border/30 hover:bg-card'
-                      }`}
-                      style={{
-                        left: offset,
-                        width: Math.max(width - 4, 40),
-                      }}
-                    >
-                      <p className={`text-xs font-medium truncate ${isCurrent ? 'text-primary' : 'text-foreground'}`}>
-                        {program.title}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        {formatTime(program.start)} - {formatTime(program.end)}
-                      </p>
-
-                      {/* Now playing indicator */}
-                      {isCurrent && (
-                        <div className="absolute top-1 right-1">
-                          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
         </div>
       </div>
 
