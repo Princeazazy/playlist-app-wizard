@@ -67,6 +67,10 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/DAZN_logo.svg/200px-DAZN_logo.svg.png',
     aliases: ['دازن'],
   },
+  ppv: {
+    logo: '/images/ppv-dazn.png',
+    aliases: ['pay per view', 'pay-per-view', 'بي بي في'],
+  },
 
   // ── Arab Networks & Platforms ──
   'bein sports': {
