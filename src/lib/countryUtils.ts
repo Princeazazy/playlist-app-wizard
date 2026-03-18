@@ -818,7 +818,15 @@ export const mergeAndSortGroups = (
     const normalizedKey = normalizeGroupName(originalName);
     const sourceName = data.originalNames[0] || originalName;
     const countryInfo = getCountryInfo(sourceName);
-    const resolvedDisplayName = data.displayNameOverride || countryInfo?.name || getDisplayName(sourceName);
+    
+    // For streaming service sub-groups (e.g. "24/7 ENG"), preserve the suffix in the display name
+    let resolvedDisplayName = data.displayNameOverride || countryInfo?.name || getDisplayName(sourceName);
+    if (countryInfo?.isStreamingService && normalizedKey.includes('_')) {
+      const suffix = normalizedKey.split('_').slice(1).join(' ').toUpperCase();
+      if (suffix) {
+        resolvedDisplayName = `${countryInfo.name} ${suffix}`;
+      }
+    }
     
     const existing = mergedGroups.get(normalizedKey);
     if (existing) {
