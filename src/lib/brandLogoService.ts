@@ -16,11 +16,11 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     aliases: ['نتفلكس', 'نتفليكس', 'nflx'],
   },
   hbo: {
-    logo: '/images/hbo-max-custom-v2.png',
+    logo: '/images/hbo-max-logo.png',
     aliases: ['hbo max', 'اتش بي او', 'hbomax'],
   },
   max: {
-    logo: '/images/hbo-max-custom-v2.png',
+    logo: '/images/hbo-max-logo.png',
     aliases: ['max tv', 'hbo max'],
   },
   'disney+': {
