@@ -788,9 +788,11 @@ export const MiMediaGrid = ({
   const groupDisplayNameMap = useMemo(() => {
     const map = new Map<string, string>();
     const displayNameCounts = new Map<string, string[]>();
+    const allRawGroups = new Set<string>();
     items.forEach((item) => {
       const group = getEffectiveGroup(item);
       if (!map.has(group) && !isIrrelevantGroup(group)) {
+        allRawGroups.add(group);
         const shortened = shortenGroupName(group);
         map.set(group, shortened);
         const existing = displayNameCounts.get(shortened) || [];
@@ -798,6 +800,9 @@ export const MiMediaGrid = ({
         displayNameCounts.set(shortened, existing);
       }
     });
+    // Debug: log all unique raw group names for series
+    console.log(`[GROUP DEBUG] All unique raw groups (${allRawGroups.size}):`, Array.from(allRawGroups).sort());
+    console.log(`[GROUP DEBUG] Display name mappings:`, Array.from(map.entries()).map(([k,v]) => `"${k}" → "${v}"`));
     // If multiple raw groups map to the same display name, use the raw group name instead (with light cleanup)
     displayNameCounts.forEach((rawNames, displayName) => {
       if (rawNames.length > 1) {
