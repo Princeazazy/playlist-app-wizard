@@ -247,7 +247,7 @@ async function searchTMDBChannelArtwork(channelName: string, tmdbKey: string): P
         );
         const firstWithLogo = data.results.find((r: any) => r.logo_path);
         const match = exact || firstWithLogo;
-        if (match?.logo_path) return `${TMDB_IMAGE_BASE}/w300${match.logo_path}`;
+        if (match?.logo_path) return `${TMDB_IMAGE_BASE}/original${match.logo_path}`;
       }
     }
 
