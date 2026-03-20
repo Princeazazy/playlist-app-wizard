@@ -324,6 +324,7 @@ export const useResilientPlayback = ({
       const candidateUrl = sourceCandidates[candidateIndex++];
       const isHls = isLikelyHlsUrl(candidateUrl);
       const isProxy = isProxyWrappedUrl(candidateUrl);
+      const isAndroid = /android/i.test(navigator.userAgent);
       const preferNativeMediaElement = nativeEnvironment && !isProxy;
 
       teardownPlayback();
