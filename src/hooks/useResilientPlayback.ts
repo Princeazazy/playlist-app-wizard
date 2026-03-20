@@ -325,7 +325,9 @@ export const useResilientPlayback = ({
       const isHls = isLikelyHlsUrl(candidateUrl);
       const isProxy = isProxyWrappedUrl(candidateUrl);
       const isAndroid = /android/i.test(navigator.userAgent);
-      const preferNativeMediaElement = nativeEnvironment && !isProxy;
+      // Android WebView does NOT support HLS natively — only iOS/Safari does.
+      // On Android native, we must still use HLS.js for .m3u8 streams.
+      const preferNativeMediaElement = nativeEnvironment && !isProxy && !(isAndroid && isHls && Hls.isSupported());
 
       teardownPlayback();
       setError(null);
