@@ -265,7 +265,7 @@ async function searchTMDBChannelArtwork(channelName: string, tmdbKey: string): P
           }))
           .sort((a: any, b: any) => b.score - a.score)[0];
 
-        if (best?.poster_path) return `${TMDB_IMAGE_BASE}/w300${best.poster_path}`;
+        if (best?.poster_path) return `${TMDB_IMAGE_BASE}/original${best.poster_path}`;
       }
     }
   } catch {
