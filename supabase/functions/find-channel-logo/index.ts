@@ -219,8 +219,8 @@ async function searchTMDBTitleArtwork(
         .filter((r: any) => r.score >= 30) // Minimum threshold to avoid wild mismatches
         .sort((a: any, b: any) => b.score - a.score)[0];
 
-      if (best?.poster_path) return `${TMDB_IMAGE_BASE}/w500${best.poster_path}`;
-      if (best?.backdrop_path) return `${TMDB_IMAGE_BASE}/w780${best.backdrop_path}`;
+      if (best?.poster_path) return `${TMDB_IMAGE_BASE}/original${best.poster_path}`;
+      if (best?.backdrop_path) return `${TMDB_IMAGE_BASE}/original${best.backdrop_path}`;
     } catch {
       // Continue to next fallback source
     }
