@@ -219,8 +219,8 @@ async function searchTMDBTitleArtwork(
         .filter((r: any) => r.score >= 30) // Minimum threshold to avoid wild mismatches
         .sort((a: any, b: any) => b.score - a.score)[0];
 
-      if (best?.poster_path) return `${TMDB_IMAGE_BASE}/w500${best.poster_path}`;
-      if (best?.backdrop_path) return `${TMDB_IMAGE_BASE}/w780${best.backdrop_path}`;
+      if (best?.poster_path) return `${TMDB_IMAGE_BASE}/original${best.poster_path}`;
+      if (best?.backdrop_path) return `${TMDB_IMAGE_BASE}/original${best.backdrop_path}`;
     } catch {
       // Continue to next fallback source
     }
@@ -247,7 +247,7 @@ async function searchTMDBChannelArtwork(channelName: string, tmdbKey: string): P
         );
         const firstWithLogo = data.results.find((r: any) => r.logo_path);
         const match = exact || firstWithLogo;
-        if (match?.logo_path) return `${TMDB_IMAGE_BASE}/w300${match.logo_path}`;
+        if (match?.logo_path) return `${TMDB_IMAGE_BASE}/original${match.logo_path}`;
       }
     }
 
@@ -265,7 +265,7 @@ async function searchTMDBChannelArtwork(channelName: string, tmdbKey: string): P
           }))
           .sort((a: any, b: any) => b.score - a.score)[0];
 
-        if (best?.poster_path) return `${TMDB_IMAGE_BASE}/w300${best.poster_path}`;
+        if (best?.poster_path) return `${TMDB_IMAGE_BASE}/original${best.poster_path}`;
       }
     }
   } catch {
