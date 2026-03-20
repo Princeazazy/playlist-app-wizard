@@ -511,6 +511,9 @@ export const useResilientPlayback = ({
       const startPlayback = async () => {
         try {
           video.muted = true;
+          video.playsInline = true;
+          video.autoplay = false;
+          video.preload = 'auto';
           await video.play();
           if (!forceMuted) {
             video.muted = false;
@@ -527,6 +530,9 @@ export const useResilientPlayback = ({
       };
 
       if (preferNativeMediaElement) {
+        video.playsInline = true;
+        video.autoplay = false;
+        video.preload = 'auto';
         video.src = candidateUrl;
         void startPlayback();
         return;
