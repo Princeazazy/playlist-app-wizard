@@ -1,8 +1,8 @@
 import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Capacitor } from '@capacitor/core';
 import Hls from 'hls.js';
 import { supabase } from '@/integrations/supabase/client';
 import { Channel } from '@/hooks/useIPTV';
+import { isNativeOrWebView } from '@/lib/platformDetect';
 
 export type PlaybackState = 'idle' | 'connecting' | 'buffering' | 'playing' | 'reconnecting' | 'failed';
 
@@ -39,7 +39,9 @@ const isLikelyHlsUrl = (url: string): boolean => {
       const decoded = decodeURIComponent(inner);
       return /\.m3u8(\?.*)?$/i.test(decoded) || /(?:^|[?&])output=(m3u8|hls)\b/i.test(decoded);
     }
-  } catch { /* not a valid URL, skip */ }
+  } catch {
+    /* not a valid URL, skip */
+  }
   return false;
 };
 
@@ -51,10 +53,6 @@ const isProxyWrappedUrl = (url: string): boolean => {
     return false;
   }
 };
-
-const isTsLikeUrl = (url: string): boolean => (
-  /\/live\/.+\.ts(\?.*)?$/i.test(url) || /(?:^|[?&])output=ts\b/i.test(url)
-);
 
 /** Non-web-playable container formats */
 const NON_WEB_EXTENSIONS = /\.(mkv|avi|wmv|flv|mov|webm|divx|rmvb|3gp)(\?.*)?$/i;
@@ -109,6 +107,7 @@ export const useResilientPlayback = ({
   const [manualRetryNonce, setManualRetryNonce] = useState(0);
 
   const hlsRef = useRef<Hls | null>(null);
+  const nativeEnvironment = useMemo(() => isNativeOrWebView(), []);
 
   const log = useCallback((event: string, details?: Record<string, unknown>) => {
     console.info(`[${logPrefix}] ${event}`, {
@@ -175,7 +174,7 @@ export const useResilientPlayback = ({
       const isHttps = variant.startsWith('https://');
       const isHls = isLikelyHlsUrl(variant);
 
-      if (channel.isLocal || Capacitor.isNativePlatform()) {
+      if (channel.isLocal || nativeEnvironment) {
         addCandidate(variant, 'direct');
         continue;
       }
@@ -201,15 +200,15 @@ export const useResilientPlayback = ({
       sourceUrl: base.slice(0, 180),
       variantCount: variants.length,
       candidateCount: finalCandidates.length,
-      variants: variants.map(v => v.slice(0, 120)),
-      candidates: finalCandidates.map(v => v.slice(0, 140)),
+      nativeEnvironment,
+      variants: variants.map((v) => v.slice(0, 120)),
+      candidates: finalCandidates.map((v) => v.slice(0, 140)),
     });
 
     return finalCandidates;
-  }, [channel.isLocal, channel.url, log, streamProxyUrl]);
+  }, [channel.isLocal, channel.url, log, nativeEnvironment, streamProxyUrl]);
 
   const retryPlayback = useCallback(() => {
-    // Immediate UI reset so retry action feels responsive.
     setError(null);
     setRetryCount(0);
     setPlaybackState('connecting');
@@ -309,6 +308,8 @@ export const useResilientPlayback = ({
 
       const candidateUrl = sourceCandidates[candidateIndex++];
       const isHls = isLikelyHlsUrl(candidateUrl);
+      const isProxy = isProxyWrappedUrl(candidateUrl);
+      const preferNativeMediaElement = nativeEnvironment && !isProxy;
 
       teardownPlayback();
       setError(null);
@@ -316,7 +317,7 @@ export const useResilientPlayback = ({
       setPlaybackState(reconnectCycle > 0 ? 'reconnecting' : 'connecting');
 
       const streamType = getStreamType(candidateUrl);
-      const resolvedProtocol = isProxyWrappedUrl(candidateUrl)
+      const resolvedProtocol = isProxy
         ? 'PROXY'
         : candidateUrl.startsWith('https://')
           ? 'HTTPS'
@@ -334,7 +335,9 @@ export const useResilientPlayback = ({
         sourceUrl: channel.url.slice(0, 200),
         finalPlaybackUrl: candidateUrl.slice(0, 200),
         protocol: resolvedProtocol,
-        isProxy: isProxyWrappedUrl(candidateUrl),
+        isProxy,
+        nativeEnvironment,
+        playbackEngine: preferNativeMediaElement ? 'native-video' : isHls ? 'hls.js' : 'html5-video',
       });
 
       let switchedCandidate = false;
@@ -492,18 +495,14 @@ export const useResilientPlayback = ({
 
       const startPlayback = async () => {
         try {
-          // Start muted to satisfy autoplay policy, then unmute
           video.muted = true;
           await video.play();
-          // Unmute after successful play — works because play() was user-gesture-initiated
-          // or the muted autoplay succeeded
           if (!forceMuted) {
             video.muted = false;
           }
         } catch (playError) {
           const errorName = (playError as { name?: string })?.name;
           if (errorName === 'NotAllowedError') {
-            // Even muted autoplay failed — need user gesture
             fail('Autoplay blocked by browser. Tap retry to start playback.', 'autoplay_blocked');
             return;
           }
@@ -511,6 +510,12 @@ export const useResilientPlayback = ({
           moveNext('play_call_failed', { errorName, error: String(playError) });
         }
       };
+
+      if (preferNativeMediaElement) {
+        video.src = candidateUrl;
+        void startPlayback();
+        return;
+      }
 
       if (isHls && Hls.isSupported()) {
         const hls = new Hls({
@@ -605,13 +610,8 @@ export const useResilientPlayback = ({
         return;
       }
 
-      if (video.canPlayType('application/vnd.apple.mpegurl') || !isHls) {
-        video.src = candidateUrl;
-        void startPlayback();
-        return;
-      }
-
-      moveNext('unsupported_format');
+      video.src = candidateUrl;
+      void startPlayback();
     };
 
     setRetryCount(0);
@@ -632,6 +632,7 @@ export const useResilientPlayback = ({
     log,
     manualRetryNonce,
     maxReconnectCycles,
+    nativeEnvironment,
     onManifestParsed,
     onSubtitleTracksUpdated,
     sourceCandidates,
