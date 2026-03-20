@@ -472,6 +472,7 @@ export const useResilientPlayback = ({
         video.removeEventListener('timeupdate', onTimeUpdate);
       };
 
+      const effectiveStartupTimeout = nativeEnvironment ? Math.max(startupTimeoutMs, 15000) : startupTimeoutMs;
       startupWatchdog = window.setTimeout(() => {
         if (canceled || switchedCandidate) return;
         const noStartupProgress = video.readyState < 2 && video.currentTime < 0.2 && video.videoWidth === 0;
@@ -479,7 +480,7 @@ export const useResilientPlayback = ({
           log('startup_timeout', { candidate: candidateUrl.slice(0, 160) });
           moveNext('startup_timeout');
         }
-      }, startupTimeoutMs);
+      }, effectiveStartupTimeout);
 
       stalledMonitor = window.setInterval(() => {
         if (canceled || switchedCandidate) return;
