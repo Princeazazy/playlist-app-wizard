@@ -70,6 +70,19 @@ const swapExtension = (url: string, newExt: string): string => {
   return url.replace(/\.[a-z0-9]{2,5}(\?.*)?$/i, `.${newExt}$1`);
 };
 
+const getUrlExtension = (url: string): string | null => {
+  try {
+    const parsed = new URL(url);
+    const match = parsed.pathname.match(/\.([a-z0-9]{2,5})$/i);
+    return match?.[1]?.toLowerCase() ?? null;
+  } catch {
+    const match = url.match(/\.([a-z0-9]{2,5})(?:\?.*)?$/i);
+    return match?.[1]?.toLowerCase() ?? null;
+  }
+};
+
+const WEB_PLAYABLE_EXTENSIONS = new Set(['m3u8', 'mp4', 'm4v', 'webm', 'mpd']);
+
 const getRetryDelay = (cycle: number) => RETRY_BACKOFF_MS[Math.min(Math.max(cycle - 1, 0), RETRY_BACKOFF_MS.length - 1)];
 
 const getBufferedSeconds = (video: HTMLVideoElement): number => {
@@ -128,6 +141,8 @@ export const useResilientPlayback = ({
     if (!base) return [];
 
     const streamType = getStreamType(base);
+    const baseExtension = getUrlExtension(base);
+    const hasKnownWebPlayableExtension = baseExtension ? WEB_PLAYABLE_EXTENSIONS.has(baseExtension) : false;
     const variants: string[] = [];
     const finalCandidates: string[] = [];
 
@@ -145,28 +160,27 @@ export const useResilientPlayback = ({
     };
 
     if (streamType === 'live') {
-      if (isLikelyHlsUrl(base)) {
-        addVariant(base);
-      } else {
-        addVariant(base);
+      addVariant(base);
+      if (!nativeEnvironment && !channel.isLocal && !isLikelyHlsUrl(base) && baseExtension !== 'm3u8') {
         addVariant(swapExtension(base, 'm3u8'));
       }
     } else if (streamType === 'movie' || streamType === 'series') {
-      if (NON_WEB_EXTENSIONS.test(base)) {
-        addVariant(swapExtension(base, 'mp4'));
-        addVariant(swapExtension(base, 'm3u8'));
-      } else {
-        addVariant(base);
-        if (!/\.mp4(\?.*)?$/i.test(base) && !isLikelyHlsUrl(base)) {
+      addVariant(base);
+
+      if (!nativeEnvironment && !channel.isLocal) {
+        if (NON_WEB_EXTENSIONS.test(base)) {
           addVariant(swapExtension(base, 'mp4'));
-        }
-        if (!isLikelyHlsUrl(base)) {
+          addVariant(swapExtension(base, 'm3u8'));
+        } else if (!hasKnownWebPlayableExtension && !isLikelyHlsUrl(base)) {
+          addVariant(swapExtension(base, 'mp4'));
           addVariant(swapExtension(base, 'm3u8'));
         }
       }
     } else {
       addVariant(base);
-      if (!isLikelyHlsUrl(base)) addVariant(swapExtension(base, 'm3u8'));
+      if (!nativeEnvironment && !channel.isLocal && !isLikelyHlsUrl(base) && !baseExtension) {
+        addVariant(swapExtension(base, 'm3u8'));
+      }
     }
 
     for (const variant of variants) {
@@ -198,6 +212,7 @@ export const useResilientPlayback = ({
     log('candidates_generated', {
       streamType,
       sourceUrl: base.slice(0, 180),
+      baseExtension,
       variantCount: variants.length,
       candidateCount: finalCandidates.length,
       nativeEnvironment,
