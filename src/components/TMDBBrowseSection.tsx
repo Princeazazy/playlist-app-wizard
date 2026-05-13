@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
-import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon } from 'lucide-react';
+import { Play, Star, Film, Tv, TrendingUp, Loader2, Moon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTMDB, TMDBItem } from '@/hooks/useTMDB';
 import { useTMDBPosters } from '@/hooks/useTMDBPosters';
 import { Channel } from '@/hooks/useIPTV';
