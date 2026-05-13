@@ -145,31 +145,151 @@ async function fetchPage(url: string): Promise<string> {
   return response.text();
 }
 
+// ===== ESPN scoreboard integration for NBA & NFL =====
+function formatEspnDate(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
+function dayLabelFor(offsetDays: number): string {
+  if (offsetDays === 0) return 'today';
+  if (offsetDays === 1) return 'tomorrow';
+  if (offsetDays === -1) return 'yesterday';
+  return 'today';
+}
+
+async function fetchEspn(sportPath: string, leagueLabel: string, offsetDays: number): Promise<Match[]> {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + offsetDays);
+  const url = `https://site.api.espn.com/apis/site/v2/sports/${sportPath}/scoreboard?dates=${formatEspnDate(date)}`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'application/json',
+      },
+    });
+    if (!res.ok) {
+      console.warn(`ESPN ${leagueLabel} ${offsetDays} failed: ${res.status}`);
+      return [];
+    }
+    const json = await res.json();
+    const events = Array.isArray(json?.events) ? json.events : [];
+    const out: Match[] = [];
+
+    for (const ev of events) {
+      try {
+        const comp = ev?.competitions?.[0];
+        if (!comp) continue;
+        const competitors = comp.competitors || [];
+        const home = competitors.find((c: any) => c.homeAway === 'home') || competitors[0];
+        const away = competitors.find((c: any) => c.homeAway === 'away') || competitors[1];
+        if (!home || !away) continue;
+
+        const stateRaw: string = comp.status?.type?.state || ev.status?.type?.state || 'pre';
+        const completed: boolean = !!(comp.status?.type?.completed || ev.status?.type?.completed);
+        let status: string = 'upcoming';
+        if (completed || stateRaw === 'post') status = 'finished';
+        else if (stateRaw === 'in') status = 'live';
+        else status = 'not_started';
+
+        const statusText: string = comp.status?.type?.shortDetail || ev.status?.type?.shortDetail || '';
+
+        // Kickoff time HH:MM (local UTC)
+        const dt = ev.date ? new Date(ev.date) : null;
+        const time = dt
+          ? `${String(dt.getUTCHours()).padStart(2, '0')}:${String(dt.getUTCMinutes()).padStart(2, '0')}`
+          : '';
+        const isoDate = dt ? dt.toISOString().slice(0, 10) : '';
+
+        const homeScore = home.score ?? '0';
+        const awayScore = away.score ?? '0';
+        const score = `${homeScore}-${awayScore}`;
+
+        // Broadcasts → channels
+        const broadcasts: string[] = [];
+        const bArr = comp.broadcasts || [];
+        for (const b of bArr) {
+          const names: string[] = b?.names || [];
+          for (const n of names) if (n && !broadcasts.includes(n)) broadcasts.push(n);
+        }
+        if (broadcasts.length === 0 && Array.isArray(comp.geoBroadcasts)) {
+          for (const gb of comp.geoBroadcasts) {
+            const n = gb?.media?.shortName;
+            if (n && !broadcasts.includes(n)) broadcasts.push(n);
+          }
+        }
+
+        out.push({
+          homeTeam: home.team?.displayName || home.team?.name || '',
+          awayTeam: away.team?.displayName || away.team?.name || '',
+          homeLogo: home.team?.logo || '',
+          awayLogo: away.team?.logo || '',
+          time,
+          score,
+          status,
+          statusText,
+          channels: broadcasts,
+          commentator: '',
+          league: leagueLabel,
+          date: isoDate,
+          dayLabel: dayLabelFor(offsetDays),
+        });
+      } catch (e) {
+        console.error(`Error parsing ESPN ${leagueLabel} event:`, e);
+      }
+    }
+    return out;
+  } catch (e) {
+    console.warn(`ESPN ${leagueLabel} ${offsetDays} error:`, (e as Error).message);
+    return [];
+  }
+}
+
+async function fetchAllEspn(): Promise<Match[]> {
+  const sports: Array<[string, string]> = [
+    ['basketball/nba', 'NBA'],
+    ['football/nfl', 'NFL'],
+  ];
+  const offsets = [0, 1, -1];
+  const tasks: Promise<Match[]>[] = [];
+  for (const [path, label] of sports) {
+    for (const off of offsets) tasks.push(fetchEspn(path, label, off));
+  }
+  const results = await Promise.all(tasks);
+  return results.flat();
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Fetching live matches from yalla-shotos.live...');
+    console.log('Fetching live matches from yalla-shotos.live + ESPN (NBA/NFL)...');
 
     const baseUrl = 'https://www.yalla-shotos.live';
 
-    // Fetch all three day pages in parallel
-    const [yesterdayHtml, todayHtml, tomorrowHtml] = await Promise.all([
+    // Fetch all three day pages in parallel + ESPN NBA/NFL
+    const [yesterdayHtml, todayHtml, tomorrowHtml, espnMatches] = await Promise.all([
       fetchPage(`${baseUrl}/matches-yesterday/`).catch(e => { console.warn('Yesterday fetch failed:', e.message); return ''; }),
       fetchPage(`${baseUrl}/matches-today/`).catch(e => { console.warn('Today fetch failed:', e.message); return ''; }),
       fetchPage(`${baseUrl}/matches-tomorrow/`).catch(e => { console.warn('Tomorrow fetch failed:', e.message); return ''; }),
+      fetchAllEspn().catch(e => { console.warn('ESPN fetch failed:', e.message); return [] as Match[]; }),
     ]);
 
     const yesterdayMatches = yesterdayHtml ? parseMatches(yesterdayHtml, 'yesterday') : [];
     const todayMatches = todayHtml ? parseMatches(todayHtml, 'today') : [];
     const tomorrowMatches = tomorrowHtml ? parseMatches(tomorrowHtml, 'tomorrow') : [];
 
-    // Combine: today first, then tomorrow, then yesterday
-    const allMatches = [...todayMatches, ...tomorrowMatches, ...yesterdayMatches];
+    // Combine: today first, then tomorrow, then yesterday, then ESPN (NBA/NFL)
+    const allMatches = [...todayMatches, ...tomorrowMatches, ...yesterdayMatches, ...espnMatches];
 
-    console.log(`Parsed ${allMatches.length} matches (yesterday: ${yesterdayMatches.length}, today: ${todayMatches.length}, tomorrow: ${tomorrowMatches.length})`);
+    const nbaCount = espnMatches.filter(m => m.league === 'NBA').length;
+    const nflCount = espnMatches.filter(m => m.league === 'NFL').length;
+    console.log(`Parsed ${allMatches.length} matches (yesterday: ${yesterdayMatches.length}, today: ${todayMatches.length}, tomorrow: ${tomorrowMatches.length}, NBA: ${nbaCount}, NFL: ${nflCount})`);
 
     return new Response(
       JSON.stringify({ success: true, matches: allMatches, fetchedAt: new Date().toISOString() }),
