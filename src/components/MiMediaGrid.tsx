@@ -692,8 +692,8 @@ export const MiMediaGrid = ({
     const g = groupName.toLowerCase();
 
     // Helper: extract year from group name
-    const yearMatch = g.match(/\b(19|20)\d{2}\b/);
-    const year = yearMatch ? parseInt(yearMatch[0]) : 0;
+    const yearMatches = [...g.matchAll(/\b(?:19|20)\d{2}\b/g)].map(m => parseInt(m[0]));
+    const year = yearMatches.length ? Math.max(...yearMatches) : 0;
 
     const isArabic = g.includes('arab') || groupName.includes('عربي') || groupName.includes('افلام') || groupName.includes('مسلسل') ||
       groupName.includes('مصر') || g.includes('egypt') || groupName.includes('خليج') || g.includes('gulf') || g.includes('khalij') ||
