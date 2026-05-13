@@ -966,10 +966,15 @@ export const MiMediaGrid = ({
       const itemDisplayName = groupDisplayNameMap.get(itemEffectiveGroup) || shortenGroupName(itemEffectiveGroup);
       const matchesGroup = searchQuery.trim() ? true : (effectiveGroupName === 'all' || matchingRawNames.includes(itemEffectiveGroup) || itemDisplayName === effectiveGroupName);
       const matchesFavorites = !showFavoritesOnly || favorites.has(item.id);
-      // Latest bucket: drop items with a known release year older than current-1
-      if (isLatestBucket && item.year) {
-        const y = parseInt(item.year, 10);
-        if (y && y < minLatestYear) return false;
+      // Latest bucket: strict — require a determinable year within the window.
+      if (isLatestBucket) {
+        let y: number | null = null;
+        if (item.year) {
+          const parsed = parseInt(item.year, 10);
+          if (parsed) y = parsed;
+        }
+        if (!y) y = extractYearFromName(item.name);
+        if (!y || y < minLatestYear) return false;
       }
       return matchesSearch && matchesGroup && matchesFavorites;
     });
