@@ -248,6 +248,130 @@ async function fetchEspn(sportPath: string, leagueLabel: string, offsetDays: num
   }
 }
 
+// ===== box.live boxing PPV schedule =====
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#039;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
+function cleanText(s: string): string {
+  return decodeEntities(s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+}
+
+function boxingDayLabel(dateISO: string): string {
+  if (!dateISO) return 'today';
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const target = new Date(dateISO + 'T00:00:00Z');
+  const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
+  if (diff <= -1) return 'yesterday';
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'tomorrow';
+  return 'tomorrow'; // future fights surface under tomorrow tab
+}
+
+function parseBoxingDate(heading: string): string {
+  // e.g. "Saturday, 16 May 2026"
+  const m = heading.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+  if (!m) return '';
+  const months: Record<string, string> = {
+    january: '01', february: '02', march: '03', april: '04', may: '05', june: '06',
+    july: '07', august: '08', september: '09', october: '10', november: '11', december: '12',
+  };
+  const mm = months[m[2].toLowerCase()];
+  if (!mm) return '';
+  return `${m[3]}-${mm}-${m[1].padStart(2, '0')}`;
+}
+
+async function fetchBoxing(): Promise<Match[]> {
+  try {
+    const html = await fetchPage('https://box.live/us-boxing-tv-schedule/');
+    // Restrict to the full text schedule section (cleaner structure)
+    const sectionStart = html.indexOf('id="full-text-schedule"');
+    const segment = sectionStart >= 0 ? html.slice(sectionStart) : html;
+
+    const out: Match[] = [];
+    const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+
+    // Split by date heading <h4 class="h3 mb-2"> ... </h4>
+    const dayBlocks = segment.split(/<h4[^>]*class="h3[^"]*"[^>]*>/);
+    for (let i = 1; i < dayBlocks.length; i++) {
+      const block = dayBlocks[i];
+      const headingEnd = block.indexOf('</h4>');
+      if (headingEnd < 0) continue;
+      const heading = cleanText(block.slice(0, headingEnd));
+      const isoDate = parseBoxingDate(heading);
+      if (!isoDate) continue;
+
+      const target = new Date(isoDate + 'T00:00:00Z');
+      const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000);
+      // Skip past fights older than 1 day
+      if (diffDays < -1) continue;
+
+      const dayBody = block.slice(headingEnd);
+      // Each card
+      const cards = dayBody.split(/<div class="text-schedule[^"]*"/);
+      for (let j = 1; j < cards.length; j++) {
+        const card = cards[j];
+        // Stop card at next h4 (next day) — already split, but defensive
+        const nextDay = card.indexOf('<h4');
+        const cardHtml = nextDay >= 0 ? card.slice(0, nextDay) : card;
+
+        const titleM = cardHtml.match(/<h5[^>]*class="text-schedule__fight-title[^"]*"[^>]*>([\s\S]*?)<\/h5>/);
+        if (!titleM) continue;
+        const title = cleanText(titleM[1]);
+        const vsParts = title.split(/\s+vs\s+/i);
+        if (vsParts.length < 2) continue;
+        const homeTeam = vsParts[0].trim();
+        const awayTeam = vsParts.slice(1).join(' vs ').trim();
+
+        const venueM = cardHtml.match(/<span[^>]*class="d-block text-schedule__venue"[^>]*>([\s\S]*?)<\/span>/);
+        const venue = venueM ? cleanText(venueM[1]) : '';
+
+        const tvM = cardHtml.match(/<strong>\s*US TV:\s*<\/strong>([\s\S]*?)<\/span>/i);
+        const channels: string[] = [];
+        if (tvM) {
+          const tvText = cleanText(tvM[1]);
+          for (const ch of tvText.split(/[,/]| and /i)) {
+            const c = ch.trim();
+            if (c) channels.push(c);
+          }
+        }
+
+        let status = 'upcoming';
+        if (diffDays < 0) status = 'finished';
+        else if (diffDays === 0) status = 'upcoming';
+        else status = 'not_started';
+
+        out.push({
+          homeTeam,
+          awayTeam,
+          homeLogo: '',
+          awayLogo: '',
+          time: '',
+          score: 'vs',
+          status,
+          statusText: venue,
+          channels,
+          commentator: '',
+          league: 'PPV Boxing',
+          date: isoDate,
+          dayLabel: boxingDayLabel(isoDate),
+        });
+      }
+    }
+    return out;
+  } catch (e) {
+    console.warn('Boxing fetch failed:', (e as Error).message);
+    return [];
+  }
+}
+
 async function fetchAllEspn(): Promise<Match[]> {
   const sports: Array<[string, string]> = [
     ['basketball/nba', 'NBA'],
@@ -272,24 +396,25 @@ Deno.serve(async (req) => {
 
     const baseUrl = 'https://www.yalla-shotos.live';
 
-    // Fetch all three day pages in parallel + ESPN NBA/NFL
-    const [yesterdayHtml, todayHtml, tomorrowHtml, espnMatches] = await Promise.all([
+    // Fetch all three day pages in parallel + ESPN NBA/NFL + box.live PPV Boxing
+    const [yesterdayHtml, todayHtml, tomorrowHtml, espnMatches, boxingMatches] = await Promise.all([
       fetchPage(`${baseUrl}/matches-yesterday/`).catch(e => { console.warn('Yesterday fetch failed:', e.message); return ''; }),
       fetchPage(`${baseUrl}/matches-today/`).catch(e => { console.warn('Today fetch failed:', e.message); return ''; }),
       fetchPage(`${baseUrl}/matches-tomorrow/`).catch(e => { console.warn('Tomorrow fetch failed:', e.message); return ''; }),
       fetchAllEspn().catch(e => { console.warn('ESPN fetch failed:', e.message); return [] as Match[]; }),
+      fetchBoxing().catch(e => { console.warn('Boxing fetch failed:', e.message); return [] as Match[]; }),
     ]);
 
     const yesterdayMatches = yesterdayHtml ? parseMatches(yesterdayHtml, 'yesterday') : [];
     const todayMatches = todayHtml ? parseMatches(todayHtml, 'today') : [];
     const tomorrowMatches = tomorrowHtml ? parseMatches(tomorrowHtml, 'tomorrow') : [];
 
-    // Combine: today first, then tomorrow, then yesterday, then ESPN (NBA/NFL)
-    const allMatches = [...todayMatches, ...tomorrowMatches, ...yesterdayMatches, ...espnMatches];
+    // Combine: today first, then tomorrow, then yesterday, then ESPN (NBA/NFL), then PPV Boxing
+    const allMatches = [...todayMatches, ...tomorrowMatches, ...yesterdayMatches, ...espnMatches, ...boxingMatches];
 
     const nbaCount = espnMatches.filter(m => m.league === 'NBA').length;
     const nflCount = espnMatches.filter(m => m.league === 'NFL').length;
-    console.log(`Parsed ${allMatches.length} matches (yesterday: ${yesterdayMatches.length}, today: ${todayMatches.length}, tomorrow: ${tomorrowMatches.length}, NBA: ${nbaCount}, NFL: ${nflCount})`);
+    console.log(`Parsed ${allMatches.length} matches (yesterday: ${yesterdayMatches.length}, today: ${todayMatches.length}, tomorrow: ${tomorrowMatches.length}, NBA: ${nbaCount}, NFL: ${nflCount}, Boxing PPV: ${boxingMatches.length})`);
 
     return new Response(
       JSON.stringify({ success: true, matches: allMatches, fetchedAt: new Date().toISOString() }),
