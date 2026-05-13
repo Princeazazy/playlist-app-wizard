@@ -63,8 +63,20 @@ export const LoginScreen = ({ onLogin }: LoginScreenProps) => {
       });
 
       if (fnError) {
-        const context = (fnError as any).context;
-        throw new Error(context?.error || fnError.message);
+        let msg = fnError.message;
+        try {
+          const ctx = (fnError as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.error) msg = body.error;
+          } else if (ctx && typeof ctx.text === 'function') {
+            const txt = await ctx.text();
+            try { const j = JSON.parse(txt); if (j?.error) msg = j.error; } catch {}
+          } else if (ctx?.error) {
+            msg = ctx.error;
+          }
+        } catch {}
+        throw new Error(msg);
       }
       if (data?.error) throw new Error(data.error);
 
