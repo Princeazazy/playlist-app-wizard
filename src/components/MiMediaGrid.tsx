@@ -678,62 +678,157 @@ export const MiMediaGrid = ({
     return windows.some(([s, e]) => now >= s && now <= e);
   }, []);
 
-  // Smart sorting for groups: Ramadan 2026 → Arabic (newest first) → English → Foreign → Anime → Platforms → Regional → Misc → Songs
+  // Smart sorting for groups
   const getGroupSortPriority = (groupName: string): number => {
     const g = groupName.toLowerCase();
-    
+
     // Helper: extract year from group name
     const yearMatch = g.match(/\b(19|20)\d{2}\b/);
     const year = yearMatch ? parseInt(yearMatch[0]) : 0;
-    
+
+    const isArabic = g.includes('arab') || groupName.includes('عربي') || groupName.includes('افلام') || groupName.includes('مسلسل') ||
+      groupName.includes('مصر') || g.includes('egypt') || groupName.includes('خليج') || g.includes('gulf') || g.includes('khalij') ||
+      groupName.includes('مغرب') || g.includes('maghreb') || g.includes('levant') || groupName.includes('شام');
+    const isEnglish = g.includes('english') || g.includes('vod en') || !!g.match(/\ben\b/) || g.includes(' uk ') || g.includes(' us ') || g.includes('usa');
+
+    // ============================================================
+    // MOVIES ordering: English latest → Arabic latest →
+    // English chronological → Arabic chronological → Brands → Misc
+    // ============================================================
+    if (category === 'movies') {
+      // Ramadan handling (off-season pushed down)
+      if (isRamadanSeason) {
+        if (g.includes('ramadan 2026 egyptian')) return 0;
+        if (g.includes('ramadan 2026')) return 1;
+        if (g.includes('ramadan pre-2026')) return 5;
+      } else if (g.includes('ramadan')) {
+        return 870;
+      }
+
+      if (g.includes('now showing') || g.includes('now_showing') || groupName.includes('يعرض الآن')) return 8;
+
+      // 1. ENGLISH LATEST (current year, very top)
+      if (isEnglish && year >= 2025) return 10 + (2040 - year); // 2026=24, 2025=25
+
+      // 2. ARABIC LATEST (current year, right after English latest)
+      const arYearMatch = g.match(/^ar\s+(mov|ser|movies?|series)\s+((?:19|20)\d{2})/i);
+      const arYear = arYearMatch ? parseInt(arYearMatch[2]) : (isArabic && year ? year : 0);
+      if (isArabic && arYear >= 2025) return 30 + (2040 - arYear); // 2026=44, 2025=45
+
+      // 3. ENGLISH CHRONOLOGICAL (older years, newest first)
+      if (isEnglish && year) return 60 + (2040 - year); // 2024=76, 2023=77...
+      if (isEnglish) return 99;
+
+      // 4. ARABIC CHRONOLOGICAL (older years, newest first)
+      if (isArabic && arYear) return 150 + (2040 - arYear);
+      if (isArabic) return 199;
+      if (g.includes('eid') || groupName.includes('عيد')) return 200;
+      if (g.includes('osn') || g.includes('shahid')) return 201;
+
+      // 5. BRAND / STREAMING PLATFORMS
+      if (g.includes('netflix')) return 250;
+      if (g.includes('disney')) return 251;
+      if (g.includes('marvel')) return 252;
+      if (g.includes('dc ') || g.match(/\bdc\b/)) return 253;
+      if (g.includes('hbo') || g.includes('max')) return 254;
+      if (g.includes('amazon') || g.includes('prime')) return 255;
+      if (g.includes('apple')) return 256;
+      if (g.includes('paramount')) return 257;
+      if (g.includes('hulu')) return 258;
+      if (g.includes('peacock')) return 259;
+      if (g.includes('starz')) return 260;
+      if (g.includes('showtime')) return 261;
+      if (g.includes('star wars')) return 262;
+      if (g.includes('pixar')) return 263;
+
+      // 6. FOREIGN / Subtitled
+      if (g.includes('foreign') || g.includes('sub')) {
+        if (year) return 300 + (2040 - year);
+        return 320;
+      }
+
+      // 7. ANIME / CARTOON / KIDS
+      if (g.includes('anime') || g.includes('انمي') || g.includes('anm') || g.includes('crunchyroll')) return 350;
+      if (g.includes('cartoon') || groupName.includes('كرتون') || g.includes('animation')) return 360;
+      if (g.includes('kids') || g.includes('family') || groupName.includes('أطفال') || g.includes('enfant')) return 365;
+
+      // 8. REGIONAL
+      if (g.includes('turkish') || g.includes('turk') || groupName.includes('ترك')) return 400;
+      if (g.includes('korean') || g.includes('korea') || groupName.includes('كوري')) return 410;
+      if (g.includes('indian') || g.includes('india') || g.includes('bollywood') || groupName.includes('هند')) return 420;
+      if (g.includes('asia') || groupName.includes('آسي')) return 430;
+      if (g.includes('french') || g.includes('fr ') || g.match(/\bfr\b/)) return 440;
+      if (g.includes('german') || g.includes('deutsch')) return 445;
+      if (g.includes('albania')) return 448;
+      if (g.includes('world') || groupName.includes('عالم')) return 450;
+
+      // 9. GENRES
+      if (g.includes('action') || g.includes('adventure')) return 500;
+      if (g.includes('comedy') || g.includes('comedie') || groupName.includes('كوميد')) return 502;
+      if (g.includes('drama') || g.includes('romance') || g.includes('drame')) return 504;
+      if (g.includes('horror') || g.includes('thriller')) return 506;
+      if (g.includes('scifi') || g.includes('sci-fi') || g.includes('fantasy')) return 508;
+      if (g.includes('crime') || g.includes('mystery')) return 510;
+      if (g.includes('war') || g.includes('military')) return 512;
+      if (g.includes('historical') || g.includes('biography')) return 514;
+      if (g.includes('documentary') || groupName.includes('وثائق')) return 516;
+      if (g.includes('sport') || g.includes('formula') || g.includes('ufc') || g.includes('wwe')) return 520;
+
+      // 10. SEASONAL
+      if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas')) return 600;
+
+      // 11. Year-only fallback (newest first)
+      if (year) return 650 + (2040 - year);
+
+      // 12. Misc bottom
+      if (g.includes('tv show') || groupName.includes('برامج') || g.includes('program')) return 820;
+      if (g.includes('islamic') || g.includes('islam') || groupName.includes('إسلام') || groupName.includes('اسلام') || groupName.includes('ديني')) return 830;
+      if (g.includes('masrah') || groupName.includes('مسرح') || g.includes('theater') || g.includes('theatre')) return 840;
+      if (g.includes('4k') || g.includes('3d')) return 850;
+      if (g.includes('song') || groupName.includes('أغاني') || groupName.includes('اغاني') || g.includes('music clip') || groupName.includes('أغان')) return 999;
+      return 900;
+    }
+
+    // ============================================================
+    // SERIES ordering (original): Ramadan → Arabic → English → ...
+    // ============================================================
     // === 1. RAMADAN — only top-priority during the season ===
     if (isRamadanSeason) {
       if (g.includes('ramadan 2026 egyptian')) return 0;
       if (g.includes('ramadan 2026')) return 1;
       if (g.includes('ramadan pre-2026')) return 5;
     } else {
-      // Off-season: push all Ramadan groups well below regular content
       if (g.includes('ramadan')) return 870;
     }
-    
-    // === 2. "Now Showing" / current content ===
+
     if (g.includes('now showing') || g.includes('now_showing') || groupName.includes('يعرض الآن')) return 10;
-    
-    // === 3. ARABIC content by year (newest first, priority 20-80) ===
-    const isArabic = g.includes('arab') || groupName.includes('عربي') || groupName.includes('افلام') || groupName.includes('مسلسل') ||
-      groupName.includes('مصر') || g.includes('egypt') || groupName.includes('خليج') || g.includes('gulf') || g.includes('khalij') ||
-      groupName.includes('مغرب') || g.includes('maghreb') || g.includes('levant') || groupName.includes('شام');
+
     const arYearMatch = g.match(/^ar\s+(mov|ser|movies?|series)\s+((?:19|20)\d{2})/i);
-    
     if (arYearMatch) {
       const arYear = parseInt(arYearMatch[2]);
-      return 20 + (2040 - arYear); // 2026→34, 2025→35, 2024→36...
+      return 20 + (2040 - arYear);
     }
     if (isArabic && year) return 20 + (2040 - year);
     if (groupName.includes('مصر') || g.includes('egypt')) return 75;
     if (isArabic) return 80;
     if (g.includes('eid') || groupName.includes('عيد')) return 81;
     if (g.includes('osn') || g.includes('shahid')) return 82;
-    
-    // === 4. ENGLISH content (priority 100-120) ===
-    if (g.includes('english') || g.includes('vod en') || g.match(/\ben\b/)) {
+
+    if (isEnglish) {
       if (year) return 100 + (2040 - year);
       return 120;
     }
     if (g.includes('uk') || g.includes('us ') || g.includes('usa')) return 121;
-    
-    // === 5. FOREIGN / Subtitled content (priority 130-150) ===
+
     if (g.includes('foreign') || g.includes('sub')) {
       if (year) return 130 + (2040 - year);
       return 150;
     }
-    
-    // === 6. ANIME content (priority 200-220) ===
+
     if (g.includes('anime') || g.includes('انمي') || g.includes('anm') || g.includes('crunchyroll')) return 200;
     if (g.includes('cartoon') || groupName.includes('كرتون') || g.includes('animation')) return 210;
     if (g.includes('kids') || g.includes('family') || groupName.includes('أطفال') || g.includes('enfant')) return 215;
-    
-    // === 7. STREAMING PLATFORMS (priority 300-350) ===
+
     if (g.includes('netflix')) return 300;
     if (g.includes('disney')) return 301;
     if (g.includes('hbo') || g.includes('max')) return 302;
@@ -744,8 +839,7 @@ export const MiMediaGrid = ({
     if (g.includes('peacock')) return 307;
     if (g.includes('starz')) return 308;
     if (g.includes('showtime')) return 309;
-    
-    // === 8. REGIONAL content (priority 400-450) ===
+
     if (g.includes('turkish') || g.includes('turk') || groupName.includes('ترك')) return 400;
     if (g.includes('korean') || g.includes('korea') || groupName.includes('كوري')) return 410;
     if (g.includes('indian') || g.includes('india') || g.includes('bollywood') || groupName.includes('هند')) return 420;
@@ -754,8 +848,7 @@ export const MiMediaGrid = ({
     if (g.includes('german') || g.includes('deutsch')) return 445;
     if (g.includes('albania')) return 448;
     if (g.includes('world') || groupName.includes('عالم')) return 450;
-    
-    // === 9. GENRE categories (priority 460-500) ===
+
     if (g.includes('action') || g.includes('adventure')) return 460;
     if (g.includes('comedy') || g.includes('comedie') || groupName.includes('كوميد')) return 462;
     if (g.includes('drama') || g.includes('romance') || g.includes('drame')) return 464;
@@ -766,24 +859,19 @@ export const MiMediaGrid = ({
     if (g.includes('historical') || g.includes('biography')) return 474;
     if (g.includes('documentary') || groupName.includes('وثائق')) return 476;
     if (g.includes('sport') || g.includes('formula') || g.includes('ufc') || g.includes('wwe')) return 480;
-    
-    // === 10. Seasonal content (priority 500) ===
+
     if (g.includes('christmas') || g.includes('holiday') || g.includes('xmas')) return 500;
-    
-    // === 11. Year-based fallback (priority 550+, newest first) ===
+
     if (year) return 550 + (2040 - year);
-    
-    // === 12. Misc content pushed to bottom (priority 800+) ===
+
     if (g.includes('tv show') || groupName.includes('برامج') || g.includes('program')) return 820;
     if (g.includes('islamic') || g.includes('islam') || groupName.includes('إسلام') || groupName.includes('اسلام') || groupName.includes('ديني')) return 830;
     if (g.includes('masrah') || groupName.includes('مسرح') || g.includes('theater') || g.includes('theatre')) return 840;
-    
-    // === 13. Everything else ===
+
     if (g.includes('4k') || g.includes('3d')) return 850;
-    
-    // === 14. Songs absolute last ===
+
     if (g.includes('song') || groupName.includes('أغاني') || groupName.includes('اغاني') || g.includes('music clip') || groupName.includes('أغان')) return 999;
-    
+
     return 900;
   };
 
