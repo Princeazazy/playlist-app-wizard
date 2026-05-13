@@ -251,31 +251,66 @@ const Index = () => {
 
   const findIPTVMatch = useCallback((tmdbTitle: string, tmdbYear: string | undefined, mediaType: 'movie' | 'tv') => {
     const searchTitle = normalizeTitle(tmdbTitle);
+    if (!searchTitle) return null;
+    const searchWords = searchTitle.split(' ').filter(Boolean);
     const contentPool = mediaType === 'tv' ? channelsByType.series : channelsByType.movies;
     let bestMatch: Channel | null = null;
     let bestScore = -Infinity;
 
     for (const channel of contentPool) {
-      const channelTitle = normalizeTitle(channel.name);
+      // Strip provider prefixes ("EN - ", "AR | ", "[TR] ", "TAR -", etc.)
+      const cleanedName = channel.name
+        .replace(/^\s*\[[^\]]+\]\s*/g, '')
+        .replace(/^\s*[A-Z]{2,4}\s*[:|\-]\s*/i, '')
+        .replace(/\s*\(\d{4}\)\s*$/g, '')
+        .trim();
+      const channelTitle = normalizeTitle(cleanedName);
+      if (!channelTitle) continue;
+      const channelWords = channelTitle.split(' ').filter(Boolean);
+
       let score = 0;
-      if (channelTitle === searchTitle) score = 100;
-      else if (channelTitle.includes(searchTitle)) score = 85;
-      else if (searchTitle.includes(channelTitle) && channelTitle.length > 3) score = 80;
-      else {
-        const searchWords = searchTitle.split(' ').filter(w => w.length > 2);
-        const channelWords = channelTitle.split(' ').filter(w => w.length > 2);
-        if (searchWords.length > 0 && channelWords.length > 0) {
-          const matchedWords = searchWords.filter(sw => channelWords.some(cw => cw === sw || cw.includes(sw) || sw.includes(cw)));
-          const matchRatio = matchedWords.length / searchWords.length;
-          if (matchRatio >= 0.5) score = matchRatio * 70;
+
+      if (channelTitle === searchTitle) {
+        score = 100;
+      } else {
+        // Whole-phrase containment with strict length-ratio guards to prevent
+        // "Boys" matching "Bad Boys: Dominican Republic Auditions"
+        const wordBoundary = new RegExp(`(^|\\s)${searchTitle.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}(\\s|$)`);
+        const reverseBoundary = new RegExp(`(^|\\s)${channelTitle.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}(\\s|$)`);
+
+        if (wordBoundary.test(channelTitle) && searchWords.length >= 2 && searchWords.length / channelWords.length >= 0.6) {
+          score = 88;
+        } else if (reverseBoundary.test(searchTitle) && channelWords.length >= 2 && channelWords.length / searchWords.length >= 0.6) {
+          score = 84;
+        } else if (searchWords.length >= 2 && channelWords.length >= 2) {
+          // Require ALL meaningful search words present + high overlap ratio
+          const meaningful = searchWords.filter(w => w.length > 2);
+          const matched = meaningful.filter(sw => channelWords.some(cw => cw === sw));
+          if (meaningful.length > 0 && matched.length === meaningful.length) {
+            const ratio = matched.length / Math.max(channelWords.length, meaningful.length);
+            if (ratio >= 0.7) score = 70 + ratio * 15;
+          }
         }
       }
-      if (score < 40) continue;
-      if (tmdbYear && channel.name.includes(tmdbYear)) score += 15;
+
+      // Hard floor — drop weak matches outright
+      if (score < 80) continue;
+
+      // Year disambiguation
+      if (tmdbYear) {
+        if (channel.name.includes(tmdbYear) || channel.year === tmdbYear) score += 15;
+        else {
+          const otherYear = (channel.year || '').match(/^(19|20)\d{2}$/);
+          if (otherYear) score -= 10;
+        }
+      }
+
       score += getLanguageScore(channel);
       if (score > bestScore) { bestScore = score; bestMatch = channel; }
     }
-    return bestMatch;
+
+    // Require a confidently-strong match before redirecting to IPTV
+    return bestScore >= 90 ? bestMatch : null;
   }, [channelsByType, normalizeTitle, getLanguageScore]);
 
 
