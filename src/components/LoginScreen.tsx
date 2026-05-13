@@ -62,7 +62,10 @@ export const LoginScreen = ({ onLogin }: LoginScreenProps) => {
         body: { action: 'signup', username: username.trim(), password, display_name: displayName.trim() || undefined },
       });
 
-      if (fnError) throw new Error(fnError.message);
+      if (fnError) {
+        const context = (fnError as any).context;
+        throw new Error(context?.error || fnError.message);
+      }
       if (data?.error) throw new Error(data.error);
 
       setSuccess('Account created! You can now sign in.');
