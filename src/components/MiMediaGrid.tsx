@@ -932,7 +932,18 @@ export const MiMediaGrid = ({
     // Find which raw group names belong to the selected merged group
     const selectedMergedGroup = groups.find(g => g.name === selectedGroup);
     const matchingRawNames = selectedMergedGroup?.rawNames || [];
-    
+
+    // Detect "Latest English" / "Latest Arabic" buckets — only show items from
+    // the current year or the previous year. Older entries belong in per-year buckets.
+    const isLatestBucket = (() => {
+      const haystack = ((selectedGroup || '') + ' ' + matchingRawNames.join(' ')).toLowerCase();
+      const haystackRaw = (selectedGroup || '') + ' ' + matchingRawNames.join(' ');
+      return haystack.includes('latest') || haystack.includes(' new ') || haystack.startsWith('new ') ||
+        haystack.includes('recent') || haystack.includes('gedida') || haystack.includes('jadida') ||
+        haystack.includes('jdid') || haystackRaw.includes('جديد') || haystackRaw.includes('أحدث');
+    })();
+    const minLatestYear = CURRENT_YEAR - 1;
+
     let filtered = items.filter((item) => {
       if (isIrrelevantGroup(item.group || '')) return false;
       // Exclude known low-quality / promo entries
@@ -945,6 +956,11 @@ export const MiMediaGrid = ({
       const itemDisplayName = groupDisplayNameMap.get(itemEffectiveGroup) || shortenGroupName(itemEffectiveGroup);
       const matchesGroup = searchQuery.trim() ? true : (effectiveGroupName === 'all' || matchingRawNames.includes(itemEffectiveGroup) || itemDisplayName === effectiveGroupName);
       const matchesFavorites = !showFavoritesOnly || favorites.has(item.id);
+      // Latest bucket: drop items with a known release year older than current-1
+      if (isLatestBucket && item.year) {
+        const y = parseInt(item.year, 10);
+        if (y && y < minLatestYear) return false;
+      }
       return matchesSearch && matchesGroup && matchesFavorites;
     });
 
