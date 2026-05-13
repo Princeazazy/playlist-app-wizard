@@ -9,13 +9,13 @@ import avatar7 from '@/assets/avatars/avatar-7.png';
 import avatar8 from '@/assets/avatars/avatar-8.png';
 
 export const AVATARS: { id: string; src: string; label: string }[] = [
-  { id: 'astronaut', src: avatar1, label: 'Astronaut' },
-  { id: 'fox', src: avatar2, label: 'Fox' },
-  { id: 'alien', src: avatar3, label: 'Alien' },
-  { id: 'cat', src: avatar4, label: 'Cat' },
-  { id: 'robot', src: avatar5, label: 'Robot' },
-  { id: 'panda', src: avatar6, label: 'Panda' },
-  { id: 'lion', src: avatar7, label: 'Lion' },
+  { id: 'neon-fox', src: avatar1, label: 'Neon Fox' },
+  { id: 'purge', src: avatar2, label: 'Purge' },
+  { id: 'gasmask', src: avatar3, label: 'Visor' },
+  { id: 'bear', src: avatar4, label: 'Bear' },
+  { id: 'astronaut', src: avatar5, label: 'Astronaut' },
+  { id: 'lion', src: avatar6, label: 'Lion' },
+  { id: 'samurai', src: avatar7, label: 'Samurai' },
   { id: 'ninja', src: avatar8, label: 'Ninja' },
 ];
 
