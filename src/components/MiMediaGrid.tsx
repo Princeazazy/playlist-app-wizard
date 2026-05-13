@@ -643,6 +643,20 @@ export const MiMediaGrid = ({
     setShowSearchInput(true);
   };
 
+  // Date-aware: Ramadan content stays at top during the season + 1.5 months grace.
+  // Ramadan 2026: Feb 17 – Mar 19, 2026. Grace ends ~May 4, 2026.
+  // Outside that window, push Ramadan rows toward the bottom so they don't dominate.
+  const isRamadanSeason = useMemo(() => {
+    const now = new Date();
+    // Approximate Ramadan windows + ~6 week grace period after Eid.
+    const windows: Array<[Date, Date]> = [
+      [new Date('2026-02-17'), new Date('2026-05-04')],
+      [new Date('2027-02-07'), new Date('2027-04-23')],
+      [new Date('2028-01-27'), new Date('2028-04-12')],
+    ];
+    return windows.some(([s, e]) => now >= s && now <= e);
+  }, []);
+
   // Smart sorting for groups: Ramadan 2026 → Arabic (newest first) → English → Foreign → Anime → Platforms → Regional → Misc → Songs
   const getGroupSortPriority = (groupName: string): number => {
     const g = groupName.toLowerCase();
@@ -651,12 +665,15 @@ export const MiMediaGrid = ({
     const yearMatch = g.match(/\b(19|20)\d{2}\b/);
     const year = yearMatch ? parseInt(yearMatch[0]) : 0;
     
-    // === 1. RAMADAN 2026 EGYPTIAN at absolute top ===
-    if (g.includes('ramadan 2026 egyptian')) return 0;
-    // Other Ramadan 2026 variants right after
-    if (g.includes('ramadan 2026')) return 1;
-    // Ramadan Pre-2026 right after
-    if (g.includes('ramadan pre-2026')) return 5;
+    // === 1. RAMADAN — only top-priority during the season ===
+    if (isRamadanSeason) {
+      if (g.includes('ramadan 2026 egyptian')) return 0;
+      if (g.includes('ramadan 2026')) return 1;
+      if (g.includes('ramadan pre-2026')) return 5;
+    } else {
+      // Off-season: push all Ramadan groups well below regular content
+      if (g.includes('ramadan')) return 870;
+    }
     
     // === 2. "Now Showing" / current content ===
     if (g.includes('now showing') || g.includes('now_showing') || groupName.includes('يعرض الآن')) return 10;
