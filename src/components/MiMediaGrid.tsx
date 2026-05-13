@@ -298,7 +298,10 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   if (g.includes('2025')) return serArabic2025Logo;
   if (g.includes('2024')) return serArabic2024Logo;
   if (g.includes('2023')) return serArabic2023Logo;
-  
+
+  // Generic Arabic fallback (no year, no special tag)
+  if (g.includes('arabic') || g.includes('عربي') || g.includes('arab')) return serArabicGenericLogo;
+
   return null;
 };
 
