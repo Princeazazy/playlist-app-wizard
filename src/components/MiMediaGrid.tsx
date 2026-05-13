@@ -997,13 +997,18 @@ export const MiMediaGrid = ({
             <button
               key={group.name}
               onClick={() => handleGroupSelect(group.name)}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                 selectedGroup === group.name
-                  ? 'bg-card ring-2 ring-accent/50'
+                  ? 'bg-gradient-to-r from-accent/20 via-accent/10 to-transparent ring-1 ring-accent/60 shadow-[0_0_20px_-6px_hsl(var(--accent)/0.6)]'
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
-              <div className="w-12 h-12 rounded-full bg-black/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 transition-all duration-300
+                bg-gradient-to-br from-white/10 via-white/5 to-black/40
+                ring-1 ${selectedGroup === group.name ? 'ring-accent/70 shadow-[0_0_18px_-4px_hsl(var(--accent)/0.7)]' : 'ring-white/10 group-hover:ring-accent/40'}
+              `}>
+                {/* Inner glow */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10" />
                 {(() => {
                   const rawNames: string[] = (group as any).rawNames || [group.name];
                   // Try all raw names to find the best logo match
@@ -1013,22 +1018,22 @@ export const MiMediaGrid = ({
                     if (logo) break;
                   }
                   if (logo) {
-                    return <img src={logo} alt={group.name} className="w-full h-full object-cover scale-150" />;
+                    return <img src={logo} alt={group.name} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
                   }
                   if (group.firstLogo) {
                     return (
                       <img 
                         src={group.firstLogo} 
                         alt={group.name} 
-                        className="w-[80%] h-[80%] object-contain"
+                        className="relative w-[78%] h-[78%] object-contain drop-shadow-[0_0_6px_hsl(var(--accent)/0.5)]"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = `<span class="text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
+                          e.currentTarget.parentElement!.innerHTML = `<span class="relative text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
                         }}
                       />
                     );
                   }
-                  return <span className="text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
+                  return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
                 })()}
               </div>
               <div className="flex-1 text-left">
