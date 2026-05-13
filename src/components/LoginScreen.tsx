@@ -89,7 +89,10 @@ export const LoginScreen = ({ onLogin }: LoginScreenProps) => {
         body: { action: 'login', username: username.trim(), password },
       });
 
-      if (fnError) throw new Error(fnError.message);
+      if (fnError) {
+        const context = (fnError as any).context;
+        throw new Error(context?.error || fnError.message);
+      }
       if (data?.error) throw new Error(data.error);
 
       setAppSession({ user: data.user, token: data.token });
