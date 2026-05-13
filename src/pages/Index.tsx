@@ -348,7 +348,7 @@ const Index = () => {
       <MiFullscreenPlayer
         channel={nav.currentChannel}
         isFavorite={nav.favorites.has(nav.currentChannel.id)}
-        onClose={() => nav.handleCloseFullscreen(isLiveTV)}
+        onClose={() => nav.handleCloseFullscreen()}
         onNext={handleNextChannel}
         onPrevious={handlePreviousChannel}
         onToggleFavorite={() => nav.handleToggleFavorite(nav.currentChannel!.id)}
@@ -498,7 +498,7 @@ const Index = () => {
         <MiniPlayer
           channel={nav.currentChannel}
           onExpand={() => nav.handleChannelSelect(nav.currentChannel!)}
-          onClose={() => nav.handleCloseFullscreen(false)}
+          onClose={() => nav.handleCloseFullscreen()}
         />
       )}
 
