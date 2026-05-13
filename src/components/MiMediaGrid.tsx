@@ -1024,7 +1024,7 @@ export const MiMediaGrid = ({
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
-              <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 transition-all duration-300
+              <div className={`relative w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 transition-all duration-300
                 bg-gradient-to-br from-white/10 via-white/5 to-black/40
                 ring-1 ${selectedGroup === group.name ? 'ring-accent/70 shadow-[0_0_18px_-4px_hsl(var(--accent)/0.7)]' : 'ring-white/10 group-hover:ring-accent/40'}
               `}>
