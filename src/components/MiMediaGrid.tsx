@@ -720,6 +720,12 @@ export const MiMediaGrid = ({
       // 2. ARABIC LATEST (current year, right after English latest)
       const arYearMatch = g.match(/^ar\s+(mov|ser|movies?|series)\s+((?:19|20)\d{2})/i);
       const arYear = arYearMatch ? parseInt(arYearMatch[2]) : (isArabic && year ? year : 0);
+      // "جديدة" (gedida = new), "latest", "new" Arabic groups → treat as latest even without a year
+      const isArabicLatestTag = isArabic && (
+        groupName.includes('جديدة') || groupName.includes('جديد') ||
+        g.includes('latest') || g.includes('new') || g.includes('gedida') || g.includes('jadida')
+      );
+      if (isArabicLatestTag) return 28; // sits right after English latest (24-25), before any year-tagged Arabic
       if (isArabic && arYear >= 2025) return 30 + (2040 - arYear); // 2026=44, 2025=45
 
       // 3. ENGLISH CHRONOLOGICAL (older years, newest first)
