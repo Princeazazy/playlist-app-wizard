@@ -234,11 +234,26 @@ const Index = () => {
     return title.toLowerCase().replace(/^(the|a|an)\s+/i, '').replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
   }, []);
 
+  const getLanguageScore = useCallback((channel: Channel) => {
+    const haystack = `${channel.name || ''} ${channel.group || ''}`.toLowerCase();
+    // Strong English signals
+    const enRegex = /(^|[\s|\-\[\(])(en|eng|english|us|uk|usa)([\s|\-\]\)]|$)/i;
+    // Non-English / dubbed signals (heavy penalty)
+    const badRegex = /(^|[\s|\-\[\(])(ir|fa|far|farsi|persian|per|tr|tur|turk|turkish|ar|arabic|es|esp|spanish|lat|latino|fr|fre|french|de|ger|german|it|ita|italian|ru|rus|russian|pt|por|portuguese|br|bra|brazil|kr|kor|korean|jp|jpn|japanese|cn|chi|chinese|hi|hin|hindi|tam|tamil|tel|telugu|dub|dubbed|dublado|doblado|sub|subbed|vostfr|legendado)([\s|\-\]\)]|$)/i;
+    const arabicChar = /[\u0600-\u06FF]/;
+    let bonus = 0;
+    if (enRegex.test(haystack)) bonus += 50;
+    if (badRegex.test(haystack)) bonus -= 200;
+    if (arabicChar.test(haystack)) bonus -= 200;
+    if (/مترجم|مدبلج/.test(haystack)) bonus -= 200;
+    return bonus;
+  }, []);
+
   const findIPTVMatch = useCallback((tmdbTitle: string, tmdbYear: string | undefined, mediaType: 'movie' | 'tv') => {
     const searchTitle = normalizeTitle(tmdbTitle);
     const contentPool = mediaType === 'tv' ? channelsByType.series : channelsByType.movies;
     let bestMatch: Channel | null = null;
-    let bestScore = 0;
+    let bestScore = -Infinity;
 
     for (const channel of contentPool) {
       const channelTitle = normalizeTitle(channel.name);
@@ -255,11 +270,14 @@ const Index = () => {
           if (matchRatio >= 0.5) score = matchRatio * 70;
         }
       }
-      if (score > 0 && tmdbYear && channel.name.includes(tmdbYear)) score += 15;
-      if (score > bestScore && score >= 40) { bestScore = score; bestMatch = channel; }
+      if (score < 40) continue;
+      if (tmdbYear && channel.name.includes(tmdbYear)) score += 15;
+      score += getLanguageScore(channel);
+      if (score > bestScore) { bestScore = score; bestMatch = channel; }
     }
     return bestMatch;
-  }, [channelsByType, normalizeTitle]);
+  }, [channelsByType, normalizeTitle, getLanguageScore]);
+
 
   const handleTMDBSelect = useCallback((item: TMDBItem) => {
     const match = findIPTVMatch(item.title, item.year, item.mediaType);
