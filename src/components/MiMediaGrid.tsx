@@ -937,11 +937,22 @@ export const MiMediaGrid = ({
     const isLatestBucket = (() => {
       const haystack = ((selectedGroup || '') + ' ' + matchingRawNames.join(' ')).toLowerCase();
       const haystackRaw = (selectedGroup || '') + ' ' + matchingRawNames.join(' ');
-      return haystack.includes('latest') || haystack.includes(' new ') || haystack.startsWith('new ') ||
+      const matched = haystack.includes('latest') || haystack.includes(' new ') || haystack.startsWith('new ') ||
         haystack.includes('recent') || haystack.includes('gedida') || haystack.includes('jadida') ||
         haystack.includes('jdid') || haystackRaw.includes('جديد') || haystackRaw.includes('أحدث');
+      if (matched) {
+        // eslint-disable-next-line no-console
+        console.log('[MiMediaGrid] isLatestBucket matched:', { selectedGroup, matchingRawNames });
+      }
+      return matched;
     })();
-    const minLatestYear = CURRENT_YEAR - 1;
+    const minLatestYear = CURRENT_YEAR - 2;
+    const extractYearFromName = (name: string): number | null => {
+      const m = name.match(/(?:^|[^\d])(19\d{2}|20\d{2})(?:[^\d]|$)/);
+      if (!m) return null;
+      const y = parseInt(m[1], 10);
+      return y >= 1900 && y <= CURRENT_YEAR + 1 ? y : null;
+    };
 
     let filtered = items.filter((item) => {
       if (isIrrelevantGroup(item.group || '')) return false;
@@ -955,10 +966,15 @@ export const MiMediaGrid = ({
       const itemDisplayName = groupDisplayNameMap.get(itemEffectiveGroup) || shortenGroupName(itemEffectiveGroup);
       const matchesGroup = searchQuery.trim() ? true : (effectiveGroupName === 'all' || matchingRawNames.includes(itemEffectiveGroup) || itemDisplayName === effectiveGroupName);
       const matchesFavorites = !showFavoritesOnly || favorites.has(item.id);
-      // Latest bucket: drop items with a known release year older than current-1
-      if (isLatestBucket && item.year) {
-        const y = parseInt(item.year, 10);
-        if (y && y < minLatestYear) return false;
+      // Latest bucket: strict — require a determinable year within the window.
+      if (isLatestBucket) {
+        let y: number | null = null;
+        if (item.year) {
+          const parsed = parseInt(item.year, 10);
+          if (parsed) y = parsed;
+        }
+        if (!y) y = extractYearFromName(item.name);
+        if (!y || y < minLatestYear) return false;
       }
       return matchesSearch && matchesGroup && matchesFavorites;
     });
