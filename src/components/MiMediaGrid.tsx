@@ -719,23 +719,21 @@ export const MiMediaGrid = ({
       // 1. ENGLISH LATEST (current year, very top)
       if (isEnglish && year >= 2025) return 10 + (2040 - year); // 2026=24, 2025=25
 
-      // 2. ARABIC LATEST (current year, right after English latest)
+      // Arabic year detection (Arabic block sits after English chronological)
       const arYearMatch = g.match(/^ar\s+(mov|ser|movies?|series)\s+((?:19|20)\d{2})/i);
       const arYear = arYearMatch ? parseInt(arYearMatch[2]) : (isArabic && year ? year : 0);
-      // "جديدة" (gedida = new), "latest", "new" Arabic groups → treat as latest even without a year
       const isArabicLatestTag = isArabic && (
         groupName.includes('جديدة') || groupName.includes('جديد') ||
         g.includes('latest') || g.includes('new') || g.includes('gedida') || g.includes('jadida')
       );
-      if (isArabicLatestTag) return 28; // sits right after English latest (24-25), before any year-tagged Arabic
-      if (isArabic && arYear >= 2025) return 30 + (2040 - arYear); // 2026=44, 2025=45
 
-      // 3. ENGLISH CHRONOLOGICAL (older years, newest first)
+      // 2. ENGLISH CHRONOLOGICAL (older years, newest first)
       if (isEnglish && year) return 60 + (2040 - year); // 2024=76, 2023=77...
       if (isEnglish) return 99;
 
-      // 4. ARABIC CHRONOLOGICAL (older years, newest first)
-      if (isArabic && arYear) return 150 + (2040 - arYear);
+      // 3. ARABIC BLOCK — Latest tag first, then year-tagged newest → oldest
+      if (isArabicLatestTag) return 148; // first Arabic row, sits above year buckets
+      if (isArabic && arYear) return 150 + (2040 - arYear); // 2026=164, 2025=165, 2024=166...
       if (isArabic) return 199;
       if (g.includes('eid') || groupName.includes('عيد')) return 200;
       if (g.includes('osn') || g.includes('shahid')) return 201;
