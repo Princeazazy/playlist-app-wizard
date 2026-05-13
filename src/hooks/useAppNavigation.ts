@@ -164,14 +164,10 @@ export const useAppNavigation = (): UseAppNavigationReturn => {
     });
   }, [toast]);
 
-  const handleCloseFullscreen = useCallback((isLiveTV: boolean) => {
+  const handleCloseFullscreen = useCallback(() => {
     setIsFullscreen(false);
-    if (isLiveTV) {
-      setShowMiniPlayer(true);
-    } else {
-      setShowMiniPlayer(false);
-      setCurrentChannel(null);
-    }
+    setShowMiniPlayer(false);
+    setCurrentChannel(null);
   }, []);
 
   const handleCatchUpSelect = useCallback((item: WatchProgress) => {
