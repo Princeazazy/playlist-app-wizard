@@ -721,6 +721,11 @@ export const MiMediaGrid = ({
     // Now showing — between Ramadan and Latest
     if (g.includes('now showing') || g.includes('now_showing') || groupName.includes('يعرض الآن')) return 8;
 
+    // MULTI-LANG releases are English with multi-subtitle support — treat as English latest
+    const isMultiLangReleases = (g.includes('multi-lang') || g.includes('multi lang') || g.includes('multilang')) &&
+      (g.includes('new release') || g.includes('latest') || g.includes('release'));
+    if (isMultiLangReleases) return 11; // Right after EN Latest (priority 10)
+
     // 2. LATEST ENGLISH — very top
     if (isLatestTag && isEnglish) return 10;
     // 3. ENGLISH year buckets — full English chronological block (newest first)
@@ -937,9 +942,12 @@ export const MiMediaGrid = ({
     const isLatestBucket = (() => {
       const haystack = ((selectedGroup || '') + ' ' + matchingRawNames.join(' ')).toLowerCase();
       const haystackRaw = (selectedGroup || '') + ' ' + matchingRawNames.join(' ');
+      const isMultiLangReleases = (haystack.includes('multi-lang') || haystack.includes('multi lang') || haystack.includes('multilang')) &&
+        (haystack.includes('new release') || haystack.includes('latest') || haystack.includes('release'));
       const matched = haystack.includes('latest') || haystack.includes(' new ') || haystack.startsWith('new ') ||
         haystack.includes('recent') || haystack.includes('gedida') || haystack.includes('jadida') ||
-        haystack.includes('jdid') || haystackRaw.includes('جديد') || haystackRaw.includes('أحدث');
+        haystack.includes('jdid') || haystackRaw.includes('جديد') || haystackRaw.includes('أحدث') ||
+        isMultiLangReleases;
       if (matched) {
         // eslint-disable-next-line no-console
         console.log('[MiMediaGrid] isLatestBucket matched:', { selectedGroup, matchingRawNames });
