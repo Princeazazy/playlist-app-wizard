@@ -673,22 +673,6 @@ export const MiMediaGrid = ({
     setShowSearchInput(true);
   };
 
-  // Date-aware: Ramadan content stays at top during the season + 1.5 months grace.
-  // Ramadan 2026: Feb 17 – Mar 19, 2026. Grace ends ~May 4, 2026.
-  // Outside that window, push Ramadan rows toward the bottom so they don't dominate.
-  const isRamadanSeason = useMemo(() => {
-    const now = new Date();
-    // Approximate Ramadan windows + ~6 week grace period after Eid.
-    const windows: Array<[Date, Date]> = [
-      [new Date('2026-02-17'), new Date('2026-05-04')],
-      [new Date('2027-02-07'), new Date('2027-04-23')],
-      [new Date('2028-01-27'), new Date('2028-04-12')],
-      [new Date('2029-01-15'), new Date('2029-03-31')],
-      [new Date('2030-01-05'), new Date('2030-03-21')],
-    ];
-    return windows.some(([s, e]) => now >= s && now <= e);
-  }, []);
-
   // Unified smart sorting for groups (Movies + Series)
   // Order: Ramadan(in-season) → Latest English → Latest Arabic →
   //        Year buckets (newest→oldest, within: Arabic→English→Foreign) →
