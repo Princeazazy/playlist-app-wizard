@@ -31,7 +31,7 @@ interface UseAppNavigationReturn {
   handleNextEpisode: () => void;
   handlePreviousEpisode: () => void;
   handleToggleFavorite: (channelId: string) => void;
-  handleCloseFullscreen: (isLiveTV: boolean) => void;
+  handleCloseFullscreen: () => void;
   handleCatchUpSelect: (item: WatchProgress) => void;
   handleContinueWatchingSelect: (channelId: string) => void;
   handleOpenCatchUp: () => void;
