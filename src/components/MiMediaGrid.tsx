@@ -131,6 +131,9 @@ import serGermanVodLogo from '@/assets/category-logos/ser-german-vod.png';
 import ppvDaznLogo from '@/assets/category-logos/ppv-dazn.png';
 import serArabicTrSubLogo from '@/assets/category-logos/ser-arabic-tr-sub.png';
 import serArabicTrDubLogo from '@/assets/category-logos/ser-arabic-tr-dub.png';
+import serArabicGenericLogo from '@/assets/category-logos/ser-arabic-generic.png';
+import serArabicAsiaLogo from '@/assets/category-logos/ser-arabic-asia.png';
+import serArabicEnLogo from '@/assets/category-logos/ser-arabic-en.png';
 
 // Series-specific category logo matcher
 const getSeriesCategoryLogo = (groupName: string): string | null => {
@@ -171,6 +174,11 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   // Standalone مترجم / مدبلج Arabic groups (no [TR] tag)
   if ((g.includes('arabic') || g.includes('عربي')) && g.includes('مدبلج')) return serArabicTrDubLogo;
   if ((g.includes('arabic') || g.includes('عربي')) && g.includes('مترجم')) return serArabicTrSubLogo;
+
+  // ARABIC [ASIA] / [EN] regional tag variants — match BEFORE generic asia/english/arabic-by-year rules
+  const isArabicTagged = g.includes('arabic') || g.includes('عربي') || g.includes('arab');
+  if (isArabicTagged && (g.includes('[asia]') || g.includes(' asia') || g.includes('asian'))) return serArabicAsiaLogo;
+  if (isArabicTagged && (g.includes('[en]') || /\ben\b/.test(g) || g.includes('english'))) return serArabicEnLogo;
 
   if ((g.includes('foreign') || g.includes('english') || g.includes('bf') || g.includes('قبل')) && (g.includes('sub') || g.includes('subtitled')) && g.includes('2022')) return serEnglish2022SubLogo;
   if ((g.includes('foreign') || g.includes('english')) && g.includes('2026')) return serForeign2026Logo;
@@ -290,7 +298,10 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   if (g.includes('2025')) return serArabic2025Logo;
   if (g.includes('2024')) return serArabic2024Logo;
   if (g.includes('2023')) return serArabic2023Logo;
-  
+
+  // Generic Arabic fallback (no year, no special tag)
+  if (g.includes('arabic') || g.includes('عربي') || g.includes('arab')) return serArabicGenericLogo;
+
   return null;
 };
 
