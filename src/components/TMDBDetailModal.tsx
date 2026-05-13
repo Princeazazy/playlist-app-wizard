@@ -88,17 +88,28 @@ export const TMDBDetailModal = ({ item, allChannels, onClose, onPlayIPTV }: TMDB
       if (score > 0 && searchYear && channel.name.includes(searchYear)) {
         score += 15;
       }
-      
+
+      // Language preference: strongly prefer English, penalize non-English/dubbed
+      if (score > 0) {
+        const haystack = `${channel.name || ''} ${channel.group || ''}`.toLowerCase();
+        const enRegex = /(^|[\s|\-\[\(])(en|eng|english|us|uk|usa)([\s|\-\]\)]|$)/i;
+        const badRegex = /(^|[\s|\-\[\(])(ir|fa|far|farsi|persian|per|tr|tur|turk|turkish|ar|arabic|es|esp|spanish|lat|latino|fr|fre|french|de|ger|german|it|ita|italian|ru|rus|russian|pt|por|portuguese|br|bra|brazil|kr|kor|korean|jp|jpn|japanese|cn|chi|chinese|hi|hin|hindi|tam|tamil|tel|telugu|dub|dubbed|dublado|doblado|sub|subbed|vostfr|legendado)([\s|\-\]\)]|$)/i;
+        if (enRegex.test(haystack)) score += 50;
+        if (badRegex.test(haystack)) score -= 200;
+        if (/[\u0600-\u06FF]/.test(haystack)) score -= 200;
+        if (/مترجم|مدبلج/.test(haystack)) score -= 200;
+      }
+
       return { channel, score };
     });
-    
+
     const matches = scored
       .filter(s => s.score >= 35)
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
-    
+
     console.log(`TMDB Modal Match: "${item.title}" found ${matches.length} matches:`, matches.map(m => `${m.channel.name} (${m.score})`));
-    
+
     return matches.map(s => s.channel);
   }, [allChannels, item.title, item.year]);
 
