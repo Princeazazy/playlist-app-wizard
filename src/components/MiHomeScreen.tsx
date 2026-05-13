@@ -190,6 +190,8 @@ export const MiHomeScreen = React.memo(({
 }: MiHomeScreenProps) => {
   const [time, setTime] = useState(new Date());
   const [, forceUpdate] = useState(0);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(getProfileAvatarSrc());
   const weather = useWeather();
   const isMobile = useIsMobile();
 
