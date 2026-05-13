@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic, Zap, ChevronRight } from 'lucide-react';
 import logoVideo from '@/assets/logo-transparent.mp4';
 import { ChromaKeyVideo } from './shared/ChromaKeyVideo';
-import { getProfileInitial } from '@/lib/profileStorage';
+import { getProfileInitial, getProfileAvatarSrc } from '@/lib/profileStorage';
+import { AvatarPicker } from './AvatarPicker';
 import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ContinueWatching } from './ContinueWatching';
@@ -189,6 +190,8 @@ export const MiHomeScreen = React.memo(({
 }: MiHomeScreenProps) => {
   const [time, setTime] = useState(new Date());
   const [, forceUpdate] = useState(0);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(getProfileAvatarSrc());
   const weather = useWeather();
   const isMobile = useIsMobile();
 
@@ -270,15 +273,26 @@ export const MiHomeScreen = React.memo(({
             </button>
           )}
           <div
+            onClick={() => setShowAvatarPicker(true)}
             className="relative w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden cursor-pointer hover:scale-105 active:scale-95 transition-transform"
             style={{ boxShadow: '0 0 20px hsl(200 90% 55% / 0.4)' }}
+            title="Change avatar"
           >
-            <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-white font-bold text-lg">{getProfileInitial()}</span>
-            </div>
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="Profile avatar" className="w-full h-full object-cover bg-gradient-to-br from-primary/30 to-accent/30" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <span className="text-white font-bold text-lg">{getProfileInitial()}</span>
+              </div>
+            )}
           </div>
         </div>
       </header>
+      <AvatarPicker
+        open={showAvatarPicker}
+        onClose={() => setShowAvatarPicker(false)}
+        onChange={() => setAvatarSrc(getProfileAvatarSrc())}
+      />
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 px-6 md:px-10 pt-2 pb-32">
