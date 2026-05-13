@@ -517,20 +517,22 @@ const getCategoryEmoji = (group: string): string => {
 const shortenGroupName = (name: string): string => {
   let clean = translateGroupName(name);
   
-  // Pick the MAX year from the group name. IPTV providers often label buckets
-  // with date ranges like "AR - 2020/2024" (range of when titles were added);
-  // a 2-week-old release in such a group should land in the latest year bucket,
-  // not the earliest. Also keeps the logo lookup (which scans the raw string)
-  // aligned with the displayed bucket label.
+  // Extract years from group/raw names. IPTV providers often label buckets
+  // with date ranges like "AR - 2020/2024" (range of when titles were added).
+  // Show the full range in the label so users know the bucket spans years,
+  // while the max year drives logo lookup and sort priority.
   const allYears = [...(clean.matchAll(/\b(?:19|20)\d{2}\b/g))].map(m => parseInt(m[0]));
   const allYearsRaw = [...(name.matchAll(/\b(?:19|20)\d{2}\b/g))].map(m => parseInt(m[0]));
-  const combinedYears = [...allYears, ...allYearsRaw];
-  const rawYear = combinedYears.length ? String(Math.max(...combinedYears)) : '';
+  const combinedYears = [...new Set([...allYears, ...allYearsRaw])];
+  const minYear = combinedYears.length ? Math.min(...combinedYears) : 0;
+  const maxYear = combinedYears.length ? Math.max(...combinedYears) : 0;
+  const rawYear = maxYear ? String(maxYear) : '';
   // If the group has a decade ending in 0 and contains "s" suffix (e.g. "2000s", "1970s"), format as decade
   const cleanLower = clean.toLowerCase();
   const nameLow = name.toLowerCase();
   const isDecade = rawYear && (cleanLower.includes(rawYear + 's') || cleanLower.includes(rawYear + "'s") || nameLow.includes(rawYear + 's'));
-  const year = rawYear ? (isDecade ? rawYear + "'s" : rawYear) : '';
+  const yearLabel = minYear && maxYear && minYear !== maxYear ? `${minYear}-${maxYear}` : rawYear;
+  const year = rawYear ? (isDecade ? rawYear + "'s" : yearLabel) : '';
   const lower = clean.toLowerCase();
   const nameLower = name.toLowerCase();
   
@@ -690,8 +692,8 @@ export const MiMediaGrid = ({
     const g = groupName.toLowerCase();
 
     // Helper: extract year from group name
-    const yearMatch = g.match(/\b(19|20)\d{2}\b/);
-    const year = yearMatch ? parseInt(yearMatch[0]) : 0;
+    const yearMatches = [...g.matchAll(/\b(?:19|20)\d{2}\b/g)].map(m => parseInt(m[0]));
+    const year = yearMatches.length ? Math.max(...yearMatches) : 0;
 
     const isArabic = g.includes('arab') || groupName.includes('عربي') || groupName.includes('افلام') || groupName.includes('مسلسل') ||
       groupName.includes('مصر') || g.includes('egypt') || groupName.includes('خليج') || g.includes('gulf') || g.includes('khalij') ||
