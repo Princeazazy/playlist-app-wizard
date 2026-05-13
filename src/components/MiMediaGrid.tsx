@@ -129,6 +129,8 @@ import serFrActionLogo from '@/assets/category-logos/ser-fr-action.png';
 import serFrEnfantsLogo from '@/assets/category-logos/ser-fr-enfants.png';
 import serGermanVodLogo from '@/assets/category-logos/ser-german-vod.png';
 import ppvDaznLogo from '@/assets/category-logos/ppv-dazn.png';
+import serArabicTrSubLogo from '@/assets/category-logos/ser-arabic-tr-sub.png';
+import serArabicTrDubLogo from '@/assets/category-logos/ser-arabic-tr-dub.png';
 
 // Series-specific category logo matcher
 const getSeriesCategoryLogo = (groupName: string): string | null => {
