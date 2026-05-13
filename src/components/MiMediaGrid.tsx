@@ -180,7 +180,7 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   if (isArabicTagged && (g.includes('[asia]') || g.includes(' asia') || g.includes('asian'))) return serArabicAsiaLogo;
   if (isArabicTagged && (g.includes('[en]') || /\ben\b/.test(g) || g.includes('english'))) return serArabicEnLogo;
 
-  if ((g.includes('foreign') || g.includes('english')) && g.includes('2026')) return serForeign2026Logo;
+  if ((g.includes('foreign') || g.includes('english') || g.includes('bf') || g.includes('قبل')) && (g.includes('sub') || g.includes('subtitled')) && g.includes('2022')) return serEnglish2022SubLogo;
   if ((g.includes('foreign') || g.includes('english')) && g.includes('2025')) return serForeign2025Logo;
   if ((g.includes('foreign') || g.includes('english')) && g.includes('2024')) return serForeign2024Logo;
   if ((g.includes('foreign') || g.includes('english')) && g.includes('2023')) return serForeign2023Logo;
