@@ -933,13 +933,15 @@ export const MiFullscreenPlayer = ({
           <span className="text-white/50 text-xs">{channel.group || 'Live TV'}</span>
         </div>
 
-        {/* Bottom Left - Elapsed Time */}
-        <div className="absolute bottom-8 left-6">
-          <p className="text-white/50 text-2xl font-light">{currentTime}</p>
-          {isVOD && duration > 0 && (
-            <p className="text-white/40 text-lg">{formatTime(duration)}</p>
-          )}
-        </div>
+        {/* Bottom Left - Elapsed Time (VOD only — Live TV has no timer) */}
+        {isVOD && (
+          <div className="absolute bottom-8 left-6">
+            <p className="text-white/50 text-2xl font-light">{currentTime}</p>
+            {duration > 0 && (
+              <p className="text-white/40 text-lg">{formatTime(duration)}</p>
+            )}
+          </div>
+        )}
 
         {/* VOD Progress Bar with Thumbnail Preview */}
         {isVOD && duration > 0 && (
