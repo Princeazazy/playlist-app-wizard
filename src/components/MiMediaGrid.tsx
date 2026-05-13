@@ -129,6 +129,8 @@ import serFrActionLogo from '@/assets/category-logos/ser-fr-action.png';
 import serFrEnfantsLogo from '@/assets/category-logos/ser-fr-enfants.png';
 import serGermanVodLogo from '@/assets/category-logos/ser-german-vod.png';
 import ppvDaznLogo from '@/assets/category-logos/ppv-dazn.png';
+import serArabicTrSubLogo from '@/assets/category-logos/ser-arabic-tr-sub.png';
+import serArabicTrDubLogo from '@/assets/category-logos/ser-arabic-tr-dub.png';
 
 // Series-specific category logo matcher
 const getSeriesCategoryLogo = (groupName: string): string | null => {
@@ -161,7 +163,15 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   // Islamic
   if (g.includes('islamic') || g.includes('islam') || g.includes('إسلام') || g.includes('اسلام') || g.includes('اسلامية') || g.includes('ديني') || g.includes('الاسلامية') || g.includes('الإسلامية') || g.includes('ال الاسلامية') || g.includes('ال الإسلامية')) return serIslamicLogo;
 
-  // Foreign/English Subtitled Years (Specific) - check specific years BEFORE generic sub match
+  // ARABIC [TR] - Translated (Subbed) vs Dubbed Arabic series — match BEFORE generic arabic rules
+  const isArabicTr = (g.includes('arabic') || g.includes('عربي') || g.includes('arab')) && (g.includes('[tr]') || g.includes(' tr ') || /\btr\b/.test(g));
+  if (isArabicTr && (g.includes('مدبلج') || g.includes('dub'))) return serArabicTrDubLogo;
+  if (isArabicTr && (g.includes('مترجم') || g.includes('sub') || g.includes('translated'))) return serArabicTrSubLogo;
+  if (isArabicTr) return serArabicTrSubLogo;
+  // Standalone مترجم / مدبلج Arabic groups (no [TR] tag)
+  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('مدبلج')) return serArabicTrDubLogo;
+  if ((g.includes('arabic') || g.includes('عربي')) && g.includes('مترجم')) return serArabicTrSubLogo;
+
   if ((g.includes('foreign') || g.includes('english') || g.includes('bf') || g.includes('قبل')) && (g.includes('sub') || g.includes('subtitled')) && g.includes('2022')) return serEnglish2022SubLogo;
   if ((g.includes('foreign') || g.includes('english')) && g.includes('2026')) return serForeign2026Logo;
   if ((g.includes('foreign') || g.includes('english')) && g.includes('2025')) return serForeign2025Logo;
