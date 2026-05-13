@@ -296,10 +296,26 @@ const PlaylistRow = ({
     return () => clearInterval(interval);
   }, [channels.length, totalPages, isPaused]);
 
-  // Keyboard / remote arrow navigation when row is hovered/focused
+  // Track whether this row is the most-visible row in the viewport
+  const [isActiveInView, setIsActiveInView] = React.useState(false);
   useEffect(() => {
-    if (!isHovered) return;
+    const el = rowRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setIsActiveInView(entry.isIntersecting && entry.intersectionRatio >= 0.5),
+      { threshold: [0, 0.5, 1] }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // Keyboard / remote arrow navigation: hover OR most-visible row in viewport
+  useEffect(() => {
+    if (!isHovered && !isActiveInView) return;
     const handler = (e: KeyboardEvent) => {
+      // Don't hijack arrows when typing in inputs
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         goNext();
@@ -310,7 +326,7 @@ const PlaylistRow = ({
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [isHovered, goNext, goPrev]);
+  }, [isHovered, isActiveInView, goNext, goPrev]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
