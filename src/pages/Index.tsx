@@ -498,7 +498,7 @@ const Index = () => {
         <MiniPlayer
           channel={nav.currentChannel}
           onExpand={() => nav.handleChannelSelect(nav.currentChannel!)}
-          onClose={() => nav.handleCloseFullscreen(false)}
+          onClose={() => nav.handleCloseFullscreen()}
         />
       )}
 
