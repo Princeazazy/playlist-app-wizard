@@ -643,6 +643,20 @@ export const MiMediaGrid = ({
     setShowSearchInput(true);
   };
 
+  // Date-aware: Ramadan content stays at top during the season + 1.5 months grace.
+  // Ramadan 2026: Feb 17 – Mar 19, 2026. Grace ends ~May 4, 2026.
+  // Outside that window, push Ramadan rows toward the bottom so they don't dominate.
+  const isRamadanSeason = useMemo(() => {
+    const now = new Date();
+    // Approximate Ramadan windows + ~6 week grace period after Eid.
+    const windows: Array<[Date, Date]> = [
+      [new Date('2026-02-17'), new Date('2026-05-04')],
+      [new Date('2027-02-07'), new Date('2027-04-23')],
+      [new Date('2028-01-27'), new Date('2028-04-12')],
+    ];
+    return windows.some(([s, e]) => now >= s && now <= e);
+  }, []);
+
   // Smart sorting for groups: Ramadan 2026 → Arabic (newest first) → English → Foreign → Anime → Platforms → Regional → Misc → Songs
   const getGroupSortPriority = (groupName: string): number => {
     const g = groupName.toLowerCase();
@@ -651,12 +665,15 @@ export const MiMediaGrid = ({
     const yearMatch = g.match(/\b(19|20)\d{2}\b/);
     const year = yearMatch ? parseInt(yearMatch[0]) : 0;
     
-    // === 1. RAMADAN 2026 EGYPTIAN at absolute top ===
-    if (g.includes('ramadan 2026 egyptian')) return 0;
-    // Other Ramadan 2026 variants right after
-    if (g.includes('ramadan 2026')) return 1;
-    // Ramadan Pre-2026 right after
-    if (g.includes('ramadan pre-2026')) return 5;
+    // === 1. RAMADAN — only top-priority during the season ===
+    if (isRamadanSeason) {
+      if (g.includes('ramadan 2026 egyptian')) return 0;
+      if (g.includes('ramadan 2026')) return 1;
+      if (g.includes('ramadan pre-2026')) return 5;
+    } else {
+      // Off-season: push all Ramadan groups well below regular content
+      if (g.includes('ramadan')) return 870;
+    }
     
     // === 2. "Now Showing" / current content ===
     if (g.includes('now showing') || g.includes('now_showing') || groupName.includes('يعرض الآن')) return 10;
@@ -980,13 +997,18 @@ export const MiMediaGrid = ({
             <button
               key={group.name}
               onClick={() => handleGroupSelect(group.name)}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                 selectedGroup === group.name
-                  ? 'bg-card ring-2 ring-accent/50'
+                  ? 'bg-gradient-to-r from-accent/20 via-accent/10 to-transparent ring-1 ring-accent/60 shadow-[0_0_20px_-6px_hsl(var(--accent)/0.6)]'
                   : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
               }`}
             >
-              <div className="w-12 h-12 rounded-full bg-black/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className={`relative w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 transition-all duration-300
+                bg-gradient-to-br from-white/10 via-white/5 to-black/40
+                ring-1 ${selectedGroup === group.name ? 'ring-accent/70 shadow-[0_0_18px_-4px_hsl(var(--accent)/0.7)]' : 'ring-white/10 group-hover:ring-accent/40'}
+              `}>
+                {/* Inner glow */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10" />
                 {(() => {
                   const rawNames: string[] = (group as any).rawNames || [group.name];
                   // Try all raw names to find the best logo match
@@ -996,22 +1018,22 @@ export const MiMediaGrid = ({
                     if (logo) break;
                   }
                   if (logo) {
-                    return <img src={logo} alt={group.name} className="w-full h-full object-cover scale-150" />;
+                    return <img src={logo} alt={group.name} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
                   }
                   if (group.firstLogo) {
                     return (
                       <img 
                         src={group.firstLogo} 
                         alt={group.name} 
-                        className="w-[80%] h-[80%] object-contain"
+                        className="relative w-[78%] h-[78%] object-contain drop-shadow-[0_0_6px_hsl(var(--accent)/0.5)]"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = `<span class="text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
+                          e.currentTarget.parentElement!.innerHTML = `<span class="relative text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
                         }}
                       />
                     );
                   }
-                  return <span className="text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
+                  return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
                 })()}
               </div>
               <div className="flex-1 text-left">

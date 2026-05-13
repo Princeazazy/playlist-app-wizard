@@ -405,18 +405,19 @@ export const useIPTV = (m3uUrl?: string) => {
           setLoading(true);
         }
 
-        // Fast bootstrap gets first usable catalog quickly, then full sync runs in background
+        // Fast bootstrap gets first usable catalog quickly, then full sync runs in background.
+        // Bumped per-type cap so series/lists aren't artificially trimmed on first paint.
         const bootstrapFetchOptions = {
-          maxChannels: 30000,
-          maxBytesMB: 24,
-          maxReturnPerType: 3500,
+          maxChannels: 60000,
+          maxBytesMB: 40,
+          maxReturnPerType: 12000,
           preferXtreamApi: false,
         };
 
         const fullFetchOptions = {
-          maxChannels: 150000,
-          maxBytesMB: 80,
-          maxReturnPerType: 50000,
+          maxChannels: 250000,
+          maxBytesMB: 120,
+          maxReturnPerType: 100000,
           preferXtreamApi: false,
         };
 

@@ -683,9 +683,18 @@ export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onCh
       </div>
       
       <div className="space-y-6">
-        {ramadanShows.length > 0 && (
-          <PlaylistRow title="Ramadan 2026 Series" icon={Moon} channels={ramadanShows} onChannelSelect={onChannelSelect} mediaTypeHint="tv" />
-        )}
+        {ramadanShows.length > 0 && (() => {
+          // Date-aware: only feature Ramadan row during the season + ~6-week grace.
+          const now = new Date();
+          const inSeason =
+            (now >= new Date('2026-02-17') && now <= new Date('2026-05-04')) ||
+            (now >= new Date('2027-02-07') && now <= new Date('2027-04-23')) ||
+            (now >= new Date('2028-01-27') && now <= new Date('2028-04-12'));
+          if (!inSeason) return null;
+          return (
+            <PlaylistRow title="Ramadan 2026 Series" icon={Moon} channels={ramadanShows} onChannelSelect={onChannelSelect} mediaTypeHint="tv" />
+          );
+        })()}
         
         {arabicSeries.length > 0 && (
           <PlaylistRow title="Top Rated Arabic Series" icon={Tv} channels={arabicSeries} onChannelSelect={onChannelSelect} mediaTypeHint="tv" />
