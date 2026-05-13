@@ -673,22 +673,6 @@ export const MiMediaGrid = ({
     setShowSearchInput(true);
   };
 
-  // Date-aware: Ramadan content stays at top during the season + 1.5 months grace.
-  // Ramadan 2026: Feb 17 – Mar 19, 2026. Grace ends ~May 4, 2026.
-  // Outside that window, push Ramadan rows toward the bottom so they don't dominate.
-  const isRamadanSeason = useMemo(() => {
-    const now = new Date();
-    // Approximate Ramadan windows + ~6 week grace period after Eid.
-    const windows: Array<[Date, Date]> = [
-      [new Date('2026-02-17'), new Date('2026-05-04')],
-      [new Date('2027-02-07'), new Date('2027-04-23')],
-      [new Date('2028-01-27'), new Date('2028-04-12')],
-      [new Date('2029-01-15'), new Date('2029-03-31')],
-      [new Date('2030-01-05'), new Date('2030-03-21')],
-    ];
-    return windows.some(([s, e]) => now >= s && now <= e);
-  }, []);
-
   // Unified smart sorting for groups (Movies + Series)
   // Order: Ramadan(in-season) → Latest English → Latest Arabic →
   //        Year buckets (newest→oldest, within: Arabic→English→Foreign) →
@@ -710,13 +694,8 @@ export const MiMediaGrid = ({
     const isLatestTag = g.includes('latest') || g.includes(' new ') || g.startsWith('new ') || g.endsWith(' new') || g.includes('recent') ||
       groupName.includes('جديد') || groupName.includes('أحدث') || g.includes('gedida') || g.includes('jadida') || g.includes('jdid');
 
-    // 1. Ramadan in-season — pinned to very top
-    if (isRamadanSeason) {
-      if (g.includes('ramadan 2026 egyptian')) return 0;
-      if (g.includes('ramadan 2026')) return 1;
-      if (g.includes('ramadan pre-2026')) return 4;
-      if (g.includes('ramadan')) return 5;
-    }
+    // Ramadan in-season pinning disabled — always treat as off-season
+    // (moved down to priority 870 below)
 
     // Now showing — between Ramadan and Latest
     if (g.includes('now showing') || g.includes('now_showing') || groupName.includes('يعرض الآن')) return 8;
