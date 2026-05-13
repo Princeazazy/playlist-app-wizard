@@ -517,8 +517,15 @@ const getCategoryEmoji = (group: string): string => {
 const shortenGroupName = (name: string): string => {
   let clean = translateGroupName(name);
   
-  const yearMatch = clean.match(/\b(19|20)\d{2}\b/);
-  const rawYear = yearMatch ? yearMatch[0] : '';
+  // Pick the MAX year from the group name. IPTV providers often label buckets
+  // with date ranges like "AR - 2020/2024" (range of when titles were added);
+  // a 2-week-old release in such a group should land in the latest year bucket,
+  // not the earliest. Also keeps the logo lookup (which scans the raw string)
+  // aligned with the displayed bucket label.
+  const allYears = [...(clean.matchAll(/\b(?:19|20)\d{2}\b/g))].map(m => parseInt(m[0]));
+  const allYearsRaw = [...(name.matchAll(/\b(?:19|20)\d{2}\b/g))].map(m => parseInt(m[0]));
+  const combinedYears = [...allYears, ...allYearsRaw];
+  const rawYear = combinedYears.length ? String(Math.max(...combinedYears)) : '';
   // If the group has a decade ending in 0 and contains "s" suffix (e.g. "2000s", "1970s"), format as decade
   const cleanLower = clean.toLowerCase();
   const nameLow = name.toLowerCase();
