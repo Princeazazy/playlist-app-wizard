@@ -396,24 +396,25 @@ Deno.serve(async (req) => {
 
     const baseUrl = 'https://www.yalla-shotos.live';
 
-    // Fetch all three day pages in parallel + ESPN NBA/NFL
-    const [yesterdayHtml, todayHtml, tomorrowHtml, espnMatches] = await Promise.all([
+    // Fetch all three day pages in parallel + ESPN NBA/NFL + box.live PPV Boxing
+    const [yesterdayHtml, todayHtml, tomorrowHtml, espnMatches, boxingMatches] = await Promise.all([
       fetchPage(`${baseUrl}/matches-yesterday/`).catch(e => { console.warn('Yesterday fetch failed:', e.message); return ''; }),
       fetchPage(`${baseUrl}/matches-today/`).catch(e => { console.warn('Today fetch failed:', e.message); return ''; }),
       fetchPage(`${baseUrl}/matches-tomorrow/`).catch(e => { console.warn('Tomorrow fetch failed:', e.message); return ''; }),
       fetchAllEspn().catch(e => { console.warn('ESPN fetch failed:', e.message); return [] as Match[]; }),
+      fetchBoxing().catch(e => { console.warn('Boxing fetch failed:', e.message); return [] as Match[]; }),
     ]);
 
     const yesterdayMatches = yesterdayHtml ? parseMatches(yesterdayHtml, 'yesterday') : [];
     const todayMatches = todayHtml ? parseMatches(todayHtml, 'today') : [];
     const tomorrowMatches = tomorrowHtml ? parseMatches(tomorrowHtml, 'tomorrow') : [];
 
-    // Combine: today first, then tomorrow, then yesterday, then ESPN (NBA/NFL)
-    const allMatches = [...todayMatches, ...tomorrowMatches, ...yesterdayMatches, ...espnMatches];
+    // Combine: today first, then tomorrow, then yesterday, then ESPN (NBA/NFL), then PPV Boxing
+    const allMatches = [...todayMatches, ...tomorrowMatches, ...yesterdayMatches, ...espnMatches, ...boxingMatches];
 
     const nbaCount = espnMatches.filter(m => m.league === 'NBA').length;
     const nflCount = espnMatches.filter(m => m.league === 'NFL').length;
-    console.log(`Parsed ${allMatches.length} matches (yesterday: ${yesterdayMatches.length}, today: ${todayMatches.length}, tomorrow: ${tomorrowMatches.length}, NBA: ${nbaCount}, NFL: ${nflCount})`);
+    console.log(`Parsed ${allMatches.length} matches (yesterday: ${yesterdayMatches.length}, today: ${todayMatches.length}, tomorrow: ${tomorrowMatches.length}, NBA: ${nbaCount}, NFL: ${nflCount}, Boxing PPV: ${boxingMatches.length})`);
 
     return new Response(
       JSON.stringify({ success: true, matches: allMatches, fetchedAt: new Date().toISOString() }),
