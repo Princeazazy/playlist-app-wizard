@@ -721,19 +721,18 @@ export const MiMediaGrid = ({
     // Now showing — between Ramadan and Latest
     if (g.includes('now showing') || g.includes('now_showing') || groupName.includes('يعرض الآن')) return 8;
 
-    // 2. LATEST ENGLISH — very top of normal lists
+    // 2. LATEST ENGLISH — very top
     if (isLatestTag && isEnglish) return 10;
-    // 3. LATEST ARABIC — second
-    if (isLatestTag && isArabic) return 20;
-
-    // 4. YEAR BUCKETS — newest first; within a year: Arabic → English → Foreign
-    if (year) {
-      const yearOffset = (CURRENT_YEAR + 5 - year) * 10; // current year ≈ 50
-      if (isArabic)  return 100 + yearOffset + 0;
-      if (isEnglish) return 100 + yearOffset + 1;
-      if (isForeign) return 100 + yearOffset + 2;
-      return 100 + yearOffset + 3;
-    }
+    // 3. ENGLISH year buckets — full English chronological block (newest first)
+    if (isEnglish && year) return 20 + (CURRENT_YEAR + 5 - year); // 2026=−1? guard below
+    // 4. LATEST ARABIC — sits right above the Arabic chronological block
+    if (isLatestTag && isArabic) return 100;
+    // 5. ARABIC year buckets — full Arabic chronological block (newest first)
+    if (isArabic && year) return 110 + (CURRENT_YEAR + 5 - year);
+    // 6. FOREIGN year buckets — after Arabic block
+    if (isForeign && year) return 200 + (CURRENT_YEAR + 5 - year);
+    // Other year-tagged (no language) — between Arabic and Foreign
+    if (year) return 180 + (CURRENT_YEAR + 5 - year);
 
     // 5. NON-YEAR LANGUAGE buckets
     if (isArabic) {
