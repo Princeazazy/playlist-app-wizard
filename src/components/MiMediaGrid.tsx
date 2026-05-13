@@ -683,6 +683,8 @@ export const MiMediaGrid = ({
       [new Date('2026-02-17'), new Date('2026-05-04')],
       [new Date('2027-02-07'), new Date('2027-04-23')],
       [new Date('2028-01-27'), new Date('2028-04-12')],
+      [new Date('2029-01-15'), new Date('2029-03-31')],
+      [new Date('2030-01-05'), new Date('2030-03-21')],
     ];
     return windows.some(([s, e]) => now >= s && now <= e);
   }, []);
