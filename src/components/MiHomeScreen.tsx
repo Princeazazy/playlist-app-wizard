@@ -189,6 +189,7 @@ export const MiHomeScreen = React.memo(({
   onTMDBSelect,
   channels,
   onChannelSelect,
+  onStreamingServiceSelect,
 }: MiHomeScreenProps) => {
   const [time, setTime] = useState(new Date());
   const [, forceUpdate] = useState(0);
