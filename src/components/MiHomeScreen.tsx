@@ -301,6 +301,8 @@ export const MiHomeScreen = React.memo(({
           <div className="flex flex-col gap-4 pb-20">
             <ContinueWatching onSelect={(id) => onContinueWatchingSelect?.(id)} onRemove={handleContinueWatchingRemove} />
 
+            <StreamingServicesCarousel onSelect={(service) => console.log('[StreamingServices] selected:', service)} />
+
             <TileCard onClick={() => onNavigate('live')} size="large" delay={0} accentColor="primary" className="min-h-[160px]">
               <div className="flex-1 flex flex-col justify-between">
                 <PulsingIcon color="primary"><Tv className="w-7 h-7 text-primary" /></PulsingIcon>
@@ -466,6 +468,11 @@ export const MiHomeScreen = React.memo(({
                 <ContinueWatching onSelect={(id) => onContinueWatchingSelect?.(id)} onRemove={handleContinueWatchingRemove} compact />
               </div>
             </div>
+            </div>
+
+            {/* Streaming Services - Full width below tiles */}
+            <div className="mt-6">
+              <StreamingServicesCarousel onSelect={(service) => console.log('[StreamingServices] selected:', service)} />
             </div>
 
             {/* TMDB Section - Full width below tiles */}
