@@ -28,6 +28,7 @@ interface MiHomeScreenProps {
   onTMDBSelect?: (item: TMDBItem) => void;
   channels?: Channel[];
   onChannelSelect?: (channel: Channel) => void;
+  onStreamingServiceSelect?: (serviceName: string) => void;
 }
 
 // Simple counter - no setInterval, just use target directly for instant display
