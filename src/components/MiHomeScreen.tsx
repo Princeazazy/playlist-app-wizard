@@ -470,6 +470,11 @@ export const MiHomeScreen = React.memo(({
             </div>
             </div>
 
+            {/* Streaming Services - Full width below tiles */}
+            <div className="mt-6">
+              <StreamingServicesCarousel onSelect={(service) => console.log('[StreamingServices] selected:', service)} />
+            </div>
+
             {/* TMDB Section - Full width below tiles */}
             <div className="mt-6">
               <React.Suspense fallback={<div className="h-40 flex items-center justify-center text-muted-foreground">Loading content...</div>}>
