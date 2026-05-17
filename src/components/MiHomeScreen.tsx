@@ -8,6 +8,7 @@ import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ContinueWatching } from './ContinueWatching';
 const TMDBBrowseSection = React.lazy(() => import('./TMDBBrowseSection').then(m => ({ default: m.TMDBBrowseSection })));
+import { StreamingServicesCarousel } from './StreamingServicesCarousel';
 import { TMDBItem } from '@/hooks/useTMDB';
 import { WeatherIcon } from './shared/WeatherIcon';
 import { Channel } from '@/hooks/useIPTV';
@@ -357,6 +358,10 @@ export const MiHomeScreen = React.memo(({
             <div className="grid grid-cols-2 gap-3 mt-2">
               <ActionButton icon={User} label="Account" onClick={() => onNavigate('settings')} />
               <ActionButton icon={RefreshCw} label="Refresh All" onClick={onReload} />
+            </div>
+
+            <div className="mt-6">
+              <StreamingServicesCarousel onSelect={(service) => console.log('[StreamingServices] selected:', service)} />
             </div>
 
             <div className="mt-6">
