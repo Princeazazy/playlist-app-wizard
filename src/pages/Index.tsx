@@ -94,6 +94,7 @@ const Index = () => {
   const channels: Channel[] = useMemo(() => rawChannels.map(toChannel), [rawChannels]);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchInitialQuery, setSearchInitialQuery] = useState<string | undefined>(undefined);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [useMobileBrowse, setUseMobileBrowse] = useState(true);
   const isMobile = useIsMobile();
