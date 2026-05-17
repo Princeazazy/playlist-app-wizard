@@ -35,6 +35,7 @@ import { ChromaKeyVideo } from '@/components/shared/ChromaKeyVideo';
 import logoVideo from '@/assets/logo-transparent.mp4';
 import { ScreenSaver } from '@/components/ScreenSaver';
 import { useInactivityDetector } from '@/hooks/useInactivityDetector';
+import { StreamingServiceResults } from '@/components/StreamingServiceResults';
 
 // Adapt NormalizedChannel to Channel for backward compat
 const toChannel = (nc: NormalizedChannel): Channel => ({
@@ -95,6 +96,7 @@ const Index = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInitialQuery, setSearchInitialQuery] = useState<string | undefined>(undefined);
+  const [activeStreamingService, setActiveStreamingService] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [useMobileBrowse, setUseMobileBrowse] = useState(true);
   const isMobile = useIsMobile();
@@ -447,7 +449,7 @@ const Index = () => {
             onTMDBSelect={handleTMDBSelect}
             channels={channels}
             onChannelSelect={handleHomeChannelSelect}
-            onStreamingServiceSelect={(service) => { setSearchInitialQuery(service); nav.setIsSearchOpen(true); }}
+            onStreamingServiceSelect={(service) => setActiveStreamingService(service)}
           />
         );
 
@@ -547,7 +549,17 @@ const Index = () => {
     <>
       <BackgroundMusic src="/audio/background-music.mp4" autoPlay={true} defaultVolume={0.25} />
       {showScreenSaver && <ScreenSaver onDismiss={dismissScreenSaver} onSelectItem={handleTMDBSelect} channels={channels} />}
-      {renderScreen()}
+      {activeStreamingService ? (
+        <StreamingServiceResults
+          serviceName={activeStreamingService}
+          channels={channels}
+          onBack={() => setActiveStreamingService(null)}
+          onItemSelect={(item) => {
+            setActiveStreamingService(null);
+            nav.handleItemSelect(item, 'home');
+          }}
+        />
+      ) : renderScreen()}
 
       {nav.showMiniPlayer && nav.currentChannel && nav.currentScreen !== 'home' && (
         <MiniPlayer
