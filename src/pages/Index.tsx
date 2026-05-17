@@ -96,6 +96,7 @@ const Index = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInitialQuery, setSearchInitialQuery] = useState<string | undefined>(undefined);
+  const [activeStreamingService, setActiveStreamingService] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [useMobileBrowse, setUseMobileBrowse] = useState(true);
   const isMobile = useIsMobile();
