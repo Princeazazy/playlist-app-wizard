@@ -35,6 +35,7 @@ import { ChromaKeyVideo } from '@/components/shared/ChromaKeyVideo';
 import logoVideo from '@/assets/logo-transparent.mp4';
 import { ScreenSaver } from '@/components/ScreenSaver';
 import { useInactivityDetector } from '@/hooks/useInactivityDetector';
+import { StreamingServiceResults } from '@/components/StreamingServiceResults';
 
 // Adapt NormalizedChannel to Channel for backward compat
 const toChannel = (nc: NormalizedChannel): Channel => ({
