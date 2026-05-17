@@ -94,6 +94,7 @@ const Index = () => {
   const channels: Channel[] = useMemo(() => rawChannels.map(toChannel), [rawChannels]);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchInitialQuery, setSearchInitialQuery] = useState<string | undefined>(undefined);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [useMobileBrowse, setUseMobileBrowse] = useState(true);
   const isMobile = useIsMobile();
@@ -440,12 +441,13 @@ const Index = () => {
             onNavigate={nav.handleNavigate}
             onReload={handleReload}
             onCatchUp={nav.handleOpenCatchUp}
-            onSearchClick={() => nav.setIsSearchOpen(true)}
-            onVoiceSearchClick={() => nav.setIsSearchOpen(true)}
+            onSearchClick={() => { setSearchInitialQuery(''); nav.setIsSearchOpen(true); }}
+            onVoiceSearchClick={() => { setSearchInitialQuery(''); nav.setIsSearchOpen(true); }}
             onContinueWatchingSelect={nav.handleContinueWatchingSelect}
             onTMDBSelect={handleTMDBSelect}
             channels={channels}
             onChannelSelect={handleHomeChannelSelect}
+            onStreamingServiceSelect={(service) => { setSearchInitialQuery(service); nav.setIsSearchOpen(true); }}
           />
         );
 
@@ -561,6 +563,7 @@ const Index = () => {
         channels={channels}
         onChannelSelect={nav.handleChannelSelect}
         onItemSelect={nav.handleSearchItemSelect}
+        initialQuery={searchInitialQuery}
       />
 
       {nav.selectedTMDBItem && (

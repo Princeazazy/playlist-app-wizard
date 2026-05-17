@@ -9,6 +9,7 @@ interface GlobalSearchModalProps {
   channels: Channel[];
   onChannelSelect: (channel: Channel) => void;
   onItemSelect: (item: Channel) => void;
+  initialQuery?: string;
 }
 
 export const GlobalSearchModal = ({
@@ -17,8 +18,13 @@ export const GlobalSearchModal = ({
   channels,
   onChannelSelect,
   onItemSelect,
+  initialQuery,
 }: GlobalSearchModalProps) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery ?? '');
+
+  useEffect(() => {
+    if (isOpen && initialQuery !== undefined) setQuery(initialQuery);
+  }, [isOpen, initialQuery]);
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
 
