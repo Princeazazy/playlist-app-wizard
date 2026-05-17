@@ -449,7 +449,7 @@ const Index = () => {
             onTMDBSelect={handleTMDBSelect}
             channels={channels}
             onChannelSelect={handleHomeChannelSelect}
-            onStreamingServiceSelect={(service) => { setSearchInitialQuery(service); nav.setIsSearchOpen(true); }}
+            onStreamingServiceSelect={(service) => setActiveStreamingService(service)}
           />
         );
 
