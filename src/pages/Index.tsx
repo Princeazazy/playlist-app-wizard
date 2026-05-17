@@ -441,12 +441,13 @@ const Index = () => {
             onNavigate={nav.handleNavigate}
             onReload={handleReload}
             onCatchUp={nav.handleOpenCatchUp}
-            onSearchClick={() => nav.setIsSearchOpen(true)}
-            onVoiceSearchClick={() => nav.setIsSearchOpen(true)}
+            onSearchClick={() => { setSearchInitialQuery(''); nav.setIsSearchOpen(true); }}
+            onVoiceSearchClick={() => { setSearchInitialQuery(''); nav.setIsSearchOpen(true); }}
             onContinueWatchingSelect={nav.handleContinueWatchingSelect}
             onTMDBSelect={handleTMDBSelect}
             channels={channels}
             onChannelSelect={handleHomeChannelSelect}
+            onStreamingServiceSelect={(service) => { setSearchInitialQuery(service); nav.setIsSearchOpen(true); }}
           />
         );
 
