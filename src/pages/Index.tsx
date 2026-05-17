@@ -549,7 +549,17 @@ const Index = () => {
     <>
       <BackgroundMusic src="/audio/background-music.mp4" autoPlay={true} defaultVolume={0.25} />
       {showScreenSaver && <ScreenSaver onDismiss={dismissScreenSaver} onSelectItem={handleTMDBSelect} channels={channels} />}
-      {renderScreen()}
+      {activeStreamingService ? (
+        <StreamingServiceResults
+          serviceName={activeStreamingService}
+          channels={channels}
+          onBack={() => setActiveStreamingService(null)}
+          onItemSelect={(item) => {
+            setActiveStreamingService(null);
+            nav.handleItemSelect(item, 'home');
+          }}
+        />
+      ) : renderScreen()}
 
       {nav.showMiniPlayer && nav.currentChannel && nav.currentScreen !== 'home' && (
         <MiniPlayer
