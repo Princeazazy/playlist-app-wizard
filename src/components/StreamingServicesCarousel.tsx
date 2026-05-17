@@ -42,7 +42,7 @@ export const StreamingServicesCarousel: React.FC<StreamingServicesCarouselProps>
         {SERVICES.map((s) => (
           <button
             key={s.name}
-            onClick={() => onSelect(s.name)}
+            onClick={() => onSelect(s.searchQuery)}
             aria-label={s.name}
             className="flex-shrink-0 snap-start w-32 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
           >
