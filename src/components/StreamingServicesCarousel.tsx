@@ -13,17 +13,22 @@ interface Service {
 
 // Real brand colors + official monochrome marks served from cdn.simpleicons.org.
 // A developer can swap iconSlug for a self-hosted asset later.
-const SERVICES: Service[] = [
-  { name: 'Netflix',     color: '#E50914', iconSlug: 'netflix',       iconColor: 'FFFFFF' },
-  { name: 'Prime Video', color: '#00A8E1', iconSlug: 'primevideo',    iconColor: 'FFFFFF' },
-  { name: 'Disney+',     color: '#0E47A1', iconSlug: 'disneyplus',    iconColor: 'FFFFFF' },
-  { name: 'Apple TV+',   color: '#000000', iconSlug: 'appletv',       iconColor: 'FFFFFF' },
-  { name: 'HBO Max',     color: '#8A2BE2', iconSlug: 'hbo',           iconColor: 'FFFFFF' },
-  { name: 'Paramount+',  color: '#0064FF', iconSlug: 'paramountplus', iconColor: 'FFFFFF' },
-  { name: 'Hulu',        color: '#1CE783', iconSlug: 'hulu',          iconColor: '0B0C0F' },
-  { name: 'Peacock',     color: '#0A0A0A', iconSlug: 'peacock',       iconColor: 'FFFFFF' },
-  { name: 'Starz',       color: '#000000', iconSlug: 'starz',         iconColor: 'FFFFFF' },
-  { name: 'Showtime',    color: '#CC0000', iconSlug: 'showtime',      iconColor: 'FFFFFF' },
+interface ServiceWithQuery extends Service {
+  /** Query passed to global search — chosen to match how providers tag their groups (e.g. "Disney Plus", "Amazon", "Max"). */
+  searchQuery: string;
+}
+
+const SERVICES: ServiceWithQuery[] = [
+  { name: 'Netflix',     color: '#E50914', iconSlug: 'netflix',       iconColor: 'FFFFFF', searchQuery: 'Netflix' },
+  { name: 'Prime Video', color: '#00A8E1', iconSlug: 'primevideo',    iconColor: 'FFFFFF', searchQuery: 'Amazon' },
+  { name: 'Disney+',     color: '#0E47A1', iconSlug: 'disneyplus',    iconColor: 'FFFFFF', searchQuery: 'Disney' },
+  { name: 'Apple TV+',   color: '#000000', iconSlug: 'appletv',       iconColor: 'FFFFFF', searchQuery: 'Apple TV' },
+  { name: 'HBO Max',     color: '#8A2BE2', iconSlug: 'hbo',           iconColor: 'FFFFFF', searchQuery: 'HBO' },
+  { name: 'Paramount+',  color: '#0064FF', iconSlug: 'paramountplus', iconColor: 'FFFFFF', searchQuery: 'Paramount' },
+  { name: 'Hulu',        color: '#1CE783', iconSlug: 'hulu',          iconColor: '0B0C0F', searchQuery: 'Hulu' },
+  { name: 'Peacock',     color: '#0A0A0A', iconSlug: 'peacock',       iconColor: 'FFFFFF', searchQuery: 'Peacock' },
+  { name: 'Starz',       color: '#000000', iconSlug: 'starz',         iconColor: 'FFFFFF', searchQuery: 'Starz' },
+  { name: 'Showtime',    color: '#CC0000', iconSlug: 'showtime',      iconColor: 'FFFFFF', searchQuery: 'Showtime' },
 ];
 
 export const StreamingServicesCarousel: React.FC<StreamingServicesCarouselProps> = ({ onSelect }) => {
