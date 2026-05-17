@@ -563,6 +563,7 @@ const Index = () => {
         channels={channels}
         onChannelSelect={nav.handleChannelSelect}
         onItemSelect={nav.handleSearchItemSelect}
+        initialQuery={searchInitialQuery}
       />
 
       {nav.selectedTMDBItem && (
