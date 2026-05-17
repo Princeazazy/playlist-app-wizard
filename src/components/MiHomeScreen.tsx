@@ -360,6 +360,10 @@ export const MiHomeScreen = React.memo(({
             </div>
 
             <div className="mt-6">
+              <StreamingServicesCarousel onSelect={(service) => console.log('[StreamingServices] selected:', service)} />
+            </div>
+
+            <div className="mt-6">
               <React.Suspense fallback={<div className="h-40 flex items-center justify-center text-muted-foreground">Loading content...</div>}>
                 <TMDBBrowseSection onSelectItem={onTMDBSelect} channels={channels} onChannelSelect={onChannelSelect} />
               </React.Suspense>
