@@ -560,6 +560,77 @@ export const MiLiveTVList = ({
         }
       }
 
+      // Post-process: for groups with GENERIC names (Movies, Music, News, Sports, Kids, etc.),
+      // sniff the dominant service brand from channel names and rename the group accordingly
+      // (e.g. UK | Movies full of "UK - SKY CINEMA ..." channels → "Sky Cinema Movies").
+      const GENERIC_NAME_REGEX = /\b(movies?|cinema|music|news|sports?|kids?|entertainment|documentary|documentaries|series|drama|comedy|general|family|shows?)\b/i;
+      const BRAND_SNIFFERS: { regex: RegExp; brand: string; logo?: string }[] = [
+        { regex: /\bsky\s*cinema\b/i, brand: 'Sky Cinema', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Sky_Cinema_-_Logo_2020.svg/240px-Sky_Cinema_-_Logo_2020.svg.png' },
+        { regex: /\bsky\s*news\b/i, brand: 'Sky News', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/1/14/Sky_News_logo_2020.svg/240px-Sky_News_logo_2020.svg.png' },
+        { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Sky_Sports_logo_2020.svg/240px-Sky_Sports_logo_2020.svg.png' },
+        { regex: /\bsky\b/i, brand: 'Sky', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Sky_Group_logo_2020.svg/240px-Sky_Group_logo_2020.svg.png' },
+        { regex: /\bbbc\b/i, brand: 'BBC', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/BBC_Logo_2021.svg/240px-BBC_Logo_2021.svg.png' },
+        { regex: /\bitv\b/i, brand: 'ITV', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/ITV_logo_2019.svg/240px-ITV_logo_2019.svg.png' },
+        { regex: /\bchannel\s*4|\bch4\b|\bc4\b/i, brand: 'Channel 4', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Channel_4.svg/240px-Channel_4.svg.png' },
+        { regex: /\bdiscovery\b/i, brand: 'Discovery', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Discovery_Channel_logo.svg/240px-Discovery_Channel_logo.svg.png' },
+        { regex: /\bnat(ional)?\s*geo(graphic)?\b|\bnat\s*geo\b|\bngc\b/i, brand: 'National Geographic', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Natgeologo.svg/240px-Natgeologo.svg.png' },
+        { regex: /\bhistory\b/i, brand: 'History', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/History_Logo.svg/240px-History_Logo.svg.png' },
+        { regex: /\bmtv\b/i, brand: 'MTV', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/MTV_2021_%28brand_version%29.svg/240px-MTV_2021_%28brand_version%29.svg.png' },
+        { regex: /\bvh1\b/i, brand: 'VH1', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/VH1_logonew.svg/240px-VH1_logonew.svg.png' },
+        { regex: /\bdisney\b/i, brand: 'Disney', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Disney%2B_logo.svg/240px-Disney%2B_logo.svg.png' },
+        { regex: /\bcartoon\s*network|\bcn\b/i, brand: 'Cartoon Network', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Cartoon_Network_2010_logo.svg/240px-Cartoon_Network_2010_logo.svg.png' },
+        { regex: /\bnick(elodeon)?\b/i, brand: 'Nickelodeon', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Nickelodeon_2009_logo.svg/240px-Nickelodeon_2009_logo.svg.png' },
+        { regex: /\bcnn\b/i, brand: 'CNN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/CNN.svg/240px-CNN.svg.png' },
+        { regex: /\bfox\b/i, brand: 'FOX', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Fox_Broadcasting_Company_logo_%282019%29.svg/240px-Fox_Broadcasting_Company_logo_%282019%29.svg.png' },
+        { regex: /\bespn\b/i, brand: 'ESPN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/ESPN_wordmark.svg/240px-ESPN_wordmark.svg.png' },
+        { regex: /\beurosport\b/i, brand: 'Eurosport', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Eurosport_Logo_2015.svg/240px-Eurosport_Logo_2015.svg.png' },
+        { regex: /\bbein\b/i, brand: 'beIN', logo: '/images/bein-logo.png' },
+        { regex: /\bcanal\+?|\bcanal\s*plus\b/i, brand: 'Canal+', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Logo_Canal%2B.svg/240px-Logo_Canal%2B.svg.png' },
+        { regex: /\btf1\b/i, brand: 'TF1', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/TF1_logo_2013.svg/240px-TF1_logo_2013.svg.png' },
+        { regex: /\brtl\b/i, brand: 'RTL', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/RTL_Logo.svg/240px-RTL_Logo.svg.png' },
+        { regex: /\bzdf\b/i, brand: 'ZDF', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/ZDF_logo.svg/240px-ZDF_logo.svg.png' },
+        { regex: /\bard\b/i, brand: 'ARD', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/ARD_logo.svg/240px-ARD_logo.svg.png' },
+        { regex: /\brai\b/i, brand: 'RAI', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Logo_Rai.svg/240px-Logo_Rai.svg.png' },
+        { regex: /\bal[\s-]?jazeera|الجزيرة/i, brand: 'Al Jazeera', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Aljazeera_eng.svg/240px-Aljazeera_eng.svg.png' },
+        { regex: /\bal[\s-]?arabiya|العربية/i, brand: 'Al Arabiya', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Al_Arabiya_logo.svg/240px-Al_Arabiya_logo.svg.png' },
+        { regex: /\bmbc\b/i, brand: 'MBC', logo: '/images/mbc-group-logo.png' },
+        { regex: /\brotana\b|روتانا/i, brand: 'Rotana', logo: '/images/rotana-logo.png' },
+        { regex: /\bosn\b/i, brand: 'OSN', logo: '/images/osn-logo.png' },
+      ];
+
+      for (const [normKey, data] of groupData.entries()) {
+        // Only retitle groups whose current display is essentially generic
+        const baseName = (data.displayNameOverride || data.originalNames[0] || normKey).trim();
+        if (!GENERIC_NAME_REGEX.test(baseName)) continue;
+        // Skip if already retitled by SERVICE_PATTERNS above
+        if (data.displayNameOverride && !GENERIC_NAME_REGEX.test(data.displayNameOverride)) continue;
+
+        const groupOrigNames = normMap.get(normKey) || [];
+        const sampleChannels = channels
+          .filter(ch => groupOrigNames.includes(ch.group || 'Uncategorized'))
+          .slice(0, 12);
+        if (sampleChannels.length === 0) continue;
+
+        let bestBrand: { brand: string; logo?: string; count: number } | null = null;
+        for (const sniffer of BRAND_SNIFFERS) {
+          const count = sampleChannels.filter(ch => sniffer.regex.test(ch.name || '')).length;
+          if (count >= Math.max(2, Math.ceil(sampleChannels.length * 0.3))) {
+            if (!bestBrand || count > bestBrand.count) {
+              bestBrand = { brand: sniffer.brand, logo: sniffer.logo, count };
+            }
+          }
+        }
+        if (!bestBrand) continue;
+
+        // Compose new display name: "{Brand} {Generic}" (preserve generic category word)
+        const genericWordMatch = baseName.match(GENERIC_NAME_REGEX);
+        const genericWord = genericWordMatch
+          ? genericWordMatch[0].charAt(0).toUpperCase() + genericWordMatch[0].slice(1).toLowerCase()
+          : '';
+        data.displayNameOverride = genericWord ? `${bestBrand.brand} ${genericWord}` : bestBrand.brand;
+        if (bestBrand.logo) data.firstLogo = bestBrand.logo;
+      }
+
       // Post-process: for US sub-groups, use the 2nd channel as the source of truth for name + logo
       const cleanUsNetworkName = (rawName: string): string | null => {
         let cleaned = rawName
