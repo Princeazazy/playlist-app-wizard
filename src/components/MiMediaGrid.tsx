@@ -693,6 +693,8 @@ export const MiMediaGrid = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const weather = useWeather();
   const isMobile = useIsMobile();
+  const [aiCanonical, setAiCanonical] = useState<Record<string, string>>({});
+
 
   // Voice search handler
   const toggleVoiceSearch = () => {
