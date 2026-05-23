@@ -433,6 +433,8 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
 const getCategoryLogo = (groupName: string, category?: 'movies' | 'series'): string | null => {
   if (category === 'series') return getSeriesCategoryLogo(groupName);
   return getMovieCategoryLogo(groupName);
+};
+
 
 // Sidebar category tile logo with AI fallback (Brandfetch → Nano Banana)
 const CategoryTileLogo = ({
