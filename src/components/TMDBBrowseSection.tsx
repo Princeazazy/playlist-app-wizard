@@ -127,12 +127,10 @@ const useInfiniteScroll = (speed = 0.4) => {
       el.removeEventListener('mouseup', onUp);
       el.removeEventListener('mousemove', onMove);
       el.removeEventListener('click', onClickCapture, true);
-      el.removeEventListener('mouseenter', onEnter);
-      el.removeEventListener('mouseout', onMouseOut);
       el.removeEventListener('touchstart', onTouch);
       el.removeEventListener('touchmove', onTouch);
       el.removeEventListener('wheel', onWheel);
-      el.removeEventListener('focusin', onFocusIn);
+
       window.removeEventListener('keydown', keyHandler);
     };
   }, [speed]);
