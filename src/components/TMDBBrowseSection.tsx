@@ -88,11 +88,9 @@ const useInfiniteScroll = (speed = 0.4) => {
     const onClickCapture = (e: MouseEvent) => {
       if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
     };
-    const onEnter = () => pause(60_000); // keep paused while hovering
-    const onMouseOut = () => pause(1500);
     const onTouch = () => pause(4000);
     const onWheel = () => pause(3000);
-    const onFocusIn = () => pause(8000);
+
 
     el.addEventListener('scroll', onScroll, { passive: true });
     el.addEventListener('mousedown', onDown);
@@ -100,12 +98,10 @@ const useInfiniteScroll = (speed = 0.4) => {
     el.addEventListener('mouseup', onUp);
     el.addEventListener('mousemove', onMove);
     el.addEventListener('click', onClickCapture, true);
-    el.addEventListener('mouseenter', onEnter);
-    el.addEventListener('mouseout', onMouseOut);
     el.addEventListener('touchstart', onTouch, { passive: true });
     el.addEventListener('touchmove', onTouch, { passive: true });
     el.addEventListener('wheel', onWheel, { passive: true });
-    el.addEventListener('focusin', onFocusIn);
+
     el.style.cursor = 'grab';
 
     // Remote/keyboard navigation: arrow keys scroll by one card width when focused/hovered
@@ -131,12 +127,10 @@ const useInfiniteScroll = (speed = 0.4) => {
       el.removeEventListener('mouseup', onUp);
       el.removeEventListener('mousemove', onMove);
       el.removeEventListener('click', onClickCapture, true);
-      el.removeEventListener('mouseenter', onEnter);
-      el.removeEventListener('mouseout', onMouseOut);
       el.removeEventListener('touchstart', onTouch);
       el.removeEventListener('touchmove', onTouch);
       el.removeEventListener('wheel', onWheel);
-      el.removeEventListener('focusin', onFocusIn);
+
       window.removeEventListener('keydown', keyHandler);
     };
   }, [speed]);
