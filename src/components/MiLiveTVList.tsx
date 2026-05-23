@@ -600,7 +600,7 @@ export const MiLiveTVList = ({
         { regex: /\bchannel\s*4|\bch4\b|\bc4\b|\be4\b|\bfilm4\b/i, brand: 'Channel 4', logo: CB('channel4.com') },
         { regex: /\bchannel\s*5|\bch5\b/i, brand: 'Channel 5', logo: CB('channel5.com') },
         // Discovery family
-        { regex: /\bdiscovery\b/i, brand: 'Discovery', logo: CB('discovery.com') },
+        { regex: /\bdiscovery\b/i, brand: 'Discovery', logo: matchBrandLogo('discovery') || CB('discovery.com') },
         { regex: /\bnat(ional)?\s*geo(graphic)?\b|\bnat\s*geo\b|\bngc\b/i, brand: 'National Geographic', logo: CB('nationalgeographic.com') },
         { regex: /\banimal\s*planet\b/i, brand: 'Animal Planet', logo: CB('animalplanet.com') },
         { regex: /\btlc\b/i, brand: 'TLC', logo: CB('tlc.com') },
@@ -620,10 +620,10 @@ export const MiLiveTVList = ({
         { regex: /\bbloomberg\b/i, brand: 'Bloomberg', logo: CB('bloomberg.com') },
         { regex: /\beuronews\b/i, brand: 'Euronews', logo: CB('euronews.com') },
         { regex: /\bfrance\s*24\b/i, brand: 'France 24', logo: CB('france24.com') },
-        { regex: /\bnbc\b/i, brand: 'NBC', logo: CB('nbc.com') },
+        { regex: /\bnbc\b/i, brand: 'NBC', logo: matchBrandLogo('nbc') || CB('nbc.com') },
         { regex: /\bcbs\b/i, brand: 'CBS', logo: CB('cbs.com') },
         { regex: /\babc\b/i, brand: 'ABC', logo: CB('abc.com') },
-        { regex: /\bfox\b/i, brand: 'FOX', logo: CB('fox.com') },
+        { regex: /\bfox\b/i, brand: 'FOX', logo: matchBrandLogo('fox') || CB('fox.com') },
         { regex: /\bcomedy\s*central\b/i, brand: 'Comedy Central', logo: CB('cc.com') },
         { regex: /\bamc\b/i, brand: 'AMC', logo: CB('amc.com') },
         { regex: /\bsyfy\b/i, brand: 'Syfy', logo: CB('syfy.com') },
@@ -631,7 +631,7 @@ export const MiLiveTVList = ({
         { regex: /\btbs\b/i, brand: 'TBS', logo: CB('tbs.com') },
         { regex: /\bhgtv\b/i, brand: 'HGTV', logo: CB('hgtv.com') },
         { regex: /\bfood\s*network\b/i, brand: 'Food Network', logo: CB('foodnetwork.com') },
-        { regex: /\bpbs\b/i, brand: 'PBS', logo: CB('pbs.org') },
+        { regex: /\bpbs\b/i, brand: 'PBS', logo: matchBrandLogo('pbs') || CB('pbs.org') },
         // Sports
         { regex: /\bespn\b/i, brand: 'ESPN', logo: CB('espn.com') },
         { regex: /\beurosport\b/i, brand: 'Eurosport', logo: CB('eurosport.com') },
@@ -677,7 +677,7 @@ export const MiLiveTVList = ({
         { regex: /\bufc\b/i, brand: 'UFC', logo: CB('ufc.com') },
         { regex: /\bformula\s*1|\bf1\b/i, brand: 'Formula 1', logo: CB('formula1.com') },
         // US extras
-        { regex: /\bahc\b|american\s*heroes/i, brand: 'American Heroes', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/American_Heroes_Channel.png/512px-American_Heroes_Channel.png' },
+        { regex: /\bahc\b|american\s*heroes/i, brand: 'American Heroes', logo: matchBrandLogo('american heroes') || undefined },
         { regex: /\bhallmark\b/i, brand: 'Hallmark', logo: CB('hallmarkchannel.com') },
         { regex: /\btravel\s*channel\b/i, brand: 'Travel Channel', logo: CB('travelchannel.com') },
         { regex: /\bsmithsonian\b/i, brand: 'Smithsonian', logo: CB('smithsonianchannel.com') },
@@ -836,8 +836,16 @@ export const MiLiveTVList = ({
       // Predefined logos for known US networks (by network token, post-expansion key)
       const US_NETWORK_LOGOS: Record<string, string> = {
         'HBO': '/images/hbo-logo.png',
-        'FOX': '/images/fox-news-logo.png',
-        'PBS': '/images/pbs-logo.png',
+        'FOX': '/images/fox-round-logo.svg',
+        'NBC': '/images/nbc-round-logo.svg',
+        'PBS': '/images/pbs-round-logo.svg',
+        'UNIVISION': '/images/univision-round-logo.svg',
+        'UNIMAS': '/images/unimas-round-logo.svg',
+        'SPECTRUMNEWS': '/images/spectrum-news-round-logo.svg',
+        'BIGTENNETWORK': '/images/big-ten-round-logo.svg',
+        'AMERICANHEROES': '/images/american-heroes-round-logo.svg',
+        'DISCOVERY': '/images/discovery-round-logo.svg',
+        'USCM': '/images/cinemania-round-logo.svg',
       };
 
       for (const [normKey, data] of groupData.entries()) {
@@ -1274,7 +1282,7 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className={`absolute inset-0 z-10 w-full h-full ${isFlagLogo ? 'object-cover bg-muted' : 'object-contain bg-foreground'}`}
+                        className={`absolute inset-0 z-10 w-full h-full ${isFlagLogo ? 'object-cover bg-muted' : 'object-cover bg-foreground'}`}
                         onError={(event) => {
 
                           event.currentTarget.style.display = 'none';
