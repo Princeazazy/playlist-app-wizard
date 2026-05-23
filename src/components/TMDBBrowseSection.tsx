@@ -26,12 +26,17 @@ const getFilledPageItems = <T,>(items: T[], currentPage: number, pageSize: numbe
   return Array.from({ length: maxItems }, (_, index) => items[(start + index) % items.length]);
 };
 
+const buildLoopItems = <T,>(items: T[], minimumCopies = 5): T[] => {
+  if (items.length === 0) return [];
+  return Array.from({ length: minimumCopies }, () => items).flat();
+};
+
 let activeInfiniteCarousel: HTMLDivElement | null = null;
 
 // Mouse-drag-to-scroll + endless auto-scroll for horizontal carousels.
 // Items are expected to be duplicated (rendered 2x) so the scroll can loop seamlessly.
 // Only the carousel being hovered/focused/touched pauses; every other row keeps spinning.
-const useInfiniteScroll = (speed = 0.4) => {
+const useInfiniteScroll = (speed = 0.85) => {
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     const el = ref.current;
