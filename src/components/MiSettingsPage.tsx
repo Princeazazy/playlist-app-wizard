@@ -404,7 +404,7 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut, onSwitchPr
 
         {/* Center Logo */}
         <div className="hidden md:flex items-center justify-center">
-          <img src={universePlayLogo} alt="Universe TV" className="h-12 w-auto" />
+          <img src={universePlayLogo} alt="Universe TV" className="h-24 md:h-32 w-auto" />
         </div>
 
         {/* Time & Weather */}
