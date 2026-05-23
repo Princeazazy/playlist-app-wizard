@@ -696,7 +696,10 @@ export const MiLiveTVList = ({
           // Lower threshold (25%) when sniffing, but require group-name OR >=2 channels
           if (count >= Math.max(2, Math.ceil(sampleChannels.length * 0.25))) {
             if (!bestBrand || count > bestBrand.count) {
-              bestBrand = { brand: sniffer.brand, logo: sniffer.logo, count };
+              // Prefer the centralized brand catalog URL (reliable Wikipedia logos)
+              // over the inline CB() fallback bundled with each sniffer rule.
+              const catalogLogo = matchBrandLogo(sniffer.brand);
+              bestBrand = { brand: sniffer.brand, logo: catalogLogo || sniffer.logo, count };
             }
           }
         }
