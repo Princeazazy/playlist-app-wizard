@@ -592,6 +592,7 @@ export const MiLiveTVList = ({
       const BRAND_SNIFFERS: { regex: RegExp; brand: string; logo?: string }[] = [
         // Sky family
         { regex: /\bsky\s*cinema\b|\bsky\s*movies?\b/i, brand: 'Sky Cinema', logo: '/images/sky-movies-round-logo.png' },
+        { regex: /\bsky\s*(documentary|documentaries|docs?)\b/i, brand: 'Sky Documentary', logo: '/images/sky-documentary-logo.png' },
         { regex: /\bsky\s*(entertainment|one|atlantic|showcase|witness|comedy|max)\b/i, brand: 'Sky Entertainment', logo: SKY_ENTERTAINMENT_LOGO },
         { regex: /\bsky\s*sports?\s*f1\b/i, brand: 'Sky Sports F1', logo: CB('skysports.com') },
         { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: CB('skysports.com') },
@@ -1301,7 +1302,7 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className={`absolute inset-0 z-10 w-full h-full ${(isFlagLogo || isFillLogo) ? 'object-cover bg-muted' : 'object-contain p-1.5 bg-white'}`}
+                        className="absolute inset-0 z-10 w-full h-full object-cover bg-muted"
                         onError={(event) => {
 
                           event.currentTarget.style.display = 'none';
