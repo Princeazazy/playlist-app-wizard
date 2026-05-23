@@ -56,7 +56,7 @@ const FloatingOrbs = React.memo(() => (
   </div>
 ));
 
-// Lightweight tile card - CSS-only hover effects, no per-frame motion calculations
+// Minimal-sharp tile card: subtle glass surface, accent-color border on hover, perspective corner
 const TileCard = ({
   children,
   onClick,
@@ -72,64 +72,71 @@ const TileCard = ({
   delay?: number;
   accentColor?: 'primary' | 'accent' | 'emerald' | 'rose' | 'violet';
 }) => {
-  const gradients: Record<string, string> = {
-    primary: 'from-primary/25 to-primary/5',
-    accent: 'from-accent/25 to-accent/5',
-    emerald: 'from-emerald-500/25 to-emerald-500/5',
-    rose: 'from-rose-500/25 to-rose-500/5',
-    violet: 'from-violet-500/25 to-violet-500/5',
+  const accents: Record<string, { border: string; glow: string; overlay: string; corner: string }> = {
+    primary: {
+      border: 'hsl(200 90% 55% / 0.5)',
+      glow: '0 0 50px -12px hsl(200 90% 55% / 0.35)',
+      overlay: 'linear-gradient(180deg, hsl(200 90% 55% / 0.08) 0%, transparent 100%)',
+      corner: 'hsl(200 90% 55% / 0.35)',
+    },
+    accent: {
+      border: 'hsl(30 95% 55% / 0.45)',
+      glow: '0 0 45px -12px hsl(30 95% 55% / 0.3)',
+      overlay: 'linear-gradient(135deg, hsl(30 95% 55% / 0.07) 0%, transparent 100%)',
+      corner: 'hsl(30 95% 55% / 0.3)',
+    },
+    emerald: {
+      border: 'hsl(160 80% 45% / 0.45)',
+      glow: '0 0 45px -12px hsl(160 80% 45% / 0.3)',
+      overlay: 'linear-gradient(135deg, hsl(160 80% 45% / 0.07) 0%, transparent 100%)',
+      corner: 'hsl(160 80% 45% / 0.3)',
+    },
+    rose: {
+      border: 'hsl(350 80% 60% / 0.45)',
+      glow: '0 0 45px -12px hsl(350 80% 60% / 0.3)',
+      overlay: 'linear-gradient(135deg, hsl(350 80% 60% / 0.07) 0%, transparent 100%)',
+      corner: 'hsl(350 80% 60% / 0.3)',
+    },
+    violet: {
+      border: 'hsl(270 80% 60% / 0.45)',
+      glow: '0 0 45px -12px hsl(270 80% 60% / 0.3)',
+      overlay: 'linear-gradient(135deg, hsl(270 80% 60% / 0.07) 0%, transparent 100%)',
+      corner: 'hsl(270 80% 60% / 0.3)',
+    },
   };
-
-  const borders: Record<string, string> = {
-    primary: 'hsl(200 90% 55% / 0.4)',
-    accent: 'hsl(30 95% 55% / 0.4)',
-    emerald: 'hsl(160 80% 45% / 0.4)',
-    rose: 'hsl(350 80% 60% / 0.4)',
-    violet: 'hsl(270 80% 60% / 0.4)',
-  };
-
-  const glows: Record<string, string> = {
-    primary: '0 20px 60px hsl(200 90% 55% / 0.25)',
-    accent: '0 20px 60px hsl(30 95% 55% / 0.25)',
-    emerald: '0 20px 60px hsl(160 80% 45% / 0.25)',
-    rose: '0 20px 60px hsl(350 80% 60% / 0.25)',
-    violet: '0 20px 60px hsl(270 80% 60% / 0.25)',
-  };
-
+  const a = accents[accentColor];
+  const isLarge = size === 'large';
   const sizeClasses = { large: 'col-span-1 row-span-2', normal: 'col-span-1 row-span-1', small: 'col-span-1 row-span-1' };
 
   return (
     <button
       onClick={onClick}
-      className={`${sizeClasses[size]} hud-frame relative rounded-2xl overflow-hidden border transition-all duration-200 group ${className} hover:scale-[1.04] hover:-translate-y-1.5 active:scale-[0.97]`}
+      className={`${sizeClasses[size]} relative ${isLarge ? 'rounded-[2rem] p-8' : 'rounded-3xl p-6'} overflow-hidden border border-white/10 transition-all duration-500 group hover:scale-[1.02] active:scale-[0.98] ${className}`}
       style={{
-        borderColor: 'hsl(265 30% 22% / 0.6)',
-        boxShadow: '0 8px 30px hsl(0 0% 0% / 0.4)',
+        background: 'linear-gradient(135deg, hsl(0 0% 100% / 0.06) 0%, hsl(0 0% 100% / 0.01) 100%)',
+        boxShadow: '0 6px 24px hsl(0 0% 0% / 0.35)',
         animation: `fadeSlideIn 0.4s ease-out ${delay * 0.08}s both`,
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = glows[accentColor];
-        e.currentTarget.style.borderColor = borders[accentColor];
+        e.currentTarget.style.boxShadow = a.glow;
+        e.currentTarget.style.borderColor = a.border;
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 8px 30px hsl(0 0% 0% / 0.4)';
-        e.currentTarget.style.borderColor = 'hsl(265 30% 22% / 0.6)';
+        e.currentTarget.style.boxShadow = '0 6px 24px hsl(0 0% 0% / 0.35)';
+        e.currentTarget.style.borderColor = 'hsl(0 0% 100% / 0.1)';
       }}
     >
-      {/* Base gradient */}
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(145deg, hsl(265 45% 15%) 0%, hsl(265 40% 9%) 100%)' }} />
+      {/* Hover accent wash */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: a.overlay }} />
 
-      {/* Hover gradient overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradients[accentColor]} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-
-      {/* Shine sweep */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-600 pointer-events-none" />
-
-      {/* Top border highlight */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+      {/* Perspective corner */}
+      <div
+        className={`absolute pointer-events-none ${isLarge ? 'bottom-6 right-6 w-10 h-10 rounded-br-2xl border-r-2 border-b-2' : 'bottom-4 right-4 w-4 h-4 rounded-br-lg border-r border-b'}`}
+        style={{ borderColor: a.corner }}
+      />
 
       {/* Content */}
-      <div className="relative h-full flex flex-col p-5 text-left z-10">
+      <div className="relative h-full flex flex-col text-left z-10">
         {children}
       </div>
     </button>
