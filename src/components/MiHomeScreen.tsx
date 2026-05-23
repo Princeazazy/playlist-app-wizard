@@ -231,7 +231,10 @@ export const MiHomeScreen = React.memo(({
 
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6" style={{ animation: 'fadeSlideIn 0.4s ease-out both' }}>
-        <ChromaKeyVideo src={logoVideo} className="h-20 md:h-28" />
+        <div className="flex items-center gap-4">
+          <ChromaKeyVideo src={logoVideo} className="h-20 md:h-28" />
+          {!isMobile && <span className="hud-chip">System Online</span>}
+        </div>
 
         {!isMobile && (
           <div className="flex items-center gap-3">
