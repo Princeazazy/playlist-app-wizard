@@ -719,29 +719,93 @@ export const MiLiveTVList = ({
       }
 
       // Post-process: for US sub-groups, use the 2nd channel as the source of truth for name + logo
+      const US_NETWORK_EXPANSIONS: Record<string, string> = {
+        AHC: 'American Heroes',
+        AHL: 'AHL Hockey',
+        AMC: 'AMC',
+        AE: 'A&E',
+        FX: 'FX',
+        FXX: 'FX',
+        TBS: 'TBS',
+        TNT: 'TNT',
+        USA: 'USA Network',
+        SYFY: 'Syfy',
+        HBO: 'HBO',
+        HGTV: 'HGTV',
+        TLC: 'TLC',
+        CW: 'The CW',
+        ION: 'ION TV',
+        PBS: 'PBS',
+        ABC: 'ABC',
+        CBS: 'CBS',
+        NBC: 'NBC',
+        FOX: 'FOX',
+        ESPN: 'ESPN',
+        ESPN2: 'ESPN 2',
+        FS1: 'Fox Sports 1',
+        FS2: 'Fox Sports 2',
+        MLB: 'MLB Network',
+        NFL: 'NFL Network',
+        NHL: 'NHL Network',
+        NBA: 'NBA TV',
+        SHOWTIME: 'Showtime',
+        STARZ: 'Starz',
+        CINEMAX: 'Cinemax',
+        BRAVO: 'Bravo',
+        LIFETIME: 'Lifetime',
+        OXYGEN: 'Oxygen',
+        HALLMARK: 'Hallmark',
+        MOTORTREND: 'MotorTrend',
+        SMITHSONIAN: 'Smithsonian',
+        SCIENCE: 'Science Channel',
+        DISCOVERY: 'Discovery',
+        HISTORY: 'History',
+        NATGEO: 'National Geographic',
+        TRUTV: 'truTV',
+        FOOD: 'Food Network',
+        TRAVEL: 'Travel Channel',
+        ID: 'Investigation Discovery',
+        NICK: 'Nickelodeon',
+        DISNEY: 'Disney',
+        CARTOONNETWORK: 'Cartoon Network',
+        BOOMERANG: 'Boomerang',
+        MTV: 'MTV',
+        VH1: 'VH1',
+        BET: 'BET',
+        CNN: 'CNN',
+        MSNBC: 'MSNBC',
+        FOXNEWS: 'Fox News',
+        BLOOMBERG: 'Bloomberg',
+        TELEMUNDO: 'Telemundo',
+        UNIVISION: 'Univision',
+        UNI: 'Univision',
+      };
+
       const cleanUsNetworkName = (rawName: string): string | null => {
         let cleaned = rawName
           .replace(/^[#\-\s|]+/, '')
           .replace(/^(?:MYHD\s*-\s*|AM\s*\|\s*|AR\s*\|\s*|US\s*\|\s*)/i, '')
           .trim();
 
-        const explicitMatch = cleaned.match(/\b(?:US[\s-]*)?(ABC|CBS|NBC|FOX|CW|PBS|ION|MYTV|MYTV9|TELEMUNDO|UNIVISION|UNI|TBS|TNT|AMC|A&E|FX|FXX|USA|SYFY|HBO|SHOWTIME|STARZ|DISCOVERY|HISTORY|LIFETIME|BRAVO|E!|HGTV|FOOD|TRUTV|COMEDY\s*CENTRAL|NICK|DISNEY|CARTOON\s*NETWORK)\b/i);
+        const explicitMatch = cleaned.match(/\b(?:US[\s-]*)?(ABC|CBS|NBC|FOX|CW|PBS|ION|MYTV|MYTV9|TELEMUNDO|UNIVISION|UNI|TBS|TNT|AMC|A&E|FX|FXX|USA|SYFY|HBO|SHOWTIME|STARZ|DISCOVERY|HISTORY|LIFETIME|BRAVO|E!|HGTV|FOOD|TRUTV|COMEDY\s*CENTRAL|NICK|DISNEY|CARTOON\s*NETWORK|AHC|AHL|HALLMARK|TRAVEL|SMITHSONIAN|SCIENCE|MOTORTREND|CINEMAX|OXYGEN|ESPN2?|FS1|FS2|MLB|NFL|NHL|NBA)\b/i);
         if (explicitMatch) {
           const network = explicitMatch[1].toUpperCase().replace(/\s+/g, '');
-          return `US-${network}`;
+          return US_NETWORK_EXPANSIONS[network] || network;
         }
 
         const prefixMatch = cleaned.match(/^(US[\s-]*[A-Z0-9&+]{2,15})\b/i);
         if (prefixMatch) {
-          return prefixMatch[1].toUpperCase().replace(/\s+/g, '-');
+          const tok = prefixMatch[1].toUpperCase().replace(/^US[\s-]*/, '').replace(/\s+/g, '');
+          return US_NETWORK_EXPANSIONS[tok] || `US ${tok}`;
         }
 
         const firstToken = cleaned.split(/\s+/)[0]?.replace(/[^A-Za-z0-9&+\-]/g, '');
         if (!firstToken || /^\d+$/.test(firstToken) || firstToken.length < 2) return null;
-        return `US-${firstToken.toUpperCase()}`;
+        const tokUpper = firstToken.toUpperCase();
+        return US_NETWORK_EXPANSIONS[tokUpper] || `US ${tokUpper}`;
       };
 
-      // Predefined logos for known US networks
+      // Predefined logos for known US networks (by network token, post-expansion key)
       const US_NETWORK_LOGOS: Record<string, string> = {
         'HBO': '/images/hbo-logo.png',
         'FOX': '/images/fox-news-logo.png',
