@@ -504,10 +504,21 @@ const CategoryTileLogo = ({
     localLogo = getCategoryLogo(displayName, category);
   }
 
+  // 2. Fallback: deterministic brand logo match (Apple TV, Premier League, Serie A, UFC, Formula 1, etc.)
+  let brandLogo: string | null = null;
+  if (!localLogo) {
+    for (const rn of rawNames) {
+      brandLogo = matchBrandLogo(rn);
+      if (brandLogo) break;
+    }
+    if (!brandLogo) brandLogo = matchBrandLogo(displayName);
+  }
+
   // No AI fallback here: using generated/category-search results caused wrong or generic logos,
   // and falling back to firstLogo would use a poster/still instead of a category badge.
-  if (localLogo) {
-    return <img src={localLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
+  const finalLogo = localLogo || brandLogo;
+  if (finalLogo) {
+    return <img src={finalLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
   }
   return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
 
