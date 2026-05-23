@@ -26,6 +26,54 @@ const getFilledPageItems = <T,>(items: T[], currentPage: number, pageSize: numbe
   return Array.from({ length: maxItems }, (_, index) => items[(start + index) % items.length]);
 };
 
+// Mouse-drag-to-scroll for horizontal carousels (touch works natively)
+const useDragScroll = () => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let moved = false;
+    const onDown = (e: MouseEvent) => {
+      isDown = true;
+      moved = false;
+      startX = e.pageX - el.offsetLeft;
+      scrollLeft = el.scrollLeft;
+      el.style.cursor = 'grabbing';
+    };
+    const onLeave = () => { isDown = false; el.style.cursor = 'grab'; };
+    const onUp = () => { isDown = false; el.style.cursor = 'grab'; };
+    const onMove = (e: MouseEvent) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - el.offsetLeft;
+      const walk = (x - startX);
+      if (Math.abs(walk) > 5) moved = true;
+      el.scrollLeft = scrollLeft - walk;
+    };
+    const onClickCapture = (e: MouseEvent) => {
+      if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
+    };
+    el.addEventListener('mousedown', onDown);
+    el.addEventListener('mouseleave', onLeave);
+    el.addEventListener('mouseup', onUp);
+    el.addEventListener('mousemove', onMove);
+    el.addEventListener('click', onClickCapture, true);
+    el.style.cursor = 'grab';
+    return () => {
+      el.removeEventListener('mousedown', onDown);
+      el.removeEventListener('mouseleave', onLeave);
+      el.removeEventListener('mouseup', onUp);
+      el.removeEventListener('mousemove', onMove);
+      el.removeEventListener('click', onClickCapture, true);
+    };
+  }, []);
+  return ref;
+};
+
+
 // Lightweight card - NO framer-motion, pure CSS transitions
 const MediaCard = ({ item, onClick }: { item: TMDBItem; onClick?: () => void }) => (
   <button
