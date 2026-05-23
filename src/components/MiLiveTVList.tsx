@@ -1026,11 +1026,11 @@ export const MiLiveTVList = ({
       }
     };
 
-    // Process in batches of 5
+    // Process in batches of 8 so every visible Live TV group quickly gets a logo attempt
     const run = async () => {
-      for (let i = 0; i < needLogos.length; i += 5) {
-        await fetchBatch(needLogos.slice(i, i + 5));
-        if (i + 5 < needLogos.length) await new Promise(r => setTimeout(r, 1500));
+      for (let i = 0; i < needLogos.length; i += 8) {
+        await fetchBatch(needLogos.slice(i, i + 8));
+        if (i + 8 < needLogos.length) await new Promise(r => setTimeout(r, 650));
       }
     };
     run();
@@ -1046,14 +1046,11 @@ export const MiLiveTVList = ({
       if (meta?.flagUrl) return meta.flagUrl;
       const brandLogo = matchBrandLogo(group.name);
       if (brandLogo) return brandLogo;
-      if (group.firstLogo) return group.firstLogo;
       return aiGroupLogos[group.displayName] || null;
     }
 
     // US sub-groups: prioritize channel-derived logo over flag
-    if (group.name.startsWith('us_') && group.firstLogo) {
-      return group.firstLogo;
-    }
+    if (group.name.startsWith('us_')) return group.firstLogo || aiGroupLogos[group.displayName] || null;
 
     // 1. Try brand logo matching first
     const brandLogo = matchBrandLogo(group.displayName);
@@ -1068,8 +1065,6 @@ export const MiLiveTVList = ({
     
     if (countryInfo?.isStreamingService) {
       if (countryInfo.flagUrl) return countryInfo.flagUrl;
-      // Use first channel logo for services without a defined logo (TOD, Jawy, etc.)
-      if (group.firstLogo) return group.firstLogo;
       return aiGroupLogos[group.displayName] || null;
     }
     
@@ -1079,16 +1074,13 @@ export const MiLiveTVList = ({
     const isPremiumGroup = group.displayName.toLowerCase().includes('premium');
     if ((isMainCountryGroup || isPremiumGroup) && countryInfo?.flagUrl) return countryInfo.flagUrl;
     
-    // For other sub-groups like "USA Entertainment", use first channel logo
-    if (countryInfo && !isMainCountryGroup && group.firstLogo) return group.firstLogo;
+    // For other sub-groups like "USA Entertainment", wait for the category logo resolver instead of showing random channel art
+    if (countryInfo && !isMainCountryGroup) return aiGroupLogos[group.displayName] || null;
     
     for (const origName of group.originalNames) {
       const flag = getCountryFlagUrl(origName);
       if (flag) return flag;
     }
-    
-    // Use first channel's logo as fallback (e.g., for US sub-groups)
-    if (group.firstLogo) return group.firstLogo;
     
     // AI-resolved logo fallback
     return aiGroupLogos[group.displayName] || null;
