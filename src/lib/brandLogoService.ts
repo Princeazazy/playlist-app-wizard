@@ -134,7 +134,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     aliases: ['سيري ا', 'الدوري الايطالي'],
   },
   bundesliga: {
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/df/Bundesliga_logo_%282017%29.svg/200px-Bundesliga_logo_%282017%29.svg.png',
+    logo: '/images/bundesliga-logo.png',
     aliases: ['بوندسليغا', 'الدوري الالماني'],
   },
   uefa: {
