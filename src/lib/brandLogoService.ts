@@ -21,6 +21,16 @@ const WE = (pathOrFile: string) => wikiRedirect('en.wikipedia.org', pathOrFile);
 const CB = (domain: string) => `https://logo.clearbit.com/${domain}`;
 const SKY_ENTERTAINMENT_LOGO = '/images/sky-entertainment-logo.png?v=uploaded-sky-entertainment';
 const SKY_DOCUMENTARY_LOGO = '/images/sky-documentary-logo.png?v=uploaded-sky-documentary';
+const APPLE_TV_PLUS_LOGO = WC('Apple_TV_Plus_Logo.svg');
+const MLB_NETWORK_LOGO = WE('MLBNetworkLogo.svg');
+const NBA_TV_LOGO = WE('NBA_TV.svg');
+const NFL_NETWORK_LOGO = WE('NFL_Network_logo.svg');
+const F1_LOGO = WC('F1.svg');
+const UFC_LOGO = WC('UFC_Logo.svg');
+const ICC_LOGO = WC('ICC_logo.png');
+const CW_LOGO = WE('The_CW_2024.svg');
+const TELEMUNDO_LOGO = WC('Telemundo_logo_2018.svg');
+const ON_LOGO = WC('ON_logo.png');
 
 const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   // ── Streaming Platforms ──
@@ -31,7 +41,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'disney channel': { logo: CB('disneychannel.com'), aliases: ['disney xd', 'disney jr', 'disney junior'] },
   hulu: { logo: CB('hulu.com'), aliases: ['هولو'] },
   'amazon prime': { logo: '/images/prime-video-custom-v2.png', aliases: ['prime video', 'amazon', 'amazon prime video', 'أمازون', 'امازون', 'برايم'] },
-  'apple tv': { logo: '/images/apple-tv-logo.png', aliases: ['apple tv+', 'appletv', 'apple', 'ابل تي في', 'آبل تي في'] },
+  'apple tv': { logo: APPLE_TV_PLUS_LOGO, aliases: ['apple tv+', 'appletv', 'apple tv plus', 'ابل تي في', 'آبل تي في'] },
   paramount: { logo: '/images/paramount-plus-custom-v2.png', aliases: ['paramount+', 'paramount plus', 'paramountplus', 'باراماونت'] },
   peacock: { logo: '/images/peacock-logo.png', aliases: ['بيكوك'] },
   starz: { logo: '/images/starzplay-logo.png', aliases: ['starzplay', 'ستارز'] },
@@ -60,15 +70,15 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'champions league': { logo: '/images/champions-league-logo.png', aliases: ['uefa champions league', 'ucl', 'دوري الابطال'] },
   'europa league': { logo: CB('uefa.com'), aliases: ['uel', 'الدوري الأوروبي'] },
   uefa: { logo: '/images/uefa-logo.png', aliases: ['يويفا'] },
-  nba: { logo: '/images/nba-round-logo.png', aliases: ['nba tv', 'الدوري الأمريكي'] },
-  nfl: { logo: '/images/nfl-round-logo.png', aliases: ['nfl network'] },
-  nhl: { logo: '/images/nhl-round-logo.png', aliases: ['nhl network'] },
-  mlb: { logo: '/images/mlb-round-logo.png', aliases: ['mlb network', 'us milb', 'milb', 'minor league baseball'] },
+  nba: { logo: NBA_TV_LOGO, aliases: ['nba tv', 'الدوري الأمريكي'] },
+  nfl: { logo: NFL_NETWORK_LOGO, aliases: ['nfl network'] },
+  nhl: { logo: CB('nhl.com'), aliases: ['nhl network'] },
+  mlb: { logo: MLB_NETWORK_LOGO, aliases: ['mlb network', 'us milb', 'milb', 'minor league baseball'] },
   motogp: { logo: CB('motogp.com'), aliases: ['moto gp'] },
   nascar: { logo: CB('nascar.com'), aliases: [] },
   'national league': { logo: '/images/national-league-logo.png', aliases: ['vanarama national league', 'efl national'] },
   'pdc': { logo: WC('World_Series_of_Darts_-_Logo.svg'), aliases: ['pdc darts', 'darts', 'professional darts corporation', 'world darts'] },
-  cricket: { logo: WE('International_Cricket_Council_Logo.svg'), aliases: ['icc', 'world cricket'] },
+  cricket: { logo: ICC_LOGO, aliases: ['icc', 'world cricket'] },
   rugby: { logo: WE('World_Rugby_logo.svg'), aliases: ['world rugby', 'six nations'] },
   tennis: { logo: WE('ATP_Tour_logo.svg'), aliases: ['atp', 'wta', 'tennis channel'] },
   golf: { logo: WE('PGA_Tour_logo.svg'), aliases: ['pga', 'pga tour', 'european tour'] },
