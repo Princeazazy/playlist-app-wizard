@@ -916,6 +916,7 @@ export const mergeAndSortGroups = (
       count: data.count,
       firstLogo: data.firstLogo,
       originalNames: data.originalNames,
+      brandLogo: data.brandLogo,
     }))
     .sort((a, b) => {
       const priorityA = getGroupPriority(a.originalNames[0]);
