@@ -473,7 +473,9 @@ export const MiLiveTVList = ({
     'League One': { flagUrl: '/images/league-one-logo-v2.png', priority: 26, isService: true },
     'League Two': { flagUrl: '/images/league-two-logo-v2.png', priority: 27, isService: true },
     'La Liga': { flagUrl: '/images/laliga-logo.png', priority: 28, isService: true },
-    'Sky Sports': { flagUrl: matchBrandLogo('sky sports') || '', priority: 30, isService: true },
+    'PDC Darts': { flagUrl: '/images/pdc-logo.png', priority: 29, isService: true },
+    'EFL Championship': { flagUrl: '/images/efl-championship-logo.png', priority: 29.1, isService: true },
+    'Sky Sports': { flagUrl: '/images/sky-sports-logo.png', priority: 30, isService: true },
     'ESPN': { flagUrl: matchBrandLogo('espn') || '', priority: 31, isService: true },
     'DAZN': { flagUrl: matchBrandLogo('dazn') || '', priority: 32, isService: true },
     'Fox Sports': { flagUrl: matchBrandLogo('fox sports') || '', priority: 33, isService: true },
@@ -810,8 +812,9 @@ export const MiLiveTVList = ({
             name,
             displayName: name,
             count: data.count,
-            firstLogo: meta?.flagUrl || data.firstLogo,
+            firstLogo: data.brandLogo || meta?.flagUrl || data.firstLogo,
             originalNames: data.originalNames,
+            brandLogo: data.brandLogo,
             priority: meta?.priority ?? 999,
           };
         })
@@ -1138,7 +1141,7 @@ export const MiLiveTVList = ({
                     <img
                       src={groupLogo}
                       alt={group.displayName}
-                      className="w-full h-full object-cover scale-110"
+                      className={useContainedLogo ? 'w-full h-full object-contain p-1.5' : 'w-full h-full object-cover scale-110'}
                     />
                   ) : aiGroupLogosFetchedRef.current.has(group.displayName) && !aiGroupLogos[group.displayName] ? (
                     <Tv className="w-5 h-5 text-primary/60" />
