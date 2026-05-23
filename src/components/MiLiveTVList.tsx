@@ -906,7 +906,7 @@ export const MiLiveTVList = ({
   // Section classifier for Live TV sidebar (English / Streaming Platforms / Sports / Other).
   // Arabic groups stay at the top of the list as before (Al Jazeera, country priority).
   type LiveSection = 'arabic' | 'english' | 'streaming' | 'sports' | 'other';
-  const SECTION_ORDER: LiveSection[] = ['arabic', 'english', 'streaming', 'sports', 'other'];
+  const SECTION_ORDER: LiveSection[] = ['arabic', 'streaming', 'english', 'sports', 'other'];
   const SECTION_LABELS: Record<LiveSection, string> = {
     arabic: 'Arabic',
     english: 'English',
