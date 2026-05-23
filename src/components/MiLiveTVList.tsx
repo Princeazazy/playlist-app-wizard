@@ -590,7 +590,7 @@ export const MiLiveTVList = ({
       const BRAND_SNIFFERS: { regex: RegExp; brand: string; logo?: string }[] = [
         // Sky family
         { regex: /\bsky\s*cinema\b|\bsky\s*movies?\b/i, brand: 'Sky Cinema', logo: '/images/sky-movies-round-logo.png' },
-        { regex: /\bsky\s*(entertainment|one|atlantic|showcase|witness|comedy|max)\b/i, brand: 'Sky Entertainment', logo: '/images/sky-entertainment-round-logo.png' },
+        { regex: /\bsky\s*(entertainment|one|atlantic|showcase|witness|comedy|max)\b/i, brand: 'Sky Entertainment', logo: '/images/sky-entertainment-logo.png' },
         { regex: /\bsky\s*sports?\s*f1\b/i, brand: 'Sky Sports F1', logo: CB('skysports.com') },
         { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: CB('skysports.com') },
         { regex: /\bsky\s*news\s*arabia|سكاي\s*نيوز\s*عربية/i, brand: 'Sky News Arabia', logo: CB('skynewsarabia.com') },
@@ -929,6 +929,8 @@ export const MiLiveTVList = ({
     const orig = (group.originalNames?.[0] || '').toLowerCase();
     const all = `${name} ${orig}`;
     const info = getCountryInfo(group.originalNames?.[0] || group.displayName);
+
+    if (/\b(ba|bosnia|bosna|босна)\b/i.test(all)) return 'other';
 
     // Sports first (strong signals beat country detection — e.g. "UK Sports" is Sports, not English)
     const sportsKw = ['sport', 'espn', 'bein', 'dazn', 'fox sports', 'sky sports', 'eurosport', 'bt sport', 'tnt sports', 'nfl', 'nba', 'mlb', 'nhl', 'ufc', 'wwe', 'boxing', ' f1', 'formula 1', 'motogp', 'golf', 'tennis', 'rugby', 'cricket', 'darts', 'pdc', 'la liga', 'premier league', 'champions league', 'world cup', 'league one', 'league two', 'championship', 'ssc', 'bundesliga', 'uefa', 'fifa'];
@@ -1274,7 +1276,7 @@ export const MiLiveTVList = ({
             const renderGroupButton = (group: typeof groups[number]) => {
               const groupLogo = getGroupLogo(group);
               const isFlagLogo = isGroupFlagLogo(group, groupLogo);
-              const isFillLogo = !!groupLogo && /round-logo|mbc-(group-)?logo|mbc-logo|alwan|us-lat-logo|us-victory/i.test(groupLogo);
+              const isFillLogo = !!groupLogo && /round-logo|mbc-(group-)?logo|mbc-logo|alwan|us-lat-logo|us-victory|sky-entertainment-logo/i.test(groupLogo);
               return (
                 <button
                   key={`${group.name}-${groupLogo ?? 'none'}`}
