@@ -47,6 +47,63 @@ export type Database = {
         }
         Relationships: []
       }
+      category_canonical: {
+        Row: {
+          canonical_name: string
+          created_at: string
+          id: string
+          kind: string | null
+          raw_name: string
+        }
+        Insert: {
+          canonical_name: string
+          created_at?: string
+          id?: string
+          kind?: string | null
+          raw_name: string
+        }
+        Update: {
+          canonical_name?: string
+          created_at?: string
+          id?: string
+          kind?: string | null
+          raw_name?: string
+        }
+        Relationships: []
+      }
+      category_logos: {
+        Row: {
+          cache_key: string
+          canonical_name: string | null
+          category: string | null
+          created_at: string
+          id: string
+          logo_url: string
+          raw_name: string
+          source: string
+        }
+        Insert: {
+          cache_key: string
+          canonical_name?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          logo_url: string
+          raw_name: string
+          source: string
+        }
+        Update: {
+          cache_key?: string
+          canonical_name?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string
+          raw_name?: string
+          source?: string
+        }
+        Relationships: []
+      }
       user_providers: {
         Row: {
           account_info: Json | null
