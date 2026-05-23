@@ -164,7 +164,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'nfl network': { logo: CB('nfl.com'), aliases: ['nfln'] },
   'nhl network': { logo: CB('nhl.com'), aliases: ['nhln'] },
   'nba tv': { logo: CB('nba.com'), aliases: ['nbatv'] },
-  golf: { logo: CB('golfchannel.com'), aliases: ['golf channel'] },
+  'golf channel': { logo: CB('golfchannel.com'), aliases: [] },
   'tennis channel': { logo: CB('tennischannel.com'), aliases: [] },
   willow: { logo: CB('willow.tv'), aliases: ['willow cricket'] },
 
