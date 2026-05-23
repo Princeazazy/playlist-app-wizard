@@ -6,7 +6,7 @@ import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { translateGroupName } from '@/lib/countryUtils';
 import { useTMDBPosters } from '@/hooks/useTMDBPosters';
-import { useAICategoryLogo } from '@/hooks/useAICategoryLogo';
+
 import {
   Select,
   SelectContent,
@@ -114,10 +114,22 @@ import serIslamicLogo from '@/assets/category-logos/islamic-logo.png';
 import serEnglish2022SubLogo from '@/assets/category-logos/ser-english-2022-sub.png';
 import serForeign2023Logo from '@/assets/category-logos/ser-foreign-2023.png';
 import serForeign2026Logo from '@/assets/category-logos/ser-foreign-2026.png';
+import serRamadanMaghreb2023Logo from '@/assets/category-logos/ser-ramadan-maghreb-2023.png';
+import serRamadanMaghreb2024Logo from '@/assets/category-logos/ser-ramadan-maghreb-2024.png';
+import serRamadanMaghreb2025Logo from '@/assets/category-logos/ser-ramadan-maghreb-2025.png';
 import serRamadanMaghreb2026Logo from '@/assets/category-logos/ser-ramadan-maghreb-2026.png';
+import serRamadanEgyptian2023Logo from '@/assets/category-logos/ser-ramadan-egyptian-2023.png';
+import serRamadanEgyptian2024Logo from '@/assets/category-logos/ser-ramadan-egyptian-2024.png';
+import serRamadanEgyptian2025Logo from '@/assets/category-logos/ser-ramadan-egyptian-2025.png';
 import serRamadanEgyptian2026Logo from '@/assets/category-logos/ser-ramadan-egyptian-2026.png';
+import serRamadanGulf2023Logo from '@/assets/category-logos/ser-ramadan-gulf-2023.png';
+import serRamadanGulf2024Logo from '@/assets/category-logos/ser-ramadan-gulf-2024.png';
+import serRamadanGulf2025Logo from '@/assets/category-logos/ser-ramadan-gulf-2025.png';
 import serRamadanGulf2026Logo from '@/assets/category-logos/ser-ramadan-gulf-2026.png';
+import serRamadanLevantine2024Logo from '@/assets/category-logos/ser-ramadan-levantine-2024.png';
+import serRamadanLevantine2025Logo from '@/assets/category-logos/ser-ramadan-levantine-2025.png';
 import serRamadanLevantine2026Logo from '@/assets/category-logos/ser-ramadan-levantine-2026.png';
+import serRamadanMixLogo from '@/assets/category-logos/ser-ramadan-mix.png';
 import serAsiaLogo from '@/assets/category-logos/ser-asia.png';
 import serWorldLogo from '@/assets/category-logos/ser-world.png';
 import serAlbaniaLogo from '@/assets/category-logos/ser-albania.png';
@@ -149,18 +161,32 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   
   // PPV
   if (g.includes('ppv') || g.includes('pay per view') || g.includes('pay-per-view')) return ppvDaznLogo;
-  // Ramadan - Specific Regions (2026 only) - also check Arabic numerals ٢٠٢٦
+  // Ramadan - region + year-specific series logos
   const isRamadan = g.includes('ramadan') || g.includes('رمضان');
-  const is2026 = g.includes('2026') || g.includes('٢٠٢٦');
-  
-  if (isRamadan && is2026 && (g.includes('egypt') || g.includes('misr') || g.includes('مصر') || g.includes('مصري'))) return serRamadanEgyptian2026Logo;
-  if (isRamadan && is2026 && (g.includes('gulf') || g.includes('khaleej') || g.includes('خليج'))) return serRamadanGulf2026Logo;
-  if (isRamadan && is2026 && (g.includes('levant') || g.includes('cham') || g.includes('shami') || g.includes('shamy') || g.includes('شامي') || g.includes('شام') || g.includes('سوريا') || g.includes('syria') || g.includes('lebanon') || g.includes('لبنان'))) return serRamadanLevantine2026Logo;
-  if (isRamadan && is2026 && (g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب') || g.includes('tunisia') || g.includes('تونس') || g.includes('algeria') || g.includes('جزائر'))) return serRamadanMaghreb2026Logo;
-  if (isRamadan && is2026) return ramadanSeriesLogo;
-  
-  // Ramadan Pre-2026 Fallback
-  if (isRamadan) return serRamadanPre2026Logo;
+  if (isRamadan) {
+    const ramYear = g.includes('2026') || g.includes('٢٠٢٦') || /\b26\b/.test(g)
+      ? 2026
+      : g.includes('2025') || /\b25\b/.test(g)
+      ? 2025
+      : g.includes('2024') || /\b24\b/.test(g)
+      ? 2024
+      : g.includes('2023') || /\b23\b/.test(g)
+      ? 2023
+      : 0;
+    const isEgypt = g.includes('egypt') || g.includes('misr') || g.includes('مصر') || g.includes('مصري');
+    const isGulf = g.includes('gulf') || g.includes('khalij') || g.includes('khaleej') || g.includes('خليج');
+    const isLevant = g.includes('levant') || g.includes('cham') || g.includes('sham') || g.includes('shami') || g.includes('shamy') || g.includes('شامي') || g.includes('شام') || g.includes('سوريا') || g.includes('syria') || g.includes('lebanon') || g.includes('لبنان');
+    const isMaghreb = g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب') || g.includes('tunisia') || g.includes('تونس') || g.includes('algeria') || g.includes('جزائر');
+    const isMix = g.includes('mix');
+
+    if (isEgypt) return ramYear === 2023 ? serRamadanEgyptian2023Logo : ramYear === 2024 ? serRamadanEgyptian2024Logo : ramYear === 2025 ? serRamadanEgyptian2025Logo : serRamadanEgyptian2026Logo;
+    if (isGulf) return ramYear === 2023 ? serRamadanGulf2023Logo : ramYear === 2024 ? serRamadanGulf2024Logo : ramYear === 2025 ? serRamadanGulf2025Logo : serRamadanGulf2026Logo;
+    if (isLevant) return ramYear === 2024 ? serRamadanLevantine2024Logo : ramYear === 2025 ? serRamadanLevantine2025Logo : serRamadanLevantine2026Logo;
+    if (isMaghreb) return ramYear === 2023 ? serRamadanMaghreb2023Logo : ramYear === 2024 ? serRamadanMaghreb2024Logo : ramYear === 2025 ? serRamadanMaghreb2025Logo : serRamadanMaghreb2026Logo;
+    if (isMix) return serRamadanMixLogo;
+    if (ramYear === 2026) return ramadanSeriesLogo;
+    return serRamadanPre2026Logo;
+  }
   
   // Now Showing / Currently Airing
   if (g.includes('تعرض حاليا') || g.includes('now showing') || g.includes('currently') || g.includes('airing')) return serNowShowingLogo;
@@ -477,16 +503,10 @@ const CategoryTileLogo = ({
     localLogo = getCategoryLogo(displayName, category);
   }
 
-  // 2. AI fallback when no curated logo. We deliberately do NOT fall back to
-  // `firstLogo` because that's the first item's poster (a movie/series still),
-  // not a category brand mark — using it produces visually-wrong category tiles.
-  const aiLogo = useAICategoryLogo(displayName, category, !localLogo);
-
+  // No AI fallback here: using generated/category-search results caused wrong or generic logos,
+  // and falling back to firstLogo would use a poster/still instead of a category badge.
   if (localLogo) {
     return <img src={localLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
-  }
-  if (aiLogo) {
-    return <img src={aiLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
   }
   return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
 
@@ -601,23 +621,26 @@ const shortenGroupName = (name: string): string => {
     console.log('[SHORTEN DEBUG] Songs candidate:', { name, clean, lower, nameLower });
   }
   
-  // Ramadan specific regions - STRICT: require explicit "2026" to be in 2026 tabs
+  // Ramadan: preserve region + year distinctions (handles 23/24/25/26 short years too)
   const isRamadanGroup = lower.includes('ramadan') || nameLower.includes('رمضان') || nameLower.includes('ramadan');
-  const is2026Group = lower.includes('2026') || nameLower.includes('2026') || nameLower.includes('٢٠٢٦') || name.includes('2026');
-  
-  // Debug: log all Ramadan groups to find misclassifications
   if (isRamadanGroup) {
-    console.log('[RAMADAN DEBUG]', { name, clean, lower, nameLower, is2026Group });
+    // Detect explicit year: full 4-digit OR 2-digit suffix (23/24/25/26 → 2023-2026)
+    let ramYear = '';
+    const full = clean.match(/\b(20\d{2})\b/) || name.match(/\b(20\d{2})\b/);
+    if (full) ramYear = full[1];
+    else {
+      const short = clean.match(/\b(2[3-6])\b/) || name.match(/\b(2[3-6])\b/);
+      if (short) ramYear = '20' + short[1];
+    }
+    let region = '';
+    if (lower.includes('maghreb') || lower.includes('morocco') || nameLower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria')) region = 'Morocco';
+    else if (lower.includes('egypt') || nameLower.includes('مصر') || nameLower.includes('مصري') || lower.includes('misr')) region = 'Egyptian';
+    else if (lower.includes('gulf') || lower.includes('khalij') || lower.includes('khaleej') || nameLower.includes('خليج')) region = 'Gulf';
+    else if (lower.includes('levant') || lower.includes('sham') || lower.includes('cham') || nameLower.includes('شام') || nameLower.includes('سوري') || nameLower.includes('لبنان')) region = 'Levantine';
+    else if (lower.includes('mix')) region = 'Mix';
+    const parts = ['Ramadan', region, ramYear].filter(Boolean);
+    return parts.length > 1 ? parts.join(' ') : 'Ramadan';
   }
-  
-  if (isRamadanGroup && is2026Group) {
-    if (lower.includes('maghreb') || lower.includes('morocco') || nameLower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria')) return 'Ramadan 2026 Morocco';
-    if (lower.includes('egypt') || nameLower.includes('مصر') || nameLower.includes('مصري') || lower.includes('misr')) return 'Ramadan 2026 Egyptian';
-    if (lower.includes('gulf') || lower.includes('khaleej') || nameLower.includes('خليج')) return 'Ramadan 2026 Gulf';
-    if (lower.includes('levant') || lower.includes('sham') || nameLower.includes('شام') || nameLower.includes('سوري') || nameLower.includes('لبنان')) return 'Ramadan 2026 Levantine';
-    return 'Ramadan 2026';
-  }
-  if (isRamadanGroup && !is2026Group) return 'Ramadan Pre-2026';
   
   // Now Showing
   if (lower.includes('now showing') || lower.includes('currently') || nameLower.includes('تعرض حاليا')) return 'Now Showing';
@@ -706,7 +729,7 @@ export const MiMediaGrid = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const weather = useWeather();
   const isMobile = useIsMobile();
-  const [aiCanonical, setAiCanonical] = useState<Record<string, string>>({});
+  
 
 
   // Voice search handler
@@ -1022,7 +1045,7 @@ export const MiMediaGrid = ({
     const groupLower = group.toLowerCase();
     const nameLower = (item.group || '').toLowerCase();
     const isRamadan = groupLower.includes('ramadan') || nameLower.includes('رمضان') || group.includes('رمضان');
-    const hasYearInGroup = /20\d{2}/.test(group) || /٢٠\d{2}/.test(group);
+    const hasYearInGroup = /20\d{2}/.test(group) || /٢٠\d{2}/.test(group) || /\b2[3-6]\b/.test(group);
     
     if (isRamadan && !hasYearInGroup) {
       // Group has Ramadan but no year - split by channel's individual year
@@ -1045,8 +1068,13 @@ export const MiMediaGrid = ({
       const group = getEffectiveGroup(item);
       if (!map.has(group) && !isIrrelevantGroup(group)) {
         allRawGroups.add(group);
+        const lightClean = group
+          .replace(/^(SRS|SER|MOV|VOD|MOVIES?|SERIES|FILM)\s*[|•\-–]\s*/i, '')
+          .replace(/^[|•\-–]\s*/, '')
+          .trim() || group;
         const shortened = shortenGroupName(group);
-        map.set(group, shortened);
+        const preserveRawSeries = category === 'series' && !/^(Ramadan(?:\s.+)?|Now Showing|Songs|TV Shows|Islamic|Theater|Arabic\s.+|Arabic Classic|Foreign\s.+|Foreign Subtitled|Dubbed Foreign)$/i.test(shortened);
+        map.set(group, preserveRawSeries ? lightClean : shortened);
         const existing = displayNameCounts.get(shortened) || [];
         existing.push(group);
         displayNameCounts.set(shortened, existing);
@@ -1070,7 +1098,7 @@ export const MiMediaGrid = ({
       }
     });
     return map;
-  }, [items, getEffectiveGroup]);
+  }, [items, getEffectiveGroup, category]);
 
   const groups = useMemo(() => {
     // Merge groups that share the same shortened display name
@@ -1129,26 +1157,6 @@ export const MiMediaGrid = ({
     }
   }, [groups, selectedGroup]);
 
-  // AI canonicalization — clean up raw category names lazily, persist in DB
-  useEffect(() => {
-    if (groups.length === 0) return;
-    const names = groups.map((g) => g.name).filter((n) => !aiCanonical[n]);
-    if (names.length === 0) return;
-    const timer = setTimeout(async () => {
-      try {
-        const { supabase } = await import('@/integrations/supabase/client');
-        const { data, error } = await supabase.functions.invoke('categorize-playlist', {
-          body: { names, kind: category },
-        });
-        if (!error && data?.mapping) {
-          setAiCanonical((prev) => ({ ...prev, ...data.mapping }));
-        }
-      } catch (e) {
-        console.warn('[AI categorize] failed', e);
-      }
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [groups, category, aiCanonical]);
 
 
   const filteredItems = useMemo(() => {
@@ -1319,7 +1327,7 @@ export const MiMediaGrid = ({
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10" />
                 <CategoryTileLogo
                   rawNames={(group as any).rawNames || [group.name]}
-                  displayName={aiCanonical[group.name] || group.name}
+                  displayName={group.name}
                   firstLogo={group.firstLogo}
                   category={category}
                 />
@@ -1327,7 +1335,7 @@ export const MiMediaGrid = ({
               </div>
               <div className="flex-1 text-left">
                 <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold text-foreground' : ''}`}>
-                  {aiCanonical[group.name] || group.name}
+                  {group.name}
                 </p>
                 {selectedGroup === group.name && (
                   <p className="text-xs text-muted-foreground">{group.count} {title}</p>
