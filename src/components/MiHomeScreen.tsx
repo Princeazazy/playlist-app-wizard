@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic, Zap, ChevronRight } from 'lucide-react';
+import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic, ChevronRight } from 'lucide-react';
 import logoVideo from '@/assets/logo-transparent.mp4';
 import { ChromaKeyVideo } from './shared/ChromaKeyVideo';
 import { getProfileInitial, getProfileAvatarSrc } from '@/lib/profileStorage';
@@ -8,7 +8,6 @@ import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ContinueWatching } from './ContinueWatching';
 const TMDBBrowseSection = React.lazy(() => import('./TMDBBrowseSection').then(m => ({ default: m.TMDBBrowseSection })));
-import { StreamingServicesCarousel } from './StreamingServicesCarousel';
 import { TMDBItem } from '@/hooks/useTMDB';
 import { WeatherIcon } from './shared/WeatherIcon';
 import { Channel } from '@/hooks/useIPTV';
@@ -28,7 +27,6 @@ interface MiHomeScreenProps {
   onTMDBSelect?: (item: TMDBItem) => void;
   channels?: Channel[];
   onChannelSelect?: (channel: Channel) => void;
-  onStreamingServiceSelect?: (serviceName: string) => void;
 }
 
 // Simple counter - no setInterval, just use target directly for instant display
@@ -189,7 +187,6 @@ export const MiHomeScreen = React.memo(({
   onTMDBSelect,
   channels,
   onChannelSelect,
-  onStreamingServiceSelect,
 }: MiHomeScreenProps) => {
   const [time, setTime] = useState(new Date());
   const [, forceUpdate] = useState(0);
@@ -306,8 +303,6 @@ export const MiHomeScreen = React.memo(({
           <div className="flex flex-col gap-4 pb-20">
             <ContinueWatching onSelect={(id) => onContinueWatchingSelect?.(id)} onRemove={handleContinueWatchingRemove} />
 
-            <StreamingServicesCarousel onSelect={(service) => onStreamingServiceSelect?.(service)} />
-
             <TileCard onClick={() => onNavigate('live')} size="large" delay={0} accentColor="primary" className="min-h-[160px]">
               <div className="flex-1 flex flex-col justify-between">
                 <PulsingIcon color="primary"><Tv className="w-7 h-7 text-primary" /></PulsingIcon>
@@ -365,10 +360,6 @@ export const MiHomeScreen = React.memo(({
             <div className="grid grid-cols-2 gap-3 mt-2">
               <ActionButton icon={User} label="Account" onClick={() => onNavigate('settings')} />
               <ActionButton icon={RefreshCw} label="Refresh All" onClick={onReload} />
-            </div>
-
-            <div className="mt-6">
-              <StreamingServicesCarousel onSelect={(service) => onStreamingServiceSelect?.(service)} />
             </div>
 
             <div className="mt-6">
@@ -474,11 +465,6 @@ export const MiHomeScreen = React.memo(({
                 <ContinueWatching onSelect={(id) => onContinueWatchingSelect?.(id)} onRemove={handleContinueWatchingRemove} compact />
               </div>
             </div>
-            </div>
-
-            {/* Streaming Services - Full width below tiles */}
-            <div className="mt-6">
-              <StreamingServicesCarousel onSelect={(service) => onStreamingServiceSelect?.(service)} />
             </div>
 
             {/* TMDB Section - Full width below tiles */}
