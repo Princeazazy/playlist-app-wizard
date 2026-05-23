@@ -382,83 +382,83 @@ export const MiHomeScreen = React.memo(({
                   {/* Live TV - Large */}
                   <TileCard onClick={() => onNavigate('live')} size="large" delay={0} accentColor="primary" className="row-span-2">
                     <div className="flex-1 flex flex-col justify-between h-full">
-                    <PulsingIcon color="primary">
-                      <Tv className="w-8 h-8 text-primary" />
-                    </PulsingIcon>
-                    <div>
-                      <p className="text-4xl font-display font-bold text-foreground tracking-tight">Live TV</p>
-                      <p className="text-muted-foreground mt-1 font-mono text-xs tracking-widest uppercase">
-                        {loading ? (
-                          <span className="animate-pulse">Loading...</span>
-                        ) : (
-                          <span>+{animChannels.toLocaleString()} Channels</span>
-                        )}
-                      </p>
+                      <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-inner" style={{ background: 'hsl(200 90% 55% / 0.1)', border: '1px solid hsl(200 90% 55% / 0.25)' }}>
+                        <Tv className="w-10 h-10 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-5xl font-display font-bold text-foreground tracking-tight leading-tight">Live TV</p>
+                        <p className="mt-3 font-mono text-[11px] tracking-[0.2em] uppercase" style={{ color: 'hsl(200 90% 70% / 0.85)' }}>
+                          {loading ? (
+                            <span className="animate-pulse">Loading...</span>
+                          ) : (
+                            <span>+{animChannels.toLocaleString()} Channels</span>
+                          )}
+                        </p>
+                      </div>
                     </div>
+                  </TileCard>
 
-                  </div>
-                </TileCard>
+                  {/* Movies */}
+                  <TileCard onClick={() => onNavigate('movies')} delay={1} accentColor="accent">
+                    <div className="flex-1 flex flex-col justify-between gap-6">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'hsl(30 95% 55% / 0.1)', border: '1px solid hsl(30 95% 55% / 0.25)' }}>
+                        <Film className="w-7 h-7 text-accent" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-foreground mb-1">Movies</h3>
+                        <p className="text-muted-foreground text-sm font-medium">{loading ? '...' : `+${animMovies.toLocaleString()} Movies`}</p>
+                      </div>
+                    </div>
+                  </TileCard>
 
-                {/* Movies */}
-                <TileCard onClick={() => onNavigate('movies')} delay={1} accentColor="accent">
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(30 95% 55% / 0.12)', border: '1px solid hsl(30 95% 55% / 0.25)' }}>
-                      <Film className="w-6 h-6 text-accent" />
+                  {/* Sports */}
+                  <TileCard onClick={() => onNavigate('sports')} delay={2} accentColor="emerald">
+                    <div className="flex-1 flex flex-col justify-between gap-6">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'hsl(160 80% 45% / 0.1)', border: '1px solid hsl(160 80% 45% / 0.25)' }}>
+                        <Trophy className="w-7 h-7" style={{ color: 'hsl(160 80% 55%)' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-foreground mb-1">Sports Guide</h3>
+                        <p className="text-muted-foreground text-sm font-medium">{loading ? '...' : `+${animSports.toLocaleString()} in playlist`}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Movies</h3>
-                      <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animMovies.toLocaleString()} Movies`}</p>
-                    </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
 
-                {/* Sports */}
-                <TileCard onClick={() => onNavigate('sports')} delay={2} accentColor="emerald">
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(160 80% 45% / 0.12)', border: '1px solid hsl(160 80% 45% / 0.25)' }}>
-                      <Trophy className="w-6 h-6" style={{ color: 'hsl(160 80% 55%)' }} />
+                  {/* Series */}
+                  <TileCard onClick={() => onNavigate('series')} delay={3} accentColor="violet">
+                    <div className="absolute top-5 right-5 z-20">
+                      <span
+                        className="px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-[0.2em] shadow-lg"
+                        style={{ background: 'hsl(270 80% 55%)', boxShadow: '0 4px 14px hsl(270 80% 40% / 0.5)' }}
+                      >New</span>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Sports Guide</h3>
-                      <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animSports.toLocaleString()} in playlist`}</p>
+                    <div className="flex-1 flex flex-col justify-between gap-6">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'hsl(270 80% 60% / 0.1)', border: '1px solid hsl(270 80% 60% / 0.25)' }}>
+                        <Clapperboard className="w-7 h-7" style={{ color: 'hsl(270 80% 70%)' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-foreground mb-1">Series</h3>
+                        <p className="text-muted-foreground text-sm font-medium">{loading ? '...' : `+${animSeries.toLocaleString()} Series`}</p>
+                      </div>
                     </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
 
-                {/* Series */}
-                <TileCard onClick={() => onNavigate('series')} delay={3} accentColor="violet">
-                  <div className="absolute top-3 right-3 z-20">
-                    <span
-                      className="px-2.5 py-1 rounded-md text-xs font-bold text-white animate-pulse"
-                      style={{ background: 'linear-gradient(135deg, hsl(200 90% 55%), hsl(280 80% 60%))' }}
-                    >New</span>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(270 80% 60% / 0.12)', border: '1px solid hsl(270 80% 60% / 0.25)' }}>
-                      <Clapperboard className="w-6 h-6" style={{ color: 'hsl(270 80% 70%)' }} />
+                  {/* Catch Up */}
+                  <TileCard onClick={onCatchUp} delay={4} accentColor="rose">
+                    <div className="flex-1 flex flex-col justify-between gap-6">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'hsl(350 80% 60% / 0.1)', border: '1px solid hsl(350 80% 60% / 0.25)' }}>
+                        <Clock className="w-7 h-7" style={{ color: 'hsl(350 80% 65%)' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-foreground mb-1">Catch Up</h3>
+                        <p className="text-muted-foreground text-sm font-medium">Resume watching</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Series</h3>
-                      <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animSeries.toLocaleString()} Series`}</p>
-                    </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
+                </div>
 
-                {/* Catch Up */}
-                <TileCard onClick={onCatchUp} delay={4} accentColor="rose">
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(350 80% 60% / 0.12)', border: '1px solid hsl(350 80% 60% / 0.25)' }}>
-                      <Clock className="w-6 h-6" style={{ color: 'hsl(350 80% 65%)' }} />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Catch Up</h3>
-                      <p className="text-muted-foreground text-sm">Resume watching</p>
-                    </div>
-                  </div>
-                </TileCard>
               </div>
 
-            </div>
 
             {/* Right Panel */}
             <div className="w-72 flex flex-col gap-4">
