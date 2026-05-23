@@ -794,7 +794,8 @@ export const MiMediaGrid = ({
     const isTvShows = g.includes('tv show') || g.includes('tvshow') || g.includes('program') || groupName.includes('برامج');
 
     // ═══════════ SERIES-SPECIFIC ORDERING ═══════════
-    // User-requested: English → TV Shows → Streaming → Arabic → … → Ramadan(bottom)
+    // User-requested: English stuff → streaming platforms → Arabic family
+    // (including ARABIC [EN] / ARABIC [TR] / Turkish) → other, with Ramadan at bottom.
     if (cat === 'series') {
       // Push Ramadan to the bottom regardless of region/year
       if (isRamadan) {
@@ -806,55 +807,58 @@ export const MiMediaGrid = ({
         return 890;
       }
 
-      // 10-19: Plain English / Multi-lang (no year, no genre, no streaming)
-      if ((isEnglish || isMultiLang) && !year && !isStreaming && !isAnime && !isTvShows) {
+      // 10-99: English-language stuff only. Anything tagged Arabic stays in Arabic below.
+      if ((isEnglish || isMultiLang) && !isArabic && !year && !isStreaming && !isAnime && !isTvShows) {
         if (isLatestTag) return 10;
         return 15;
       }
 
-      // 20-29: TV Shows / Programs
+      // TV Shows / Programs sit with the top English/general section, before platforms.
       if (isTvShows && !isArabic) return 20;
 
-      // 30-99: Streaming platforms
+      if ((isEnglish || isMultiLang) && year && !isArabic) return 30 + yearRank;
+
+      if ((isEnglish || isMultiLang) && !isArabic) {
+        if (g.includes('action') || g.includes('adventure')) return 50;
+        if (g.includes('comedy')) return 52;
+        if (g.includes('drama') || g.includes('romance')) return 54;
+        if (g.includes('horror') || g.includes('thriller')) return 56;
+        if (g.includes('scifi') || g.includes('sci-fi') || g.includes('fantasy')) return 58;
+        if (g.includes('crime') || g.includes('mystery')) return 60;
+        if (g.includes('documentary')) return 62;
+        if (g.includes('kids') || g.includes('family')) return 64;
+        if (isAnime) return 66;
+        return 80;
+      }
+
+      // 100-199: Streaming platforms
       if (isStreaming) {
-        if (g.includes('netflix')) return 30;
-        if (g.includes('disney')) return 32;
-        if (g.includes('marvel')) return 34;
-        if (/\bdc\b/.test(g)) return 36;
-        if (g.includes('hbo') || g.includes('max')) return 38;
-        if (g.includes('amazon') || g.includes('prime')) return 40;
-        if (g.includes('apple')) return 42;
-        if (g.includes('paramount')) return 44;
-        if (g.includes('hulu')) return 46;
-        if (g.includes('peacock')) return 48;
-        if (g.includes('starz')) return 50;
-        if (g.includes('showtime')) return 52;
-        if (g.includes('shahid')) return 54;
-        if (g.includes('osn')) return 56;
-        if (g.includes('star wars') || g.includes('pixar')) return 58;
-        return 70;
+        if (g.includes('netflix')) return 100;
+        if (g.includes('disney')) return 102;
+        if (g.includes('marvel')) return 104;
+        if (/\bdc\b/.test(g)) return 106;
+        if (g.includes('hbo') || g.includes('max')) return 108;
+        if (g.includes('amazon') || g.includes('prime')) return 110;
+        if (g.includes('apple')) return 112;
+        if (g.includes('paramount')) return 114;
+        if (g.includes('hulu')) return 116;
+        if (g.includes('peacock')) return 118;
+        if (g.includes('starz')) return 120;
+        if (g.includes('showtime')) return 122;
+        if (g.includes('shahid')) return 124;
+        if (g.includes('osn')) return 126;
+        if (g.includes('star wars') || g.includes('pixar')) return 128;
+        return 140;
       }
 
-      // 100-149: English/Multi-lang with year (newest first)
-      if ((isEnglish || isMultiLang) && year && !isArabic) return 100 + yearRank;
-
-      // 150-189: English/Multi-lang genres (no year)
-      if ((isEnglish || isMultiLang) && !isArabic && !isAnime) {
-        if (g.includes('action') || g.includes('adventure')) return 150;
-        if (g.includes('comedy')) return 152;
-        if (g.includes('drama') || g.includes('romance')) return 154;
-        if (g.includes('horror') || g.includes('thriller')) return 156;
-        if (g.includes('scifi') || g.includes('sci-fi') || g.includes('fantasy')) return 158;
-        if (g.includes('crime') || g.includes('mystery')) return 160;
-        if (g.includes('documentary')) return 162;
-        if (g.includes('kids') || g.includes('family')) return 164;
-        return 180;
-      }
-
-      // 200-299: Arabic
+      // 200-399: Arabic family. ARABIC [EN] and ARABIC [TR] must stay here, not in English.
       if (isLatestTag && isArabic) return 200;
       if (isArabic && year) return 210 + yearRank;
       if (isArabic) {
+        if (g.includes('[en]') || /\ben\b/.test(g) || g.includes('english')) return 250;
+        if (g.includes('[tr]') || /\btr\b/.test(g) || g.includes('turk') || groupName.includes('ترك')) return 260;
+        if (g.includes('[asia]') || g.includes('asia') || groupName.includes('آسي')) return 270;
+        if (g.includes('kids') || groupName.includes('أطفال')) return 280;
         if (groupName.includes('مصر') || g.includes('egypt')) return 300;
         if (groupName.includes('خليج') || g.includes('gulf') || g.includes('khalij')) return 302;
         if (groupName.includes('شام') || g.includes('levant') || groupName.includes('سوري') || groupName.includes('لبنان')) return 304;
@@ -864,9 +868,9 @@ export const MiMediaGrid = ({
         if (g.includes('islamic') || groupName.includes('إسلام') || groupName.includes('اسلام')) return 342;
         return 350;
       }
+      if (isTurkish) return 360;
 
       // 400s: Other regional
-      if (isTurkish) return 400;
       if (g.includes('korean') || g.includes('kdrama') || g.includes('k-drama') || groupName.includes('كوري')) return 410;
       if (g.includes('indian') || g.includes('bollywood') || groupName.includes('هند')) return 420;
       if (g.includes('asia') || groupName.includes('آسي')) return 430;
