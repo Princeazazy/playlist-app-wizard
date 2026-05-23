@@ -803,8 +803,8 @@ export const getCategoryEmoji = (group: string): string => {
 
 // Merge and sort groups, combining duplicate countries
 export const mergeAndSortGroups = (
-  groupData: Map<string, { count: number; firstLogo?: string; originalNames: string[]; displayNameOverride?: string }>
-): { name: string; displayName: string; count: number; firstLogo?: string; originalNames: string[] }[] => {
+  groupData: Map<string, { count: number; firstLogo?: string; originalNames: string[]; displayNameOverride?: string; brandLogo?: string }>
+): { name: string; displayName: string; count: number; firstLogo?: string; originalNames: string[]; brandLogo?: string }[] => {
   // Merge groups by normalized name
   const mergedGroups = new Map<string, { 
     displayName: string; 
@@ -812,6 +812,7 @@ export const mergeAndSortGroups = (
     firstLogo?: string; 
     originalNames: string[];
     priority: number;
+    brandLogo?: string;
   }>();
 
   for (const [originalName, data] of groupData.entries()) {
