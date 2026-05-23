@@ -569,8 +569,8 @@ export const MiLiveTVList = ({
       const BRAND_SNIFFERS: { regex: RegExp; brand: string; logo?: string }[] = [
         // Sky family
         { regex: /\bsky\s*cinema\b/i, brand: 'Sky Cinema', logo: CB('sky.com') },
-        { regex: /\bsky\s*sports?\s*f1\b/i, brand: 'Sky Sports F1', logo: CB('skysports.com') },
-        { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: CB('skysports.com') },
+        { regex: /\bsky\s*sports?\s*f1\b/i, brand: 'Sky Sports F1', logo: '/images/sky-sports-logo.png' },
+        { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: '/images/sky-sports-logo.png' },
         { regex: /\bsky\s*news\s*arabia|سكاي\s*نيوز\s*عربية/i, brand: 'Sky News Arabia', logo: CB('skynewsarabia.com') },
         { regex: /\bsky\s*news\b/i, brand: 'Sky News', logo: CB('news.sky.com') },
         { regex: /\bsky\s*(one|atlantic|showcase|witness|comedy|max)\b/i, brand: 'Sky Entertainment', logo: '/images/sky-entertainment-logo.png' },
@@ -624,6 +624,10 @@ export const MiLiveTVList = ({
         { regex: /\bmoto\s*gp\b/i, brand: 'MotoGP', logo: CB('motogp.com') },
         { regex: /\bworld\s*cup|كأس\s*العالم|مونديال/i, brand: 'World Cup', logo: '/images/world-cup-logo.png' },
         { regex: /\bchampions\s*league|دوري\s*الابطال/i, brand: 'Champions League', logo: '/images/champions-league-logo.png' },
+        { regex: /\bpdc\b|\bdarts?\b/i, brand: 'PDC Darts', logo: '/images/pdc-logo.png' },
+        { regex: /\befl\s*championship\b|\bchampionship\b/i, brand: 'EFL Championship', logo: '/images/efl-championship-logo.png' },
+        { regex: /\bleague\s*one\b|\befl\s*league\s*1\b/i, brand: 'League One', logo: '/images/league-one-logo-v3.png' },
+        { regex: /\bleague\s*two\b|\befl\s*league\s*2\b/i, brand: 'League Two', logo: '/images/league-two-logo-v3.png' },
         { regex: /\bbein\b/i, brand: 'beIN', logo: '/images/bein-logo.png' },
         // European
         { regex: /\bcanal\+?|\bcanal\s*plus\b/i, brand: 'Canal+', logo: CB('canalplus.com') },
