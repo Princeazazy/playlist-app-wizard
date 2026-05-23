@@ -1259,8 +1259,9 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className="absolute inset-0 z-10 w-full h-full object-contain p-1.5 bg-muted"
+                        className="absolute inset-0 z-10 w-full h-full object-cover scale-110 bg-muted"
                         onError={(event) => {
+
                           event.currentTarget.style.display = 'none';
                           event.currentTarget.parentElement?.classList.add('category-logo-failed');
                         }}
