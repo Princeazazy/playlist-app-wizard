@@ -309,11 +309,24 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut, onSwitchPr
     setShowParentalDialog(false);
   };
 
+  const formatExpireDate = (expDate: string | null | undefined): string => {
+    if (!expDate) return 'Forever';
+    const raw = String(expDate).trim();
+    if (!raw || raw === '0' || raw.toLowerCase() === 'null') return 'Forever';
+    // Xtream exp_date is usually a UNIX timestamp in seconds
+    const num = Number(raw);
+    const date = !isNaN(num) && num > 0
+      ? new Date(num * (num < 1e12 ? 1000 : 1))
+      : new Date(raw);
+    if (isNaN(date.getTime())) return 'Forever';
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+  };
+
   const accountData = {
-    status: 'Active',
+    status: activeProvider?.accountInfo?.status || 'Active',
     macAddress: '8f:f7:2f:95:d1',
     deviceKey: '170135',
-    expireDate: 'Forever'
+    expireDate: formatExpireDate(activeProvider?.accountInfo?.expDate),
   };
 
   return (
