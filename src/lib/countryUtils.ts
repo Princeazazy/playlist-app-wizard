@@ -836,6 +836,9 @@ export const mergeAndSortGroups = (
       if (!existing.firstLogo && data.firstLogo) {
         existing.firstLogo = data.firstLogo;
       }
+      if (!existing.brandLogo && data.brandLogo) {
+        existing.brandLogo = data.brandLogo;
+      }
       if (existing.displayName === 'United States' && data.displayNameOverride) {
         existing.displayName = data.displayNameOverride;
       }
@@ -846,6 +849,7 @@ export const mergeAndSortGroups = (
         firstLogo: data.firstLogo,
         originalNames: [...data.originalNames],
         priority: countryInfo?.priority || 999,
+        brandLogo: data.brandLogo,
       });
     }
   }
