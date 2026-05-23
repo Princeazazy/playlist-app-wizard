@@ -247,10 +247,10 @@ const USA_ENTRY: Record<string, CountryInfo> = {
 
 // Other countries (priority 50+)
 const OTHER_COUNTRIES: Record<string, CountryInfo> = {
-  'uk': { name: 'United Kingdom', code: 'gb', flagUrl: 'https://flagcdn.com/w80/gb.png', priority: 50 },
-  'gb': { name: 'United Kingdom', code: 'gb', flagUrl: 'https://flagcdn.com/w80/gb.png', priority: 50 },
-  'england': { name: 'United Kingdom', code: 'gb', flagUrl: 'https://flagcdn.com/w80/gb.png', priority: 50 },
-  'british': { name: 'United Kingdom', code: 'gb', flagUrl: 'https://flagcdn.com/w80/gb.png', priority: 50 },
+  'uk': { name: 'United Kingdom', code: 'gb', flagUrl: 'https://flagcdn.com/w80/gb.png', priority: 31 },
+  'gb': { name: 'United Kingdom', code: 'gb', flagUrl: 'https://flagcdn.com/w80/gb.png', priority: 31 },
+  'england': { name: 'United Kingdom', code: 'gb', flagUrl: 'https://flagcdn.com/w80/gb.png', priority: 31 },
+  'british': { name: 'United Kingdom', code: 'gb', flagUrl: 'https://flagcdn.com/w80/gb.png', priority: 31 },
   'de': { name: 'Germany', code: 'de', flagUrl: 'https://flagcdn.com/w80/de.png', priority: 51 },
   'germany': { name: 'Germany', code: 'de', flagUrl: 'https://flagcdn.com/w80/de.png', priority: 51 },
   'german': { name: 'Germany', code: 'de', flagUrl: 'https://flagcdn.com/w80/de.png', priority: 51 },
