@@ -1034,7 +1034,8 @@ export const MiMediaGrid = ({
       const itemDisplayName = groupDisplayNameMap.get(itemEffectiveGroup) || shortenGroupName(itemEffectiveGroup);
       const matchesGroup = searchQuery.trim() ? true : (effectiveGroupName === 'all' || matchingRawNames.includes(itemEffectiveGroup) || itemDisplayName === effectiveGroupName);
       const matchesFavorites = !showFavoritesOnly || favorites.has(item.id);
-      // Latest bucket: strict — require a determinable year within the window.
+      // Latest bucket: provider already tagged these as latest. Only drop
+      // items that have a KNOWN old year — keep items where year is unknown.
       if (isLatestBucket) {
         let y: number | null = null;
         if (item.year) {
@@ -1042,8 +1043,9 @@ export const MiMediaGrid = ({
           if (parsed) y = parsed;
         }
         if (!y) y = extractYearFromName(item.name);
-        if (!y || y < minLatestYear) return false;
+        if (y && y < minLatestYear) return false;
       }
+
       return matchesSearch && matchesGroup && matchesFavorites;
     });
 
