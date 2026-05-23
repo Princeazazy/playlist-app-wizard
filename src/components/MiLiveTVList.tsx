@@ -1155,6 +1155,14 @@ export const MiLiveTVList = ({
     return aiGroupLogos[group.displayName] || null;
   };
 
+  const isGroupFlagLogo = (group: { displayName: string; originalNames: string[] }, logo: string | null): boolean => {
+    if (!logo) return false;
+    if (logo.includes('flagcdn.com')) return true;
+    const countryInfo = getCountryInfo(group.displayName);
+    if (countryInfo?.flagUrl === logo) return true;
+    return group.originalNames.some(origName => getCountryFlagUrl(origName) === logo);
+  };
+
   // Check if a group is a streaming service (for logo styling)
   const isStreamingServiceGroup = (group: { displayName: string }): boolean => {
     if (category === 'sports') {
@@ -1248,6 +1256,7 @@ export const MiLiveTVList = ({
           {(() => {
             const renderGroupButton = (group: typeof groups[number]) => {
               const groupLogo = getGroupLogo(group);
+              const isFlagLogo = isGroupFlagLogo(group, groupLogo);
               return (
                 <button
                   key={`${group.name}-${groupLogo ?? 'none'}`}
@@ -1265,7 +1274,7 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className="absolute inset-0 z-10 w-full h-full object-cover bg-muted"
+                        className={`absolute inset-0 z-10 w-full h-full ${isFlagLogo ? 'object-cover bg-muted' : 'object-contain p-1.5 bg-foreground'}`}
                         onError={(event) => {
 
                           event.currentTarget.style.display = 'none';
