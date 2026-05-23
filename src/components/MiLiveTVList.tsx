@@ -445,24 +445,24 @@ export const MiLiveTVList = ({
 
   // Sports-specific logo for categories - brand logos for services, flags only for real countries
   const SPORTS_GROUP_META: Record<string, { flagUrl: string; priority: number; isService?: boolean }> = {
-    'Egypt': { flagUrl: 'https://flagcdn.com/w80/eg.png', priority: 1 },
-    'Saudi Arabia': { flagUrl: 'https://flagcdn.com/w80/sa.png', priority: 2 },
-    'UAE': { flagUrl: 'https://flagcdn.com/w80/ae.png', priority: 3 },
-    'Qatar': { flagUrl: 'https://flagcdn.com/w80/qa.png', priority: 4 },
-    'Kuwait': { flagUrl: 'https://flagcdn.com/w80/kw.png', priority: 5 },
-    'Bahrain': { flagUrl: 'https://flagcdn.com/w80/bh.png', priority: 6 },
-    'Oman': { flagUrl: 'https://flagcdn.com/w80/om.png', priority: 7 },
-    'Jordan': { flagUrl: 'https://flagcdn.com/w80/jo.png', priority: 8 },
-    'Lebanon': { flagUrl: 'https://flagcdn.com/w80/lb.png', priority: 9 },
-    'Iraq': { flagUrl: 'https://flagcdn.com/w80/iq.png', priority: 10 },
-    'Palestine': { flagUrl: 'https://flagcdn.com/w80/ps.png', priority: 11 },
-    'Morocco': { flagUrl: 'https://flagcdn.com/w80/ma.png', priority: 12 },
-    'Tunisia': { flagUrl: 'https://flagcdn.com/w80/tn.png', priority: 13 },
-    'Algeria': { flagUrl: 'https://flagcdn.com/w80/dz.png', priority: 14 },
-    'Libya': { flagUrl: 'https://flagcdn.com/w80/ly.png', priority: 15 },
-    'Sudan': { flagUrl: 'https://flagcdn.com/w80/sd.png', priority: 16 },
-    'Syria': { flagUrl: 'https://flagcdn.com/w80/sy.png', priority: 17 },
-    'Yemen': { flagUrl: 'https://flagcdn.com/w80/ye.png', priority: 18 },
+    'Egypt': { flagUrl: 'https://flagcdn.com/w160/eg.png', priority: 1 },
+    'Saudi Arabia': { flagUrl: 'https://flagcdn.com/w160/sa.png', priority: 2 },
+    'UAE': { flagUrl: 'https://flagcdn.com/w160/ae.png', priority: 3 },
+    'Qatar': { flagUrl: 'https://flagcdn.com/w160/qa.png', priority: 4 },
+    'Kuwait': { flagUrl: 'https://flagcdn.com/w160/kw.png', priority: 5 },
+    'Bahrain': { flagUrl: 'https://flagcdn.com/w160/bh.png', priority: 6 },
+    'Oman': { flagUrl: 'https://flagcdn.com/w160/om.png', priority: 7 },
+    'Jordan': { flagUrl: 'https://flagcdn.com/w160/jo.png', priority: 8 },
+    'Lebanon': { flagUrl: 'https://flagcdn.com/w160/lb.png', priority: 9 },
+    'Iraq': { flagUrl: 'https://flagcdn.com/w160/iq.png', priority: 10 },
+    'Palestine': { flagUrl: 'https://flagcdn.com/w160/ps.png', priority: 11 },
+    'Morocco': { flagUrl: 'https://flagcdn.com/w160/ma.png', priority: 12 },
+    'Tunisia': { flagUrl: 'https://flagcdn.com/w160/tn.png', priority: 13 },
+    'Algeria': { flagUrl: 'https://flagcdn.com/w160/dz.png', priority: 14 },
+    'Libya': { flagUrl: 'https://flagcdn.com/w160/ly.png', priority: 15 },
+    'Sudan': { flagUrl: 'https://flagcdn.com/w160/sd.png', priority: 16 },
+    'Syria': { flagUrl: 'https://flagcdn.com/w160/sy.png', priority: 17 },
+    'Yemen': { flagUrl: 'https://flagcdn.com/w160/ye.png', priority: 18 },
     'beIN Sports': { flagUrl: '/images/bein-logo.png', priority: 20, isService: true },
     'Shahid': { flagUrl: '/images/shahid-logo.png?v=2', priority: 21, isService: true },
     'MBC': { flagUrl: '/images/mbc-logo.png', priority: 22, isService: true },
@@ -1259,7 +1259,7 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className="absolute inset-0 z-10 w-full h-full object-cover scale-110 bg-muted"
+                        className="absolute inset-0 z-10 w-full h-full object-cover bg-muted"
                         onError={(event) => {
 
                           event.currentTarget.style.display = 'none';
