@@ -766,6 +766,10 @@ export const MiLiveTVList = ({
         ESPN2: 'ESPN 2',
         FS1: 'Fox Sports 1',
         FS2: 'Fox Sports 2',
+        BTN: 'Big Ten Network',
+        BIGTEN: 'Big Ten Network',
+        SPECTRUM: 'Spectrum News',
+        SPECTRUMNEWS: 'Spectrum News',
         MLB: 'MLB Network',
         NFL: 'NFL Network',
         NHL: 'NHL Network',
@@ -800,6 +804,8 @@ export const MiLiveTVList = ({
         BLOOMBERG: 'Bloomberg',
         TELEMUNDO: 'Telemundo',
         UNIVISION: 'Univision',
+        UNIMAS: 'UniMás',
+        UNIMÁS: 'UniMás',
         UNI: 'Univision',
       };
 
@@ -809,7 +815,7 @@ export const MiLiveTVList = ({
           .replace(/^(?:MYHD\s*-\s*|AM\s*\|\s*|AR\s*\|\s*|US\s*\|\s*)/i, '')
           .trim();
 
-        const explicitMatch = cleaned.match(/\b(?:US[\s-]*)?(ABC|CBS|NBC|FOX|CW|PBS|ION|MYTV|MYTV9|TELEMUNDO|UNIVISION|UNI|TBS|TNT|AMC|A&E|FX|FXX|USA|SYFY|HBO|SHOWTIME|STARZ|DISCOVERY|HISTORY|LIFETIME|BRAVO|E!|HGTV|FOOD|TRUTV|COMEDY\s*CENTRAL|NICK|DISNEY|CARTOON\s*NETWORK|AHC|AHL|HALLMARK|TRAVEL|SMITHSONIAN|SCIENCE|MOTORTREND|CINEMAX|OXYGEN|ESPN2?|FS1|FS2|MLB|NFL|NHL|NBA)\b/i);
+        const explicitMatch = cleaned.match(/\b(?:US[\s-]*)?(ABC|CBS|NBC|FOX|CW|PBS|ION|MYTV|MYTV9|TELEMUNDO|UNIM[ÁA]S|UNIVISION|UNI|TBS|TNT|AMC|A&E|FX|FXX|USA|SYFY|HBO|SHOWTIME|STARZ|DISCOVERY|HISTORY|LIFETIME|BRAVO|E!|HGTV|FOOD|TRUTV|COMEDY\s*CENTRAL|NICK|DISNEY|CARTOON\s*NETWORK|AHC|AHL|HALLMARK|TRAVEL|SMITHSONIAN|SCIENCE|MOTORTREND|CINEMAX|OXYGEN|ESPN2?|FS1|FS2|BTN|BIG\s*TEN|SPECTRUM(?:\s*NEWS)?|MLB|NFL|NHL|NBA)\b/i);
         if (explicitMatch) {
           const network = explicitMatch[1].toUpperCase().replace(/\s+/g, '');
           return US_NETWORK_EXPANSIONS[network] || network;
@@ -1149,6 +1155,14 @@ export const MiLiveTVList = ({
     return aiGroupLogos[group.displayName] || null;
   };
 
+  const isGroupFlagLogo = (group: { displayName: string; originalNames: string[] }, logo: string | null): boolean => {
+    if (!logo) return false;
+    if (logo.includes('flagcdn.com')) return true;
+    const countryInfo = getCountryInfo(group.displayName);
+    if (countryInfo?.flagUrl === logo) return true;
+    return group.originalNames.some(origName => getCountryFlagUrl(origName) === logo);
+  };
+
   // Check if a group is a streaming service (for logo styling)
   const isStreamingServiceGroup = (group: { displayName: string }): boolean => {
     if (category === 'sports') {
@@ -1242,6 +1256,7 @@ export const MiLiveTVList = ({
           {(() => {
             const renderGroupButton = (group: typeof groups[number]) => {
               const groupLogo = getGroupLogo(group);
+              const isFlagLogo = isGroupFlagLogo(group, groupLogo);
               return (
                 <button
                   key={`${group.name}-${groupLogo ?? 'none'}`}
@@ -1259,7 +1274,7 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className="absolute inset-0 z-10 w-full h-full object-cover bg-muted"
+                        className={`absolute inset-0 z-10 w-full h-full ${isFlagLogo ? 'object-cover bg-muted' : 'object-contain p-1.5 bg-foreground'}`}
                         onError={(event) => {
 
                           event.currentTarget.style.display = 'none';
