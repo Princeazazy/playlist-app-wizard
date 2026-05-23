@@ -678,17 +678,45 @@ export const MiLiveTVList = ({
         { regex: /\bal[\s-]?nahar|النهار/i, brand: 'Al Nahar', logo: CB('alnaharegypt.com') },
       ];
 
+      const CATEGORY_LOGO_OVERRIDES: { regex: RegExp; brand: string; logo: string }[] = [
+        { regex: /\bpdc\b|\bdarts?\b/i, brand: 'PDC Darts', logo: '/images/pdc-logo.png' },
+        { regex: /\befl\s*championship\b|\bchampionship\b/i, brand: 'EFL Championship', logo: '/images/efl-championship-logo.png' },
+        { regex: /\bleague\s*one\b|\befl\s*league\s*1\b/i, brand: 'League One', logo: '/images/league-one-logo-v3.png' },
+        { regex: /\bleague\s*two\b|\befl\s*league\s*2\b/i, brand: 'League Two', logo: '/images/league-two-logo-v3.png' },
+        { regex: /\bchristmas\b|\bxmas\b|\bholiday\b/i, brand: 'Christmas', logo: '/images/christmas-logo.png' },
+        { regex: /\bchristian\b|\bchurch\b|\bgospel\b|مسيحية|المسيحية/i, brand: 'Christian', logo: '/images/christian-logo-v2.png' },
+      ];
+
       for (const [normKey, data] of groupData.entries()) {
         // Only retitle groups whose current display is essentially generic
         const baseName = (data.displayNameOverride || data.originalNames[0] || normKey).trim();
-        if (!GENERIC_NAME_REGEX.test(baseName)) continue;
-        // Skip if already retitled by SERVICE_PATTERNS above
-        if (data.displayNameOverride && !GENERIC_NAME_REGEX.test(data.displayNameOverride)) continue;
-
         const groupOrigNames = normMap.get(normKey) || [];
         const sampleChannels = channels
           .filter(ch => groupOrigNames.includes(ch.group || 'Uncategorized'))
-          .slice(0, 12);
+          .slice(0, 24);
+
+        const haystack = `${baseName} ${data.originalNames.join(' ')} ${sampleChannels.map(ch => ch.name).join(' ')}`;
+        const override = CATEGORY_LOGO_OVERRIDES.find(item => item.regex.test(haystack));
+        const directBrandLogo = matchBrandLogo(haystack);
+        const dominantChannelLogo = getDominantChannelLogo(sampleChannels);
+
+        if (override) {
+          data.displayNameOverride = override.brand;
+          data.brandLogo = override.logo;
+          data.firstLogo = override.logo;
+          continue;
+        }
+
+        if (directBrandLogo && !data.brandLogo) {
+          data.brandLogo = directBrandLogo;
+          data.firstLogo = directBrandLogo;
+        } else if (dominantChannelLogo && !data.firstLogo) {
+          data.firstLogo = dominantChannelLogo;
+        }
+
+        if (!GENERIC_NAME_REGEX.test(baseName)) continue;
+        // Skip if already retitled by SERVICE_PATTERNS above
+        if (data.displayNameOverride && !GENERIC_NAME_REGEX.test(data.displayNameOverride)) continue;
         if (sampleChannels.length === 0) continue;
 
         let bestBrand: { brand: string; logo?: string; count: number } | null = null;
