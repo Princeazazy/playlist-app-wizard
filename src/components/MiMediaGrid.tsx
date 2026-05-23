@@ -6,6 +6,7 @@ import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { translateGroupName } from '@/lib/countryUtils';
 import { useTMDBPosters } from '@/hooks/useTMDBPosters';
+import { useAICategoryLogo } from '@/hooks/useAICategoryLogo';
 import {
   Select,
   SelectContent,
