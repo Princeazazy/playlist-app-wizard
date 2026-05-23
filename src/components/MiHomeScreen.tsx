@@ -103,7 +103,7 @@ const TileCard = ({
   return (
     <button
       onClick={onClick}
-      className={`${sizeClasses[size]} relative rounded-2xl overflow-hidden border transition-all duration-200 group ${className} hover:scale-[1.04] hover:-translate-y-1.5 active:scale-[0.97]`}
+      className={`${sizeClasses[size]} hud-frame relative rounded-2xl overflow-hidden border transition-all duration-200 group ${className} hover:scale-[1.04] hover:-translate-y-1.5 active:scale-[0.97]`}
       style={{
         borderColor: 'hsl(265 30% 22% / 0.6)',
         boxShadow: '0 8px 30px hsl(0 0% 0% / 0.4)',
