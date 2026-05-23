@@ -191,7 +191,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
 
   // ── Themed / category fallbacks (collections that aren't a single brand) ──
   '24/7': { logo: '/images/twenty-four-seven-logo.png', aliases: ['24-7', '247'] },
-  latino: { logo: WC('f/fc/Flag_of_Mexico.svg/512px-Flag_of_Mexico.svg.png'), aliases: ['hispanic', 'spanish latino'] },
+  latino: { logo: WC('f/fc/Flag_of_Mexico.svg/512px-Flag_of_Mexico.svg.png'), aliases: ['hispanic', 'spanish latino', 'us lat', 'us latino'] },
   christian: { logo: '/images/christian-logo.png', aliases: ['religious', 'religion', 'faith'] },
   'fifa+': { logo: WC('b/b1/FIFA_logo_without_slogan.svg/512px-FIFA_logo_without_slogan.svg.png'), aliases: ['fifa plus', 'ppv fifa+'] },
   caribbean: { logo: '/images/caribbean-logo.png', aliases: ['caribbiean'] },
