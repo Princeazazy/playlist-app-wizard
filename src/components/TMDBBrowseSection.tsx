@@ -235,66 +235,43 @@ const CategoryRow = ({
   onSelectItem?: (item: TMDBItem) => void;
   loading?: boolean;
 }) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-
-  const visibleItems = getFilledPageItems(items, currentPage, ITEMS_PER_PAGE);
-
-  useEffect(() => {
-    if (items.length <= ITEMS_PER_PAGE || isPaused) return;
-
-    const interval = setInterval(() => {
-      setCurrentPage((prev) => (prev + 1) % totalPages);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [items.length, totalPages, isPaused]);
+  const scrollRef = useDragScroll();
 
   return (
-    <div 
-      className="space-y-3"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
+    <div className="space-y-3">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <Icon className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         </div>
-
-        {!loading && totalPages > 1 && (
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
-      
+
       {loading ? (
         <div className="flex items-center justify-center h-[200px]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : items.length >= MIN_ITEMS_TO_SHOW_ROW ? (
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 transition-opacity duration-300">
-          {visibleItems.map((item, index) => (
-            <MediaCard
-              key={`${item.id}-${item.mediaType}-${currentPage}-${index}`}
-              item={item}
-              onClick={() => onSelectItem?.(item)}
-            />
+        <div
+          ref={scrollRef}
+          className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 scrollbar-hide"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {items.map((item, index) => (
+            <div
+              key={`${item.id}-${item.mediaType}-${index}`}
+              className="snap-start flex-shrink-0 w-[33vw] sm:w-[22vw] md:w-[16vw] lg:w-[13vw] max-w-[200px]"
+            >
+              <MediaCard
+                item={item}
+                onClick={() => onSelectItem?.(item)}
+              />
+            </div>
           ))}
         </div>
       ) : (
         <div className="flex items-center justify-center h-[200px] text-muted-foreground">
           No content available
+
         </div>
       )}
     </div>
