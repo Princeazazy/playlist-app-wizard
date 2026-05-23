@@ -9,7 +9,10 @@
 
 // High-quality brand logo URLs from public CDNs / Wikipedia Commons
 // All URLs are HTTPS, high-resolution, and stable
-// Clearbit logo CDN (reliable for hotlinking, no key needed)
+// Wikipedia Commons / English Wikipedia (most reliable - publicly hosted)
+const WC = (path: string) => `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}`;
+const WE = (path: string) => `https://upload.wikimedia.org/wikipedia/en/thumb/${path}`;
+// Clearbit logo CDN (fallback for brands without a stable Wikipedia logo)
 const CB = (domain: string) => `https://logo.clearbit.com/${domain}`;
 
 const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
