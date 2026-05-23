@@ -863,7 +863,9 @@ export const MiLiveTVList = ({
   }, [groups, category]);
 
   // Get logo for groups - brand logos for services, country flags for countries, AI fallback
-  const getGroupLogo = (group: { name: string; displayName: string; firstLogo?: string; originalNames: string[] }): string | null => {
+  const getGroupLogo = (group: { name: string; displayName: string; firstLogo?: string; originalNames: string[]; brandLogo?: string }): string | null => {
+    // Highest priority: explicit brand logo set by generic-name brand sniffer
+    if (group.brandLogo) return group.brandLogo;
     // Sports mode: use sports-specific meta
     if (category === 'sports') {
       const meta = SPORTS_GROUP_META[group.name];
