@@ -181,6 +181,8 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'spectrum news': { logo: '/images/spectrum-news-round-logo.svg', aliases: ['spectrum', 'us spectrum', 'us spectrum news'] },
   'the cw': { logo: WC('8/8b/The_CW.svg/512px-The_CW.svg.png'), aliases: ['cw', 'cw network'] },
   cinemania: { logo: '/images/cinemania-round-logo.svg', aliases: ['us cm', 'cinemania'] },
+  'alwan entertainment': { logo: '/images/alwan-round-logo.png', aliases: ['alwan', 'alwan ent', 'ألوان', 'الوان'] },
+  'us victory': { logo: '/images/us-victory-round-logo.png', aliases: ['victory channel', 'victory', 'us vc', 'us victory channel'] },
 
   // ── International news ──
   'france 24': { logo: WC('8/84/FRANCE_24_logo.svg/512px-FRANCE_24_logo.svg.png'), aliases: ['france24'] },
