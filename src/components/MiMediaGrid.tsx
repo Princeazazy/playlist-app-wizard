@@ -862,14 +862,22 @@ export const MiMediaGrid = ({
     // ═══════════ END SERIES-SPECIFIC ═══════════
 
 
-    // ───────── 1. ENGLISH / MULTI-LANG: latest → chronological → genres ─────────
-    // 10-19: Latest tags (English / Multi-lang)
-    if (isLatestTag && (isEnglish || isMultiLang)) return 10;
-    if (g.includes('now showing') || groupName.includes('يعرض الآن')) return 12;
-    if (isMultiLang && (g.includes('new release') || g.includes('release'))) return 14;
+    // ───────── 1. MULTI-LANG (always first) → ENGLISH ─────────
+    // Multi-lang stuff sits at the very top, then English latest, then by year.
+    // 1-9: Multi-lang latest / new releases
+    if (isMultiLang && (isLatestTag || g.includes('new release') || g.includes('release'))) return 3;
+    // 5-9: Multi-lang by year (newer first)
+    if (isMultiLang && year) return 5 + Math.min(yearRank, 4);
+    // Generic multi-lang (no year tag, e.g. "Before 2000")
+    if (isMultiLang) return 9;
 
-    // 20-99: English / Multi-lang by year (newest first)
-    if ((isEnglish || isMultiLang) && year) return 20 + yearRank;
+    // 10-19: English latest (right after multi-lang)
+    if (isLatestTag && isEnglish) return 12;
+    if (g.includes('now showing') || groupName.includes('يعرض الآن')) return 14;
+
+    // 20-99: English by year (newest first)
+    if (isEnglish && year) return 20 + yearRank;
+
 
     // 100-199: English-language genres (no year)
     if ((isEnglish || isMultiLang) && !isArabic) {
