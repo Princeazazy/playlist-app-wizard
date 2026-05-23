@@ -336,12 +336,6 @@ export const MiHomeScreen = React.memo(({
               </TileCard>
 
               <TileCard onClick={() => onNavigate('series')} delay={2} accentColor="violet" className="min-h-[140px]">
-                <div className="absolute top-3 right-3 z-20">
-                    <span
-                      className="px-2 py-0.5 rounded-md text-[10px] font-bold text-white animate-pulse"
-                      style={{ background: 'linear-gradient(135deg, hsl(200 90% 55%), hsl(280 80% 60%))' }}
-                    >New</span>
-                  </div>
                 <div className="flex-1 flex flex-col justify-between">
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'hsl(270 80% 60% / 0.12)', border: '1px solid hsl(270 80% 60% / 0.25)' }}>
                     <Clapperboard className="w-5 h-5" style={{ color: 'hsl(270 80% 70%)' }} />
