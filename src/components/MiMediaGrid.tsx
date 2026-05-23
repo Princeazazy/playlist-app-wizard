@@ -598,23 +598,26 @@ const shortenGroupName = (name: string): string => {
     console.log('[SHORTEN DEBUG] Songs candidate:', { name, clean, lower, nameLower });
   }
   
-  // Ramadan specific regions - STRICT: require explicit "2026" to be in 2026 tabs
+  // Ramadan: preserve region + year distinctions (handles 23/24/25/26 short years too)
   const isRamadanGroup = lower.includes('ramadan') || nameLower.includes('رمضان') || nameLower.includes('ramadan');
-  const is2026Group = lower.includes('2026') || nameLower.includes('2026') || nameLower.includes('٢٠٢٦') || name.includes('2026');
-  
-  // Debug: log all Ramadan groups to find misclassifications
   if (isRamadanGroup) {
-    console.log('[RAMADAN DEBUG]', { name, clean, lower, nameLower, is2026Group });
+    // Detect explicit year: full 4-digit OR 2-digit suffix (23/24/25/26 → 2023-2026)
+    let ramYear = '';
+    const full = clean.match(/\b(20\d{2})\b/) || name.match(/\b(20\d{2})\b/);
+    if (full) ramYear = full[1];
+    else {
+      const short = clean.match(/\b(2[3-6])\b/) || name.match(/\b(2[3-6])\b/);
+      if (short) ramYear = '20' + short[1];
+    }
+    let region = '';
+    if (lower.includes('maghreb') || lower.includes('morocco') || nameLower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria')) region = 'Morocco';
+    else if (lower.includes('egypt') || nameLower.includes('مصر') || nameLower.includes('مصري') || lower.includes('misr')) region = 'Egyptian';
+    else if (lower.includes('gulf') || lower.includes('khalij') || lower.includes('khaleej') || nameLower.includes('خليج')) region = 'Gulf';
+    else if (lower.includes('levant') || lower.includes('sham') || lower.includes('cham') || nameLower.includes('شام') || nameLower.includes('سوري') || nameLower.includes('لبنان')) region = 'Levantine';
+    else if (lower.includes('mix')) region = 'Mix';
+    const parts = ['Ramadan', region, ramYear].filter(Boolean);
+    return parts.length > 1 ? parts.join(' ') : 'Ramadan';
   }
-  
-  if (isRamadanGroup && is2026Group) {
-    if (lower.includes('maghreb') || lower.includes('morocco') || nameLower.includes('مغرب') || lower.includes('tunisia') || lower.includes('algeria')) return 'Ramadan 2026 Morocco';
-    if (lower.includes('egypt') || nameLower.includes('مصر') || nameLower.includes('مصري') || lower.includes('misr')) return 'Ramadan 2026 Egyptian';
-    if (lower.includes('gulf') || lower.includes('khaleej') || nameLower.includes('خليج')) return 'Ramadan 2026 Gulf';
-    if (lower.includes('levant') || lower.includes('sham') || nameLower.includes('شام') || nameLower.includes('سوري') || nameLower.includes('لبنان')) return 'Ramadan 2026 Levantine';
-    return 'Ramadan 2026';
-  }
-  if (isRamadanGroup && !is2026Group) return 'Ramadan Pre-2026';
   
   // Now Showing
   if (lower.includes('now showing') || lower.includes('currently') || nameLower.includes('تعرض حاليا')) return 'Now Showing';
