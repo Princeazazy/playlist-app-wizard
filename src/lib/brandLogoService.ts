@@ -204,7 +204,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   christian: { logo: '/images/christian-logo.png', aliases: ['religious', 'religion', 'faith'] },
   'fifa+': { logo: WC('b/b1/FIFA_logo_without_slogan.svg/512px-FIFA_logo_without_slogan.svg.png'), aliases: ['fifa plus', 'ppv fifa+'] },
   caribbean: { logo: '/images/caribbean-logo.png', aliases: ['caribbiean'] },
-  bosna: { logo: WC('b/bf/Flag_of_Bosnia_and_Herzegovina.svg/512px-Flag_of_Bosnia_and_Herzegovina.svg.png'), aliases: ['bosnia', 'bosnia and herzegovina'] },
+  // bosna intentionally omitted — handled by country flag detection so it renders as a full circular flag
   championship: { logo: '/images/championship-logo.png', aliases: ['efl championship', 'english championship'] },
   christmas: { logo: '/images/christmas-logo.png', aliases: ['holiday', 'xmas'] },
   ireland: { logo: WC('4/45/Flag_of_Ireland.svg/512px-Flag_of_Ireland.svg.png'), aliases: ['irish'] },
