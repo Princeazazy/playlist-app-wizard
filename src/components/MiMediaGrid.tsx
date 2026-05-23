@@ -49,6 +49,13 @@ import theaterPlaysLogo from '@/assets/category-logos/theater-plays-movies.png';
 import worldMoviesLogo from '@/assets/category-logos/world-movies.png';
 import asiaMoviesLogo from '@/assets/category-logos/asia-movies.png';
 import multiLangMoviesLogo from '@/assets/category-logos/multi-lang-movies.png';
+import multiLangNewReleasesLogo from '@/assets/category-logos/multi-lang-new-releases.png';
+import multiLang2020sLogo from '@/assets/category-logos/multi-lang-2020s.png';
+import multiLang2010sLogo from '@/assets/category-logos/multi-lang-2010s.png';
+import multiLang2000sLogo from '@/assets/category-logos/multi-lang-2000s.png';
+import multiLangClassicsLogo from '@/assets/category-logos/multi-lang-classics.png';
+import englishLatestMoviesLogo from '@/assets/category-logos/english-latest-movies.png';
+
 import dcMoviesLogo from '@/assets/category-logos/dc-movies.png';
 import disneyShortsLogo from '@/assets/category-logos/disney-shorts.png';
 import enDramaRomanceLogo from '@/assets/category-logos/en-drama-romance.png';
@@ -387,17 +394,26 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return netflixCustomLogo;
   
   // Latest English/Movies - includes "EN MOV 2025" style groups
-  if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي') || g.includes('movie') || g.includes('film')) || g.includes('أفلام اجنبية جديدة')) return englishMoviesLogo;
-  if (/\ben\b/.test(g) && /mov|film|movie/.test(g)) return englishMoviesLogo;
+  if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي') || g.includes('movie') || g.includes('film')) || g.includes('أفلام اجنبية جديدة')) return englishLatestMoviesLogo;
+  if (/\ben\b/.test(g) && /mov|film|movie/.test(g)) return englishLatestMoviesLogo;
   
   // Generic English movies
-  if (g.includes('english') && (g.includes('mov') || g.includes('film') || g.includes('انجليزي'))) return englishMoviesLogo;
+  if (g.includes('english') && (g.includes('mov') || g.includes('film') || g.includes('انجليزي'))) return englishLatestMoviesLogo;
   
   // Albania
   if (g.includes('albania') || g.includes('ألبان')) return albaniaMoviesLogo;
 
-  // Multi-Language Releases
-  if (g.includes('multi') && (g.includes('lang') || g.includes('sub') || g.includes('release')) || g.includes('ملتي') || g.includes('متعدد')) return multiLangMoviesLogo;
+  // Multi-Language Releases — era-specific variants BEFORE generic fallback
+  const isMulti = g.includes('multi') || g.includes('ملتي') || g.includes('متعدد');
+  if (isMulti) {
+    if (g.includes('new release') || g.includes('latest') || g.includes('new ')) return multiLangNewReleasesLogo;
+    if (g.includes('before 2000') || g.includes('pre-2000') || g.includes('pre 2000') || g.includes('classic') || g.includes('199') || g.includes('198') || g.includes('197')) return multiLangClassicsLogo;
+    if (g.includes('2020') || g.includes('2021') || g.includes('2022') || g.includes('2023') || g.includes('2024') || g.includes('2025') || g.includes('2026')) return multiLang2020sLogo;
+    if (g.includes('2010') || g.includes('2011') || g.includes('2012') || g.includes('2013') || g.includes('2014') || g.includes('2015') || g.includes('2016') || g.includes('2017') || g.includes('2018') || g.includes('2019')) return multiLang2010sLogo;
+    if (g.includes('2000') || g.includes('2001') || g.includes('2002') || g.includes('2003') || g.includes('2004') || g.includes('2005') || g.includes('2006') || g.includes('2007') || g.includes('2008') || g.includes('2009')) return multiLang2000sLogo;
+    return multiLangMoviesLogo;
+  }
+
   
   // Asia
   if (g.includes('asia') || g.includes('آسيا') || g.includes('asian')) return asiaMoviesLogo;
@@ -862,14 +878,22 @@ export const MiMediaGrid = ({
     // ═══════════ END SERIES-SPECIFIC ═══════════
 
 
-    // ───────── 1. ENGLISH / MULTI-LANG: latest → chronological → genres ─────────
-    // 10-19: Latest tags (English / Multi-lang)
-    if (isLatestTag && (isEnglish || isMultiLang)) return 10;
-    if (g.includes('now showing') || groupName.includes('يعرض الآن')) return 12;
-    if (isMultiLang && (g.includes('new release') || g.includes('release'))) return 14;
+    // ───────── 1. MULTI-LANG (always first) → ENGLISH ─────────
+    // Multi-lang stuff sits at the very top, then English latest, then by year.
+    // 1-9: Multi-lang latest / new releases
+    if (isMultiLang && (isLatestTag || g.includes('new release') || g.includes('release'))) return 3;
+    // 5-9: Multi-lang by year (newer first)
+    if (isMultiLang && year) return 5 + Math.min(yearRank, 4);
+    // Generic multi-lang (no year tag, e.g. "Before 2000")
+    if (isMultiLang) return 9;
 
-    // 20-99: English / Multi-lang by year (newest first)
-    if ((isEnglish || isMultiLang) && year) return 20 + yearRank;
+    // 10-19: English latest (right after multi-lang)
+    if (isLatestTag && isEnglish) return 12;
+    if (g.includes('now showing') || groupName.includes('يعرض الآن')) return 14;
+
+    // 20-99: English by year (newest first)
+    if (isEnglish && year) return 20 + yearRank;
+
 
     // 100-199: English-language genres (no year)
     if ((isEnglish || isMultiLang) && !isArabic) {
