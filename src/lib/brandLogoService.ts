@@ -83,8 +83,8 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   cbc: { logo: CB('cbc-eg.com'), aliases: ['سي بي سي'] },
   'al nahar': { logo: CB('alnaharegypt.com'), aliases: ['النهار'] },
   ssc: { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Saudi_Sports_Company_logo.svg/512px-Saudi_Sports_Company_logo.svg.png', aliases: ['ssc sports', 'saudi sports', 'ssc1', 'ssc2', 'ssc3', 'ssc4', 'ssc5'] },
-  'abu dhabi': { logo: CB('adtv.ae'), aliases: ['ad sports', 'abu dhabi sports', 'أبوظبي', 'ابوظبي'] },
-  dubai: { logo: CB('dmi.ae'), aliases: ['dubai tv', 'dubai sports', 'دبي'] },
+  'abu dhabi': { logo: WC('5/5c/Abu_Dhabi_TV_logo.svg/512px-Abu_Dhabi_TV_logo.svg.png'), aliases: ['ad sports', 'abu dhabi sports', 'abu dhabi tv', 'أبوظبي', 'ابوظبي'] },
+  dubai: { logo: WC('4/45/Dubai_TV_logo.svg/512px-Dubai_TV_logo.svg.png'), aliases: ['dubai tv', 'dubai sports', 'دبي'] },
 
   // ── Sports Networks ──
   espn: { logo: CB('espn.com'), aliases: ['اي اس بي ان', 'espn+', 'espn2'] },
