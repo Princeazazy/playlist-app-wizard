@@ -291,149 +291,42 @@ const PlaylistRow = ({
   onChannelSelect?: (channel: Channel) => void;
   mediaTypeHint?: 'movie' | 'tv';
 }) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const totalPages = Math.ceil(channels.length / ITEMS_PER_PAGE);
   const { getPosterForChannel } = useTMDBPosters(channels, mediaTypeHint);
-  const rowRef = React.useRef<HTMLDivElement>(null);
-  const touchStartX = React.useRef<number | null>(null);
-
-  const visibleItems = getFilledPageItems(channels, currentPage, ITEMS_PER_PAGE);
-
-  const goPrev = React.useCallback(() => {
-    if (totalPages <= 1) return;
-    setCurrentPage((p) => (p - 1 + totalPages) % totalPages);
-  }, [totalPages]);
-
-  const goNext = React.useCallback(() => {
-    if (totalPages <= 1) return;
-    setCurrentPage((p) => (p + 1) % totalPages);
-  }, [totalPages]);
-
-  useEffect(() => {
-    if (channels.length <= ITEMS_PER_PAGE || isPaused) return;
-
-    const interval = setInterval(() => {
-      setCurrentPage((prev) => (prev + 1) % totalPages);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [channels.length, totalPages, isPaused]);
-
-  // Track whether this row is the most-visible row in the viewport
-  const [isActiveInView, setIsActiveInView] = React.useState(false);
-  useEffect(() => {
-    const el = rowRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setIsActiveInView(entry.isIntersecting && entry.intersectionRatio >= 0.5),
-      { threshold: [0, 0.5, 1] }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
-  // Keyboard / remote arrow navigation: hover OR most-visible row in viewport
-  useEffect(() => {
-    if (!isHovered && !isActiveInView) return;
-    const handler = (e: KeyboardEvent) => {
-      // Don't hijack arrows when typing in inputs
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        goNext();
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        goPrev();
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [isHovered, isActiveInView, goNext, goPrev]);
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current == null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(dx) < 50) return;
-    if (dx < 0) goNext(); else goPrev();
-  };
+  const scrollRef = useDragScroll();
 
   if (channels.length < MIN_ITEMS_TO_SHOW_ROW) return null;
 
   return (
-    <div 
-      ref={rowRef}
-      tabIndex={0}
-      className="space-y-3 outline-none group/row"
-      onMouseEnter={() => { setIsPaused(true); setIsHovered(true); }}
-      onMouseLeave={() => { setIsPaused(false); setIsHovered(false); }}
-      onFocus={() => setIsHovered(true)}
-      onBlur={() => setIsHovered(false)}
-    >
+    <div className="space-y-3">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <Icon className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         </div>
-
-        {totalPages > 1 && (
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentPage ? 'bg-primary w-4' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
-      
-      <div className="relative">
-        {totalPages > 1 && (
-          <>
-            <button
-              onClick={goPrev}
-              aria-label="Previous"
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-20 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 flex items-center justify-center opacity-0 group-hover/row:opacity-100 hover:bg-background transition-opacity"
-            >
-              <ChevronLeft className="w-5 h-5 text-foreground" />
-            </button>
-            <button
-              onClick={goNext}
-              aria-label="Next"
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-20 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 flex items-center justify-center opacity-0 group-hover/row:opacity-100 hover:bg-background transition-opacity"
-            >
-              <ChevronRight className="w-5 h-5 text-foreground" />
-            </button>
-          </>
-        )}
-        <div
-          className="grid grid-cols-3 md:grid-cols-6 gap-3 transition-opacity duration-300 touch-pan-y"
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-        >
-          {visibleItems.map((channel, index) => (
+
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 scrollbar-hide"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {channels.map((channel, index) => (
+          <div
+            key={`${channel.id}-${index}`}
+            className="snap-start flex-shrink-0 w-[33vw] sm:w-[22vw] md:w-[16vw] lg:w-[13vw] max-w-[200px]"
+          >
             <PlaylistCard
-              key={`${channel.id}-${currentPage}-${index}`}
               channel={channel}
               tmdbPoster={getPosterForChannel(channel.name)}
               onClick={() => onChannelSelect?.(channel)}
             />
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
+
 
 export const TMDBBrowseSection = React.memo(({ onSelectItem, channels = [], onChannelSelect }: TMDBBrowseSectionProps) => {
   const { getTrending, getMovies, getTVShows, error } = useTMDB();
