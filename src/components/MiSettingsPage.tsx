@@ -309,11 +309,11 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut, onSwitchPr
     setShowParentalDialog(false);
   };
 
-  const formatExpireDate = (expDate: string | null | undefined): string => {
-    if (!expDate) return 'Forever';
+  const formatExpireDate = (expDate: string | null | undefined, loading: boolean): string => {
+    if (loading) return '...';
+    if (expDate === null || expDate === undefined) return 'Forever';
     const raw = String(expDate).trim();
     if (!raw || raw === '0' || raw.toLowerCase() === 'null') return 'Forever';
-    // Xtream exp_date is usually a UNIX timestamp in seconds
     const num = Number(raw);
     const date = !isNaN(num) && num > 0
       ? new Date(num * (num < 1e12 ? 1000 : 1))
@@ -322,11 +322,69 @@ export const MiSettingsPage = ({ onBack, onPlaylistChange, onSignOut, onSwitchPr
     return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
   };
 
+  const [liveExpDate, setLiveExpDate] = useState<string | null | undefined>(
+    activeProvider?.accountInfo?.expDate ?? undefined
+  );
+  const [expLoading, setExpLoading] = useState(false);
+
+  useEffect(() => {
+    const existing = activeProvider?.accountInfo?.expDate;
+    if (existing !== undefined && existing !== null) {
+      setLiveExpDate(existing);
+      setExpLoading(false);
+      return;
+    }
+    // Try to extract Xtream creds from M3U get.php URL or Xtream config
+    const cfg: any = activeProvider?.config;
+    let creds: { server: string; username: string; password: string } | null = null;
+    if (cfg?.type === 'xtream' && cfg.serverUrl && cfg.username && cfg.password) {
+      creds = { server: cfg.serverUrl.replace(/\/+$/, ''), username: cfg.username, password: cfg.password };
+    } else {
+      const url: string | undefined = cfg?.m3uUrl || cfg?.vpnUrl;
+      if (url) {
+        try {
+          const u = new URL(url);
+          const username = u.searchParams.get('username');
+          const password = u.searchParams.get('password');
+          if (username && password) {
+            creds = { server: `${u.protocol}//${u.host}`, username, password };
+          }
+        } catch {}
+      }
+    }
+    if (!creds) { setLiveExpDate(null); setExpLoading(false); return; }
+    setExpLoading(true);
+    let cancelled = false;
+    (async () => {
+      const apiUrl = `${creds!.server}/player_api.php?username=${encodeURIComponent(creds!.username)}&password=${encodeURIComponent(creds!.password)}`;
+      let data: any = null;
+      try {
+        const r = await fetch(apiUrl, { headers: { 'User-Agent': 'IPTV Smarters Pro/3.0.0' } });
+        if (r.ok) data = await r.json();
+      } catch {}
+      if (!data?.user_info) {
+        try {
+          const { data: ed } = await supabase.functions.invoke('fetch-m3u', {
+            body: { url: apiUrl, rawFetch: true },
+          });
+          if (ed?.rawResponse) {
+            data = typeof ed.rawResponse === 'string' ? JSON.parse(ed.rawResponse) : ed.rawResponse;
+          }
+        } catch {}
+      }
+      if (cancelled) return;
+      setLiveExpDate(data?.user_info?.exp_date ?? null);
+      setExpLoading(false);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProvider?.id]);
+
   const accountData = {
     status: activeProvider?.accountInfo?.status || 'Active',
     macAddress: '8f:f7:2f:95:d1',
     deviceKey: '170135',
-    expireDate: formatExpireDate(activeProvider?.accountInfo?.expDate),
+    expireDate: formatExpireDate(liveExpDate, expLoading),
   };
 
   return (
