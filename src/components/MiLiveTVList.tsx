@@ -1142,6 +1142,9 @@ export const MiLiveTVList = ({
     if (/\bsky\s*(entertainment|one|atlantic|showcase|witness|comedy|max)\b/i.test(searchableGroupName)) {
       return SKY_ENTERTAINMENT_LOGO;
     }
+    if (/\bsky\s*(documentary|documentaries|docs?)\b/i.test(searchableGroupName)) {
+      return SKY_DOCUMENTARY_LOGO;
+    }
 
     // Highest priority: explicit brand logo set by generic-name brand sniffer
     if (group.brandLogo) return group.brandLogo;
