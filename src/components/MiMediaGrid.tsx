@@ -960,7 +960,21 @@ export const MiMediaGrid = ({
         if (a[1].bestPriority !== b[1].bestPriority) return a[1].bestPriority - b[1].bestPriority;
         return a[0].localeCompare(b[0]);
       })
-      .map(([name, data]) => ({ name, count: data.count, firstLogo: data.firstLogo, rawNames: data.rawNames }));
+      .map(([name, data]) => {
+        // If any raw source bucket was tagged "latest/new/أحدث", surface that
+        // in the display label so users see "Latest Arabic Movies" instead of
+        // a generic "Arabic Movies".
+        const rawHaystack = data.rawNames.join(' ').toLowerCase();
+        const rawHaystackRaw = data.rawNames.join(' ');
+        const isLatest = rawHaystack.includes('latest') || rawHaystack.includes(' new ') ||
+          rawHaystack.includes('recent') || rawHaystack.includes('gedida') ||
+          rawHaystack.includes('jadida') || rawHaystack.includes('jdid') ||
+          rawHaystackRaw.includes('جديد') || rawHaystackRaw.includes('أحدث');
+        const alreadyLabeled = /\b(latest|new|recent)\b/i.test(name);
+        const finalName = isLatest && !alreadyLabeled ? `Latest ${name}` : name;
+        return { name: finalName, count: data.count, firstLogo: data.firstLogo, rawNames: data.rawNames };
+      });
+
   }, [items, groupDisplayNameMap, getEffectiveGroup]);
 
   // Set selectedGroup to the first group in the sorted list if not already set
