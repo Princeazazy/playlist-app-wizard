@@ -823,11 +823,20 @@ export const MiLiveTVList = ({
         const networkName = cleanUsNetworkName(sourceChannel.name);
         if (networkName) {
           data.displayNameOverride = networkName;
-          // Use predefined logo if available for this network
-          const networkKey = networkName.replace(/^US-/, '');
-          if (US_NETWORK_LOGOS[networkKey]) {
-            data.firstLogo = US_NETWORK_LOGOS[networkKey];
-          } else if (sourceChannel.logo) {
+          // Prefer brand-matched logo (uses the rich BRAND_LOGOS catalog incl. AHC/Hallmark/etc.)
+          const brandLogo = matchBrandLogo(networkName);
+          if (brandLogo) {
+            data.brandLogo = brandLogo;
+            data.firstLogo = brandLogo;
+          } else {
+            const networkKey = networkName.replace(/^US[\s-]*/i, '').toUpperCase().replace(/\s+/g, '');
+            if (US_NETWORK_LOGOS[networkKey]) {
+              data.firstLogo = US_NETWORK_LOGOS[networkKey];
+            } else if (sourceChannel.logo) {
+              data.firstLogo = sourceChannel.logo;
+            }
+          }
+        } else if (sourceChannel.logo) {
             data.firstLogo = sourceChannel.logo;
           }
         } else if (sourceChannel.logo) {
