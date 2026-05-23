@@ -1045,7 +1045,7 @@ export const MiMediaGrid = ({
     const groupLower = group.toLowerCase();
     const nameLower = (item.group || '').toLowerCase();
     const isRamadan = groupLower.includes('ramadan') || nameLower.includes('رمضان') || group.includes('رمضان');
-    const hasYearInGroup = /20\d{2}/.test(group) || /٢٠\d{2}/.test(group);
+    const hasYearInGroup = /20\d{2}/.test(group) || /٢٠\d{2}/.test(group) || /\b2[3-6]\b/.test(group);
     
     if (isRamadan && !hasYearInGroup) {
       // Group has Ramadan but no year - split by channel's individual year
