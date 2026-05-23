@@ -98,12 +98,10 @@ const useInfiniteScroll = (speed = 0.4) => {
     el.addEventListener('mouseup', onUp);
     el.addEventListener('mousemove', onMove);
     el.addEventListener('click', onClickCapture, true);
-    el.addEventListener('mouseenter', onEnter);
-    el.addEventListener('mouseout', onMouseOut);
     el.addEventListener('touchstart', onTouch, { passive: true });
     el.addEventListener('touchmove', onTouch, { passive: true });
     el.addEventListener('wheel', onWheel, { passive: true });
-    el.addEventListener('focusin', onFocusIn);
+
     el.style.cursor = 'grab';
 
     // Remote/keyboard navigation: arrow keys scroll by one card width when focused/hovered
