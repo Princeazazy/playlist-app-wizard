@@ -329,7 +329,7 @@ const CategoryRow = ({
           className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 scrollbar-hide"
           style={{ scrollbarWidth: 'none' }}
         >
-          {items.map((item, index) => (
+          {loopItems.map((item, index) => (
             <div
               key={`${item.id}-${item.mediaType}-${index}`}
               className="snap-start flex-shrink-0 w-[33vw] sm:w-[22vw] md:w-[16vw] lg:w-[13vw] max-w-[200px]"
@@ -340,6 +340,7 @@ const CategoryRow = ({
               />
             </div>
           ))}
+
         </div>
       ) : (
         <div className="flex items-center justify-center h-[200px] text-muted-foreground">
