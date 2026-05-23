@@ -629,7 +629,10 @@ export const MiLiveTVList = ({
           ? genericWordMatch[0].charAt(0).toUpperCase() + genericWordMatch[0].slice(1).toLowerCase()
           : '';
         data.displayNameOverride = genericWord ? `${bestBrand.brand} ${genericWord}` : bestBrand.brand;
-        if (bestBrand.logo) data.firstLogo = bestBrand.logo;
+        if (bestBrand.logo) {
+          data.brandLogo = bestBrand.logo;
+          data.firstLogo = bestBrand.logo;
+        }
       }
 
       // Post-process: for US sub-groups, use the 2nd channel as the source of truth for name + logo
