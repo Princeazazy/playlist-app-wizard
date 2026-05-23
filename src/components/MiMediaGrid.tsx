@@ -726,6 +726,8 @@ export const MiMediaGrid = ({
   //        Regional → Genres → Seasonal → Misc → Songs(bottom)
   const CURRENT_YEAR = new Date().getFullYear();
   const getGroupSortPriority = (groupName: string): number => {
+    const cat = category; // 'movies' | 'series'
+
     const g = groupName.toLowerCase();
 
     // Year extraction
