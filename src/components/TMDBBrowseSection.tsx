@@ -326,7 +326,7 @@ const CategoryRow = ({
       ) : items.length >= MIN_ITEMS_TO_SHOW_ROW ? (
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 scrollbar-hide"
+          className="flex gap-3 overflow-x-auto snap-x pb-2 -mx-1 px-1 scrollbar-hide"
           style={{ scrollbarWidth: 'none' }}
         >
           {loopItems.map((item, index) => (
@@ -382,7 +382,7 @@ const PlaylistRow = ({
 
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 scrollbar-hide"
+        className="flex gap-3 overflow-x-auto snap-x pb-2 -mx-1 px-1 scrollbar-hide"
         style={{ scrollbarWidth: 'none' }}
       >
         {loopChannels.map((channel, index) => (
