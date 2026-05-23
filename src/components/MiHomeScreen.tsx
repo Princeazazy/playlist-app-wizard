@@ -56,7 +56,7 @@ const FloatingOrbs = React.memo(() => (
   </div>
 ));
 
-// Lightweight tile card - CSS-only hover effects, no per-frame motion calculations
+// Minimal-sharp tile card: subtle glass surface, accent-color border on hover, perspective corner
 const TileCard = ({
   children,
   onClick,
@@ -72,64 +72,71 @@ const TileCard = ({
   delay?: number;
   accentColor?: 'primary' | 'accent' | 'emerald' | 'rose' | 'violet';
 }) => {
-  const gradients: Record<string, string> = {
-    primary: 'from-primary/25 to-primary/5',
-    accent: 'from-accent/25 to-accent/5',
-    emerald: 'from-emerald-500/25 to-emerald-500/5',
-    rose: 'from-rose-500/25 to-rose-500/5',
-    violet: 'from-violet-500/25 to-violet-500/5',
+  const accents: Record<string, { border: string; glow: string; overlay: string; corner: string }> = {
+    primary: {
+      border: 'hsl(200 90% 55% / 0.5)',
+      glow: '0 0 50px -12px hsl(200 90% 55% / 0.35)',
+      overlay: 'linear-gradient(180deg, hsl(200 90% 55% / 0.08) 0%, transparent 100%)',
+      corner: 'hsl(200 90% 55% / 0.35)',
+    },
+    accent: {
+      border: 'hsl(30 95% 55% / 0.45)',
+      glow: '0 0 45px -12px hsl(30 95% 55% / 0.3)',
+      overlay: 'linear-gradient(135deg, hsl(30 95% 55% / 0.07) 0%, transparent 100%)',
+      corner: 'hsl(30 95% 55% / 0.3)',
+    },
+    emerald: {
+      border: 'hsl(160 80% 45% / 0.45)',
+      glow: '0 0 45px -12px hsl(160 80% 45% / 0.3)',
+      overlay: 'linear-gradient(135deg, hsl(160 80% 45% / 0.07) 0%, transparent 100%)',
+      corner: 'hsl(160 80% 45% / 0.3)',
+    },
+    rose: {
+      border: 'hsl(350 80% 60% / 0.45)',
+      glow: '0 0 45px -12px hsl(350 80% 60% / 0.3)',
+      overlay: 'linear-gradient(135deg, hsl(350 80% 60% / 0.07) 0%, transparent 100%)',
+      corner: 'hsl(350 80% 60% / 0.3)',
+    },
+    violet: {
+      border: 'hsl(270 80% 60% / 0.45)',
+      glow: '0 0 45px -12px hsl(270 80% 60% / 0.3)',
+      overlay: 'linear-gradient(135deg, hsl(270 80% 60% / 0.07) 0%, transparent 100%)',
+      corner: 'hsl(270 80% 60% / 0.3)',
+    },
   };
-
-  const borders: Record<string, string> = {
-    primary: 'hsl(200 90% 55% / 0.4)',
-    accent: 'hsl(30 95% 55% / 0.4)',
-    emerald: 'hsl(160 80% 45% / 0.4)',
-    rose: 'hsl(350 80% 60% / 0.4)',
-    violet: 'hsl(270 80% 60% / 0.4)',
-  };
-
-  const glows: Record<string, string> = {
-    primary: '0 20px 60px hsl(200 90% 55% / 0.25)',
-    accent: '0 20px 60px hsl(30 95% 55% / 0.25)',
-    emerald: '0 20px 60px hsl(160 80% 45% / 0.25)',
-    rose: '0 20px 60px hsl(350 80% 60% / 0.25)',
-    violet: '0 20px 60px hsl(270 80% 60% / 0.25)',
-  };
-
+  const a = accents[accentColor];
+  const isLarge = size === 'large';
   const sizeClasses = { large: 'col-span-1 row-span-2', normal: 'col-span-1 row-span-1', small: 'col-span-1 row-span-1' };
 
   return (
     <button
       onClick={onClick}
-      className={`${sizeClasses[size]} hud-frame relative rounded-2xl overflow-hidden border transition-all duration-200 group ${className} hover:scale-[1.04] hover:-translate-y-1.5 active:scale-[0.97]`}
+      className={`${sizeClasses[size]} relative ${isLarge ? 'rounded-[2rem] p-8' : 'rounded-3xl p-6'} overflow-hidden border border-white/10 transition-all duration-500 group hover:scale-[1.02] active:scale-[0.98] ${className}`}
       style={{
-        borderColor: 'hsl(265 30% 22% / 0.6)',
-        boxShadow: '0 8px 30px hsl(0 0% 0% / 0.4)',
+        background: 'linear-gradient(135deg, hsl(0 0% 100% / 0.06) 0%, hsl(0 0% 100% / 0.01) 100%)',
+        boxShadow: '0 6px 24px hsl(0 0% 0% / 0.35)',
         animation: `fadeSlideIn 0.4s ease-out ${delay * 0.08}s both`,
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = glows[accentColor];
-        e.currentTarget.style.borderColor = borders[accentColor];
+        e.currentTarget.style.boxShadow = a.glow;
+        e.currentTarget.style.borderColor = a.border;
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 8px 30px hsl(0 0% 0% / 0.4)';
-        e.currentTarget.style.borderColor = 'hsl(265 30% 22% / 0.6)';
+        e.currentTarget.style.boxShadow = '0 6px 24px hsl(0 0% 0% / 0.35)';
+        e.currentTarget.style.borderColor = 'hsl(0 0% 100% / 0.1)';
       }}
     >
-      {/* Base gradient */}
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(145deg, hsl(265 45% 15%) 0%, hsl(265 40% 9%) 100%)' }} />
+      {/* Hover accent wash */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: a.overlay }} />
 
-      {/* Hover gradient overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradients[accentColor]} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-
-      {/* Shine sweep */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-600 pointer-events-none" />
-
-      {/* Top border highlight */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+      {/* Perspective corner */}
+      <div
+        className={`absolute pointer-events-none ${isLarge ? 'bottom-6 right-6 w-10 h-10 rounded-br-2xl border-r-2 border-b-2' : 'bottom-4 right-4 w-4 h-4 rounded-br-lg border-r border-b'}`}
+        style={{ borderColor: a.corner }}
+      />
 
       {/* Content */}
-      <div className="relative h-full flex flex-col p-5 text-left z-10">
+      <div className="relative h-full flex flex-col text-left z-10">
         {children}
       </div>
     </button>
@@ -159,17 +166,20 @@ const ActionButton = ({
 }) => (
   <button
     onClick={onClick}
-    className="relative w-full flex items-center gap-4 px-5 py-4 rounded-xl overflow-hidden border border-white/5 group hover:scale-[1.02] active:scale-[0.97] transition-transform duration-150"
-    style={{ background: 'linear-gradient(145deg, hsl(265 45% 14%) 0%, hsl(265 40% 9%) 100%)' }}
+    className="relative w-full flex items-center gap-5 p-5 rounded-2xl overflow-hidden border border-white/10 group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+    style={{ background: 'linear-gradient(135deg, hsl(0 0% 100% / 0.06) 0%, hsl(0 0% 100% / 0.01) 100%)' }}
   >
     <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-    <div className="relative w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'hsl(200 90% 55% / 0.12)', border: '1px solid hsl(200 90% 55% / 0.2)' }}>
-      <Icon className={`w-4 h-4 text-primary ${spinning ? 'animate-spin' : ''}`} />
+    <div
+      className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-700 ${spinning ? '' : 'group-hover:scale-110'}`}
+      style={{ background: 'hsl(200 90% 55% / 0.12)', border: '1px solid hsl(200 90% 55% / 0.25)' }}
+    >
+      <Icon className={`w-5 h-5 text-primary ${spinning ? 'animate-spin' : ''}`} />
     </div>
-    <span className="relative text-foreground font-medium">{label}</span>
+    <span className="relative text-lg font-semibold text-foreground">{label}</span>
     <ChevronRight className="w-4 h-4 text-primary/60 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
   </button>
+
 );
 
 export const MiHomeScreen = React.memo(({
@@ -375,83 +385,83 @@ export const MiHomeScreen = React.memo(({
                   {/* Live TV - Large */}
                   <TileCard onClick={() => onNavigate('live')} size="large" delay={0} accentColor="primary" className="row-span-2">
                     <div className="flex-1 flex flex-col justify-between h-full">
-                    <PulsingIcon color="primary">
-                      <Tv className="w-8 h-8 text-primary" />
-                    </PulsingIcon>
-                    <div>
-                      <p className="text-4xl font-display font-bold text-foreground tracking-tight">Live TV</p>
-                      <p className="text-muted-foreground mt-1 font-mono text-xs tracking-widest uppercase">
-                        {loading ? (
-                          <span className="animate-pulse">Loading...</span>
-                        ) : (
-                          <span>+{animChannels.toLocaleString()} Channels</span>
-                        )}
-                      </p>
+                      <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-inner" style={{ background: 'hsl(200 90% 55% / 0.1)', border: '1px solid hsl(200 90% 55% / 0.25)' }}>
+                        <Tv className="w-10 h-10 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-5xl font-display font-bold text-foreground tracking-tight leading-tight">Live TV</p>
+                        <p className="mt-3 font-mono text-[11px] tracking-[0.2em] uppercase" style={{ color: 'hsl(200 90% 70% / 0.85)' }}>
+                          {loading ? (
+                            <span className="animate-pulse">Loading...</span>
+                          ) : (
+                            <span>+{animChannels.toLocaleString()} Channels</span>
+                          )}
+                        </p>
+                      </div>
                     </div>
+                  </TileCard>
 
-                  </div>
-                </TileCard>
+                  {/* Movies */}
+                  <TileCard onClick={() => onNavigate('movies')} delay={1} accentColor="accent">
+                    <div className="flex-1 flex flex-col justify-between gap-6">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'hsl(30 95% 55% / 0.1)', border: '1px solid hsl(30 95% 55% / 0.25)' }}>
+                        <Film className="w-7 h-7 text-accent" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-foreground mb-1">Movies</h3>
+                        <p className="text-muted-foreground text-sm font-medium">{loading ? '...' : `+${animMovies.toLocaleString()} Movies`}</p>
+                      </div>
+                    </div>
+                  </TileCard>
 
-                {/* Movies */}
-                <TileCard onClick={() => onNavigate('movies')} delay={1} accentColor="accent">
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(30 95% 55% / 0.12)', border: '1px solid hsl(30 95% 55% / 0.25)' }}>
-                      <Film className="w-6 h-6 text-accent" />
+                  {/* Sports */}
+                  <TileCard onClick={() => onNavigate('sports')} delay={2} accentColor="emerald">
+                    <div className="flex-1 flex flex-col justify-between gap-6">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'hsl(160 80% 45% / 0.1)', border: '1px solid hsl(160 80% 45% / 0.25)' }}>
+                        <Trophy className="w-7 h-7" style={{ color: 'hsl(160 80% 55%)' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-foreground mb-1">Sports Guide</h3>
+                        <p className="text-muted-foreground text-sm font-medium">{loading ? '...' : `+${animSports.toLocaleString()} in playlist`}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Movies</h3>
-                      <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animMovies.toLocaleString()} Movies`}</p>
-                    </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
 
-                {/* Sports */}
-                <TileCard onClick={() => onNavigate('sports')} delay={2} accentColor="emerald">
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(160 80% 45% / 0.12)', border: '1px solid hsl(160 80% 45% / 0.25)' }}>
-                      <Trophy className="w-6 h-6" style={{ color: 'hsl(160 80% 55%)' }} />
+                  {/* Series */}
+                  <TileCard onClick={() => onNavigate('series')} delay={3} accentColor="violet">
+                    <div className="absolute top-5 right-5 z-20">
+                      <span
+                        className="px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-[0.2em] shadow-lg"
+                        style={{ background: 'hsl(270 80% 55%)', boxShadow: '0 4px 14px hsl(270 80% 40% / 0.5)' }}
+                      >New</span>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Sports Guide</h3>
-                      <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animSports.toLocaleString()} in playlist`}</p>
+                    <div className="flex-1 flex flex-col justify-between gap-6">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'hsl(270 80% 60% / 0.1)', border: '1px solid hsl(270 80% 60% / 0.25)' }}>
+                        <Clapperboard className="w-7 h-7" style={{ color: 'hsl(270 80% 70%)' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-foreground mb-1">Series</h3>
+                        <p className="text-muted-foreground text-sm font-medium">{loading ? '...' : `+${animSeries.toLocaleString()} Series`}</p>
+                      </div>
                     </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
 
-                {/* Series */}
-                <TileCard onClick={() => onNavigate('series')} delay={3} accentColor="violet">
-                  <div className="absolute top-3 right-3 z-20">
-                    <span
-                      className="px-2.5 py-1 rounded-md text-xs font-bold text-white animate-pulse"
-                      style={{ background: 'linear-gradient(135deg, hsl(200 90% 55%), hsl(280 80% 60%))' }}
-                    >New</span>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(270 80% 60% / 0.12)', border: '1px solid hsl(270 80% 60% / 0.25)' }}>
-                      <Clapperboard className="w-6 h-6" style={{ color: 'hsl(270 80% 70%)' }} />
+                  {/* Catch Up */}
+                  <TileCard onClick={onCatchUp} delay={4} accentColor="rose">
+                    <div className="flex-1 flex flex-col justify-between gap-6">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'hsl(350 80% 60% / 0.1)', border: '1px solid hsl(350 80% 60% / 0.25)' }}>
+                        <Clock className="w-7 h-7" style={{ color: 'hsl(350 80% 65%)' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-foreground mb-1">Catch Up</h3>
+                        <p className="text-muted-foreground text-sm font-medium">Resume watching</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Series</h3>
-                      <p className="text-muted-foreground text-sm">{loading ? '...' : `+${animSeries.toLocaleString()} Series`}</p>
-                    </div>
-                  </div>
-                </TileCard>
+                  </TileCard>
+                </div>
 
-                {/* Catch Up */}
-                <TileCard onClick={onCatchUp} delay={4} accentColor="rose">
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(350 80% 60% / 0.12)', border: '1px solid hsl(350 80% 60% / 0.25)' }}>
-                      <Clock className="w-6 h-6" style={{ color: 'hsl(350 80% 65%)' }} />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-foreground">Catch Up</h3>
-                      <p className="text-muted-foreground text-sm">Resume watching</p>
-                    </div>
-                  </div>
-                </TileCard>
               </div>
 
-            </div>
 
             {/* Right Panel */}
             <div className="w-72 flex flex-col gap-4">
