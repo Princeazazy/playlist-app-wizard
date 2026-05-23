@@ -394,17 +394,26 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
   if (g.includes('netflix') || g.includes('نتفليكس') || g.includes('نتفلكس')) return netflixCustomLogo;
   
   // Latest English/Movies - includes "EN MOV 2025" style groups
-  if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي') || g.includes('movie') || g.includes('film')) || g.includes('أفلام اجنبية جديدة')) return englishMoviesLogo;
-  if (/\ben\b/.test(g) && /mov|film|movie/.test(g)) return englishMoviesLogo;
+  if ((g.includes('latest') || g.includes('أحدث')) && (g.includes('english') || g.includes('انجليزي') || g.includes('movie') || g.includes('film')) || g.includes('أفلام اجنبية جديدة')) return englishLatestMoviesLogo;
+  if (/\ben\b/.test(g) && /mov|film|movie/.test(g)) return englishLatestMoviesLogo;
   
   // Generic English movies
-  if (g.includes('english') && (g.includes('mov') || g.includes('film') || g.includes('انجليزي'))) return englishMoviesLogo;
+  if (g.includes('english') && (g.includes('mov') || g.includes('film') || g.includes('انجليزي'))) return englishLatestMoviesLogo;
   
   // Albania
   if (g.includes('albania') || g.includes('ألبان')) return albaniaMoviesLogo;
 
-  // Multi-Language Releases
-  if (g.includes('multi') && (g.includes('lang') || g.includes('sub') || g.includes('release')) || g.includes('ملتي') || g.includes('متعدد')) return multiLangMoviesLogo;
+  // Multi-Language Releases — era-specific variants BEFORE generic fallback
+  const isMulti = g.includes('multi') || g.includes('ملتي') || g.includes('متعدد');
+  if (isMulti) {
+    if (g.includes('new release') || g.includes('latest') || g.includes('new ')) return multiLangNewReleasesLogo;
+    if (g.includes('before 2000') || g.includes('pre-2000') || g.includes('pre 2000') || g.includes('classic') || g.includes('199') || g.includes('198') || g.includes('197')) return multiLangClassicsLogo;
+    if (g.includes('2020') || g.includes('2021') || g.includes('2022') || g.includes('2023') || g.includes('2024') || g.includes('2025') || g.includes('2026')) return multiLang2020sLogo;
+    if (g.includes('2010') || g.includes('2011') || g.includes('2012') || g.includes('2013') || g.includes('2014') || g.includes('2015') || g.includes('2016') || g.includes('2017') || g.includes('2018') || g.includes('2019')) return multiLang2010sLogo;
+    if (g.includes('2000') || g.includes('2001') || g.includes('2002') || g.includes('2003') || g.includes('2004') || g.includes('2005') || g.includes('2006') || g.includes('2007') || g.includes('2008') || g.includes('2009')) return multiLang2000sLogo;
+    return multiLangMoviesLogo;
+  }
+
   
   // Asia
   if (g.includes('asia') || g.includes('آسيا') || g.includes('asian')) return asiaMoviesLogo;
