@@ -308,6 +308,26 @@ export const MiLiveTVList = ({
 
   const effectiveSearchQuery = localSearchQuery || searchQuery;
 
+  const isLowValueGroupLogo = (logo?: string | null): boolean => {
+    if (!logo) return true;
+    const lower = logo.toLowerCase();
+    return lower.includes('flagcdn.com')
+      || lower.includes('flag_of_')
+      || lower.includes('/flags/')
+      || lower.includes('placeholder')
+      || lower.endsWith('/placeholder.svg');
+  };
+
+  const getDominantChannelLogo = (groupChannels: Channel[]): string | undefined => {
+    const counts = new Map<string, number>();
+    for (const ch of groupChannels) {
+      if (isLowValueGroupLogo(ch.logo)) continue;
+      const logo = ch.logo!.trim();
+      counts.set(logo, (counts.get(logo) || 0) + 1);
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0];
+  };
+
   const toggleVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
