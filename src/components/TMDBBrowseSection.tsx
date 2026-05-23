@@ -88,11 +88,9 @@ const useInfiniteScroll = (speed = 0.4) => {
     const onClickCapture = (e: MouseEvent) => {
       if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
     };
-    const onEnter = () => pause(60_000); // keep paused while hovering
-    const onMouseOut = () => pause(1500);
     const onTouch = () => pause(4000);
     const onWheel = () => pause(3000);
-    const onFocusIn = () => pause(8000);
+
 
     el.addEventListener('scroll', onScroll, { passive: true });
     el.addEventListener('mousedown', onDown);
