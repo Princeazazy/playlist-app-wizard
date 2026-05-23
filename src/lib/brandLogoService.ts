@@ -41,11 +41,11 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   tubi: { logo: CB('tubi.tv'), aliases: ['tubitv'] },
 
   // ── Sky family ──
-  'sky cinema': { logo: CB('sky.com'), aliases: ['skycinema', 'sky movies'] },
+  'sky cinema': { logo: '/images/sky-movies-round-logo.png', aliases: ['skycinema', 'sky movies', 'sky cinema movies'] },
   'sky sports': { logo: CB('skysports.com'), aliases: ['skysports', 'سكاي سبورت'] },
   'sky sports f1': { logo: CB('skysports.com'), aliases: ['sky f1'] },
   'sky news': { logo: CB('news.sky.com'), aliases: ['sky news arabia', 'سكاي نيوز'] },
-  'sky entertainment': { logo: '/images/sky-entertainment-logo.png', aliases: ['sky one', 'sky atlantic', 'sky showcase', 'sky comedy', 'sky witness', 'sky max'] },
+  'sky entertainment': { logo: '/images/sky-entertainment-round-logo.png', aliases: ['sky one', 'sky atlantic', 'sky showcase', 'sky comedy', 'sky witness', 'sky max'] },
   sky: { logo: CB('sky.com'), aliases: ['سكاي'] },
 
   // ── PPV / Sports networks ──
@@ -102,7 +102,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
 
   // ── Sports Leagues ──
   'la liga': { logo: '/images/laliga-logo.png', aliases: ['laliga', 'لاليغا', 'لا ليغا'] },
-  'serie a': { logo: CB('legaseriea.it'), aliases: ['سيري ا', 'الدوري الايطالي'] },
+  'serie a': { logo: WC('Serie_A_logo_2022.svg'), aliases: ['سيري ا', 'الدوري الايطالي', 'seriea', 'serie a tim'] },
   bundesliga: { logo: '/images/bundesliga-logo.png', aliases: ['بوندسليغا', 'الدوري الالماني'] },
   'ligue 1': { logo: CB('ligue1.com'), aliases: ['ligue1', 'الدوري الفرنسي'] },
   'league one': { logo: '/images/league-one-logo-v2.png', aliases: ['league 1', 'efl league one', 'efl league 1', 'efl1', 'الدوري الأول'] },
@@ -181,6 +181,8 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'spectrum news': { logo: '/images/spectrum-news-round-logo.svg', aliases: ['spectrum', 'us spectrum', 'us spectrum news'] },
   'the cw': { logo: WC('8/8b/The_CW.svg/512px-The_CW.svg.png'), aliases: ['cw', 'cw network'] },
   cinemania: { logo: '/images/cinemania-round-logo.svg', aliases: ['us cm', 'cinemania'] },
+  'alwan entertainment': { logo: '/images/alwan-round-logo.png', aliases: ['alwan', 'alwan ent', 'ألوان', 'الوان'] },
+  'us victory': { logo: '/images/us-victory-round-logo.png', aliases: ['victory channel', 'victory', 'us vc', 'us victory channel'] },
 
   // ── International news ──
   'france 24': { logo: WC('8/84/FRANCE_24_logo.svg/512px-FRANCE_24_logo.svg.png'), aliases: ['france24'] },

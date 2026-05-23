@@ -548,6 +548,8 @@ export const MiLiveTVList = ({
         { regex: /\bmbc\b/i, name: 'MBC', logoKey: 'predefined', predefinedLogo: '/images/mbc-group-logo.png' },
         { regex: /\bjawy\b|\bjawwy\b|جوي/i, name: 'Jawwy', logoKey: 'predefined', predefinedLogo: '/images/jawwy-logo.png' },
         { regex: /\btod\b/i, name: 'TOD', logoKey: 'first' },
+        { regex: /\balwan\b|ألوان|الوان/i, name: 'Alwan Entertainment', logoKey: 'predefined', predefinedLogo: '/images/alwan-round-logo.png' },
+        { regex: /\bvictory\b/i, name: 'US Victory', logoKey: 'predefined', predefinedLogo: '/images/us-victory-round-logo.png' },
       ];
 
       for (const [normKey, data] of groupData.entries()) {
@@ -692,6 +694,12 @@ export const MiLiveTVList = ({
         { regex: /\ba\s*&\s*e\b|\baetv\b/i, brand: 'A&E', logo: CB('aetv.com') },
         { regex: /\bfxx?\b/i, brand: 'FX', logo: CB('fxnetworks.com') },
         { regex: /\btnt\s*sports?|bt\s*sport\b/i, brand: 'TNT Sports', logo: CB('tntsports.co.uk') },
+        // Faith / community
+        { regex: /\bvictory\b|\bvc\b/i, brand: 'US Victory', logo: '/images/us-victory-round-logo.png' },
+        // Arabic entertainment
+        { regex: /\balwan\b|ألوان|الوان/i, brand: 'Alwan Entertainment', logo: '/images/alwan-round-logo.png' },
+        // Football leagues
+        { regex: /\bserie\s*a\b/i, brand: 'Serie A', logo: matchBrandLogo('serie a') || undefined },
       ];
 
       for (const [normKey, data] of groupData.entries()) {
@@ -1265,6 +1273,7 @@ export const MiLiveTVList = ({
             const renderGroupButton = (group: typeof groups[number]) => {
               const groupLogo = getGroupLogo(group);
               const isFlagLogo = isGroupFlagLogo(group, groupLogo);
+              const isFillLogo = !!groupLogo && /round-logo|mbc-(group-)?logo|mbc-logo|alwan|us-lat-logo|us-victory/i.test(groupLogo);
               return (
                 <button
                   key={`${group.name}-${groupLogo ?? 'none'}`}
@@ -1282,7 +1291,7 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className={`absolute inset-0 z-10 w-full h-full ${isFlagLogo ? 'object-cover bg-muted' : 'object-contain p-1.5 bg-white'}`}
+                        className={`absolute inset-0 z-10 w-full h-full ${(isFlagLogo || isFillLogo) ? 'object-cover bg-muted' : 'object-contain p-1.5 bg-white'}`}
                         onError={(event) => {
 
                           event.currentTarget.style.display = 'none';
