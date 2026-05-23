@@ -29,9 +29,9 @@
     --popover: 265 40% 10%;
     --popover-foreground: 220 20% 95%;
     
-    /* Primary - Cosmic cyan/blue glow */
-    --primary: 200 90% 55%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary - Neon cyan glow */
+    --primary: 188 100% 55%;
+    --primary-foreground: 240 50% 6%;
     
     /* Secondary */
     --secondary: 270 35% 18%;
@@ -39,11 +39,12 @@
     
     /* Muted */
     --muted: 265 30% 18%;
-    --muted-foreground: 230 20% 65%;
+    --muted-foreground: 230 20% 70%;
     
-    /* Accent - Warm orange/gold from planet rings */
-    --accent: 30 95% 55%;
+    /* Accent - Hot magenta plasma */
+    --accent: 320 95% 60%;
     --accent-foreground: 0 0% 100%;
+
     
     /* Destructive */
     --destructive: 0 84% 60%;
