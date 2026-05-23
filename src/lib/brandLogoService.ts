@@ -56,6 +56,12 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   motogp: { logo: CB('motogp.com'), aliases: ['moto gp'] },
   nascar: { logo: CB('nascar.com'), aliases: [] },
   'national league': { logo: '/images/national-league-logo.png', aliases: ['vanarama national league', 'efl national'] },
+  'pdc': { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/0/02/PDC_Darts_logo.svg/512px-PDC_Darts_logo.svg.png', aliases: ['pdc darts', 'darts', 'professional darts corporation', 'world darts'] },
+  cricket: { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/df/International_Cricket_Council_Logo.svg/512px-International_Cricket_Council_Logo.svg.png', aliases: ['icc', 'world cricket'] },
+  rugby: { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/World_Rugby_logo.svg/512px-World_Rugby_logo.svg.png', aliases: ['world rugby', 'six nations'] },
+  tennis: { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/3/3a/ATP_Tour_logo.svg/512px-ATP_Tour_logo.svg.png', aliases: ['atp', 'wta', 'tennis channel'] },
+  golf: { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/76/PGA_Tour_logo.svg/512px-PGA_Tour_logo.svg.png', aliases: ['pga', 'pga tour', 'european tour'] },
+  boxing: { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/World_Boxing_Council_logo.svg/512px-World_Boxing_Council_logo.svg.png', aliases: ['wbc', 'boxing channel'] },
 
   // ── Arab Networks & Platforms ──
   'bein sports': { logo: '/images/bein-logo.png', aliases: ['bein', 'bein sport', 'بي ان سبورت', 'بين سبورت', 'بي ان', 'بين', 'beinsports'] },
