@@ -36,8 +36,8 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
     aliases: ['prime video', 'amazon', 'amazon prime video', 'أمازون', 'امازون', 'برايم'],
   },
   'apple tv': {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Apple_TV_Plus_Logo.svg/200px-Apple_TV_Plus_Logo.svg.png',
-    aliases: ['apple tv+', 'appletv', 'ابل تي في'],
+    logo: '/images/apple-tv-logo.png',
+    aliases: ['apple tv+', 'appletv', 'apple', 'ابل تي في', 'آبل تي في'],
   },
   paramount: {
     logo: '/images/paramount-plus-custom-v2.png',
