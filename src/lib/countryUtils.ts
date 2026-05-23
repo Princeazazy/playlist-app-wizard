@@ -69,13 +69,6 @@ const STREAMING_SERVICES: Record<string, CountryInfo> = {
   'showtime': { name: 'Showtime', code: 'showtime', flagUrl: bl('showtime'), priority: 1010, isStreamingService: true },
   'premier league': { name: 'Premier League', code: 'premierleague', flagUrl: bl('premier league'), priority: 1021, isStreamingService: true },
   'serie a': { name: 'Serie A', code: 'seriea', flagUrl: bl('serie a'), priority: 1022, isStreamingService: true },
-  'pdc': { name: 'PDC Darts', code: 'pdc', flagUrl: bl('pdc darts'), priority: 1023, isStreamingService: true },
-  'pdc darts': { name: 'PDC Darts', code: 'pdc', flagUrl: bl('pdc darts'), priority: 1023, isStreamingService: true },
-  'darts': { name: 'PDC Darts', code: 'pdc', flagUrl: bl('pdc darts'), priority: 1023, isStreamingService: true },
-  'championship': { name: 'EFL Championship', code: 'eflchampionship', flagUrl: bl('efl championship'), priority: 1024, isStreamingService: true },
-  'efl championship': { name: 'EFL Championship', code: 'eflchampionship', flagUrl: bl('efl championship'), priority: 1024, isStreamingService: true },
-  'league one': { name: 'League One', code: 'leagueone', flagUrl: bl('league one'), priority: 1025, isStreamingService: true },
-  'league two': { name: 'League Two', code: 'leaguetwo', flagUrl: bl('league two'), priority: 1026, isStreamingService: true },
   // Arabic streaming services - priority 23-27
   'tod': { name: 'TOD', code: 'tod', flagUrl: '', priority: 20, isStreamingService: true },
   'tod tv': { name: 'TOD', code: 'tod', flagUrl: '', priority: 20, isStreamingService: true },
@@ -495,10 +488,10 @@ const OTHER_COUNTRIES: Record<string, CountryInfo> = {
   'asia': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 166 },
   'asian': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 166 },
   'آسيا': { name: 'Asia Mix', code: 'asia', flagUrl: '/images/asia-mix-logo.png', priority: 166 },
-  'christian': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo-v2.png', priority: 167 },
-  'مسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo-v2.png', priority: 167 },
-  'المسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo-v2.png', priority: 167 },
-  'لمسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo-v2.png', priority: 167 },
+  'christian': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 167 },
+  'مسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 167 },
+  'المسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 167 },
+  'لمسيحية': { name: 'Christian', code: 'christian', flagUrl: '/images/christian-logo.png', priority: 167 },
 };
 
 // Merged all countries (not including streaming services - checked separately)

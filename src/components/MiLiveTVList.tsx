@@ -308,26 +308,6 @@ export const MiLiveTVList = ({
 
   const effectiveSearchQuery = localSearchQuery || searchQuery;
 
-  const isLowValueGroupLogo = (logo?: string | null): boolean => {
-    if (!logo) return true;
-    const lower = logo.toLowerCase();
-    return lower.includes('flagcdn.com')
-      || lower.includes('flag_of_')
-      || lower.includes('/flags/')
-      || lower.includes('placeholder')
-      || lower.endsWith('/placeholder.svg');
-  };
-
-  const getDominantChannelLogo = (groupChannels: Channel[]): string | undefined => {
-    const counts = new Map<string, number>();
-    for (const ch of groupChannels) {
-      if (isLowValueGroupLogo(ch.logo)) continue;
-      const logo = ch.logo!.trim();
-      counts.set(logo, (counts.get(logo) || 0) + 1);
-    }
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0];
-  };
-
   const toggleVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
@@ -473,9 +453,7 @@ export const MiLiveTVList = ({
     'League One': { flagUrl: '/images/league-one-logo-v2.png', priority: 26, isService: true },
     'League Two': { flagUrl: '/images/league-two-logo-v2.png', priority: 27, isService: true },
     'La Liga': { flagUrl: '/images/laliga-logo.png', priority: 28, isService: true },
-    'PDC Darts': { flagUrl: '/images/pdc-logo.png', priority: 29, isService: true },
-    'EFL Championship': { flagUrl: '/images/efl-championship-logo.png', priority: 29.1, isService: true },
-    'Sky Sports': { flagUrl: '/images/sky-sports-logo.png', priority: 30, isService: true },
+    'Sky Sports': { flagUrl: matchBrandLogo('sky sports') || '', priority: 30, isService: true },
     'ESPN': { flagUrl: matchBrandLogo('espn') || '', priority: 31, isService: true },
     'DAZN': { flagUrl: matchBrandLogo('dazn') || '', priority: 32, isService: true },
     'Fox Sports': { flagUrl: matchBrandLogo('fox sports') || '', priority: 33, isService: true },
@@ -511,18 +489,14 @@ export const MiLiveTVList = ({
       // Sports mode: use smart categorization
       for (const ch of channels) {
         const sportsGroup = sportsChannelGroupMap.get(ch.id) || 'Other';
-        const brandLogo = matchBrandLogo(`${sportsGroup} ${ch.name || ''} ${ch.group || ''}`) || undefined;
-        const preferredLogo = brandLogo || (!isLowValueGroupLogo(ch.logo) ? ch.logo : undefined);
         const existing = groupData.get(sportsGroup);
         if (!existing) {
-          groupData.set(sportsGroup, { count: 1, firstLogo: preferredLogo, brandLogo, originalNames: [sportsGroup] });
+          groupData.set(sportsGroup, { count: 1, firstLogo: ch.logo, originalNames: [sportsGroup] });
           normMap.set(sportsGroup, [sportsGroup]);
         } else {
           existing.count++;
-          if (!existing.brandLogo && brandLogo) existing.brandLogo = brandLogo;
-          if (!existing.firstLogo && preferredLogo) existing.firstLogo = preferredLogo;
-          if (existing.count === 2 && preferredLogo && !existing.secondLogo) {
-            existing.secondLogo = preferredLogo;
+          if (existing.count === 2 && ch.logo && !existing.secondLogo) {
+            existing.secondLogo = ch.logo;
           }
         }
       }
@@ -530,18 +504,14 @@ export const MiLiveTVList = ({
       for (const ch of channels) {
         const group = ch.group || 'Uncategorized';
         const normalizedKey = normalizeGroupName(group);
-        const brandLogo = matchBrandLogo(`${group} ${ch.name || ''}`) || undefined;
-        const preferredLogo = brandLogo || (!isLowValueGroupLogo(ch.logo) ? ch.logo : undefined);
         const existing = groupData.get(normalizedKey);
         if (!existing) {
-          groupData.set(normalizedKey, { count: 1, firstLogo: preferredLogo, brandLogo, originalNames: [group] });
+          groupData.set(normalizedKey, { count: 1, firstLogo: ch.logo, originalNames: [group] });
           normMap.set(normalizedKey, [group]);
         } else {
           existing.count++;
-          if (!existing.brandLogo && brandLogo) existing.brandLogo = brandLogo;
-          if (!existing.firstLogo && preferredLogo) existing.firstLogo = preferredLogo;
-          if (existing.count === 2 && preferredLogo && !existing.secondLogo) {
-            existing.secondLogo = preferredLogo;
+          if (existing.count === 2 && ch.logo && !existing.secondLogo) {
+            existing.secondLogo = ch.logo;
           }
           if (!existing.originalNames.includes(group)) {
             existing.originalNames.push(group);
@@ -599,8 +569,8 @@ export const MiLiveTVList = ({
       const BRAND_SNIFFERS: { regex: RegExp; brand: string; logo?: string }[] = [
         // Sky family
         { regex: /\bsky\s*cinema\b/i, brand: 'Sky Cinema', logo: CB('sky.com') },
-        { regex: /\bsky\s*sports?\s*f1\b/i, brand: 'Sky Sports F1', logo: '/images/sky-sports-logo.png' },
-        { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: '/images/sky-sports-logo.png' },
+        { regex: /\bsky\s*sports?\s*f1\b/i, brand: 'Sky Sports F1', logo: CB('skysports.com') },
+        { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: CB('skysports.com') },
         { regex: /\bsky\s*news\s*arabia|سكاي\s*نيوز\s*عربية/i, brand: 'Sky News Arabia', logo: CB('skynewsarabia.com') },
         { regex: /\bsky\s*news\b/i, brand: 'Sky News', logo: CB('news.sky.com') },
         { regex: /\bsky\s*(one|atlantic|showcase|witness|comedy|max)\b/i, brand: 'Sky Entertainment', logo: '/images/sky-entertainment-logo.png' },
@@ -654,10 +624,6 @@ export const MiLiveTVList = ({
         { regex: /\bmoto\s*gp\b/i, brand: 'MotoGP', logo: CB('motogp.com') },
         { regex: /\bworld\s*cup|كأس\s*العالم|مونديال/i, brand: 'World Cup', logo: '/images/world-cup-logo.png' },
         { regex: /\bchampions\s*league|دوري\s*الابطال/i, brand: 'Champions League', logo: '/images/champions-league-logo.png' },
-        { regex: /\bpdc\b|\bdarts?\b/i, brand: 'PDC Darts', logo: '/images/pdc-logo.png' },
-        { regex: /\befl\s*championship\b|\bchampionship\b/i, brand: 'EFL Championship', logo: '/images/efl-championship-logo.png' },
-        { regex: /\bleague\s*one\b|\befl\s*league\s*1\b/i, brand: 'League One', logo: '/images/league-one-logo-v3.png' },
-        { regex: /\bleague\s*two\b|\befl\s*league\s*2\b/i, brand: 'League Two', logo: '/images/league-two-logo-v3.png' },
         { regex: /\bbein\b/i, brand: 'beIN', logo: '/images/bein-logo.png' },
         // European
         { regex: /\bcanal\+?|\bcanal\s*plus\b/i, brand: 'Canal+', logo: CB('canalplus.com') },
@@ -680,45 +646,17 @@ export const MiLiveTVList = ({
         { regex: /\bal[\s-]?nahar|النهار/i, brand: 'Al Nahar', logo: CB('alnaharegypt.com') },
       ];
 
-      const CATEGORY_LOGO_OVERRIDES: { regex: RegExp; brand: string; logo: string }[] = [
-        { regex: /\bpdc\b|\bdarts?\b/i, brand: 'PDC Darts', logo: '/images/pdc-logo.png' },
-        { regex: /\befl\s*championship\b|\bchampionship\b/i, brand: 'EFL Championship', logo: '/images/efl-championship-logo.png' },
-        { regex: /\bleague\s*one\b|\befl\s*league\s*1\b/i, brand: 'League One', logo: '/images/league-one-logo-v3.png' },
-        { regex: /\bleague\s*two\b|\befl\s*league\s*2\b/i, brand: 'League Two', logo: '/images/league-two-logo-v3.png' },
-        { regex: /\bchristmas\b|\bxmas\b|\bholiday\b/i, brand: 'Christmas', logo: '/images/christmas-logo.png' },
-        { regex: /\bchristian\b|\bchurch\b|\bgospel\b|مسيحية|المسيحية/i, brand: 'Christian', logo: '/images/christian-logo-v2.png' },
-      ];
-
       for (const [normKey, data] of groupData.entries()) {
         // Only retitle groups whose current display is essentially generic
         const baseName = (data.displayNameOverride || data.originalNames[0] || normKey).trim();
-        const groupOrigNames = normMap.get(normKey) || [];
-        const sampleChannels = channels
-          .filter(ch => groupOrigNames.includes(ch.group || 'Uncategorized'))
-          .slice(0, 24);
-
-        const haystack = `${baseName} ${data.originalNames.join(' ')} ${sampleChannels.map(ch => ch.name).join(' ')}`;
-        const override = CATEGORY_LOGO_OVERRIDES.find(item => item.regex.test(haystack));
-        const directBrandLogo = matchBrandLogo(haystack);
-        const dominantChannelLogo = getDominantChannelLogo(sampleChannels);
-
-        if (override) {
-          data.displayNameOverride = override.brand;
-          data.brandLogo = override.logo;
-          data.firstLogo = override.logo;
-          continue;
-        }
-
-        if (directBrandLogo && !data.brandLogo) {
-          data.brandLogo = directBrandLogo;
-          data.firstLogo = directBrandLogo;
-        } else if (dominantChannelLogo && !data.firstLogo) {
-          data.firstLogo = dominantChannelLogo;
-        }
-
         if (!GENERIC_NAME_REGEX.test(baseName)) continue;
         // Skip if already retitled by SERVICE_PATTERNS above
         if (data.displayNameOverride && !GENERIC_NAME_REGEX.test(data.displayNameOverride)) continue;
+
+        const groupOrigNames = normMap.get(normKey) || [];
+        const sampleChannels = channels
+          .filter(ch => groupOrigNames.includes(ch.group || 'Uncategorized'))
+          .slice(0, 12);
         if (sampleChannels.length === 0) continue;
 
         let bestBrand: { brand: string; logo?: string; count: number } | null = null;
@@ -812,9 +750,8 @@ export const MiLiveTVList = ({
             name,
             displayName: name,
             count: data.count,
-            firstLogo: data.brandLogo || meta?.flagUrl || data.firstLogo,
+            firstLogo: meta?.flagUrl || data.firstLogo,
             originalNames: data.originalNames,
-            brandLogo: data.brandLogo,
             priority: meta?.priority ?? 999,
           };
         })
@@ -1141,7 +1078,7 @@ export const MiLiveTVList = ({
                     <img
                       src={groupLogo}
                       alt={group.displayName}
-                      className={useContainedLogo ? 'w-full h-full object-contain p-1.5' : 'w-full h-full object-cover scale-110'}
+                      className="w-full h-full object-cover scale-110"
                     />
                   ) : aiGroupLogosFetchedRef.current.has(group.displayName) && !aiGroupLogos[group.displayName] ? (
                     <Tv className="w-5 h-5 text-primary/60" />
