@@ -1239,47 +1239,66 @@ export const MiLiveTVList = ({
             </button>
           )}
 
-          {groups.map((group) => {
-            const groupLogo = getGroupLogo(group);
-
-            return (
-              <button
-                key={`${group.name}-${groupLogo ?? 'none'}`}
-                onClick={() => handleGroupSelect(group.name)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
-                  selectedGroup === group.name
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
-                }`}
-              >
-                <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-muted relative">
-                  {groupLogo ? (
-                    <img
-                      src={groupLogo}
-                      alt={group.displayName}
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                      className="absolute inset-0 z-10 w-full h-full object-contain p-1.5 bg-muted"
-                      onError={(event) => {
-                        event.currentTarget.style.display = 'none';
-                        event.currentTarget.parentElement?.classList.add('category-logo-failed');
-                      }}
-                    />
-                  ) : (
-                    <CategoryLogoFallback name={group.displayName} />
-                  )}
-                  {groupLogo && <CategoryLogoFallback name={group.displayName} />}
-                </div>
-                {(!sidebarCollapsed || isMobile) && (
-                  <div className="flex-1 text-left min-w-0">
-                    <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
-                      {translateGroupName(group.displayName)}
-                    </p>
+          {(() => {
+            const renderGroupButton = (group: typeof groups[number]) => {
+              const groupLogo = getGroupLogo(group);
+              return (
+                <button
+                  key={`${group.name}-${groupLogo ?? 'none'}`}
+                  onClick={() => handleGroupSelect(group.name)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                    selectedGroup === group.name
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-muted relative">
+                    {groupLogo ? (
+                      <img
+                        src={groupLogo}
+                        alt={group.displayName}
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        className="absolute inset-0 z-10 w-full h-full object-contain p-1.5 bg-muted"
+                        onError={(event) => {
+                          event.currentTarget.style.display = 'none';
+                          event.currentTarget.parentElement?.classList.add('category-logo-failed');
+                        }}
+                      />
+                    ) : (
+                      <CategoryLogoFallback name={group.displayName} />
+                    )}
+                    {groupLogo && <CategoryLogoFallback name={group.displayName} />}
                   </div>
-                )}
-              </button>
-            );
-          })}
+                  {(!sidebarCollapsed || isMobile) && (
+                    <div className="flex-1 text-left min-w-0">
+                      <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
+                        {translateGroupName(group.displayName)}
+                      </p>
+                    </div>
+                  )}
+                </button>
+              );
+            };
+
+            if (sectionedGroups) {
+              return sectionedGroups.map(({ section, label, items }) => (
+                <div key={section} className="space-y-1">
+                  {(!sidebarCollapsed || isMobile) ? (
+                    <div className="pt-3 pb-1 px-3 text-[10px] uppercase tracking-[0.15em] font-semibold text-muted-foreground/70">
+                      {label}
+                    </div>
+                  ) : (
+                    <div className="pt-3 pb-1 mx-3 border-t border-border/40" />
+                  )}
+                  {items.map(renderGroupButton)}
+                </div>
+              ));
+            }
+
+            return groups.map(renderGroupButton);
+          })()}
+
         </div>
 
         {/* Bottom Nav - Favorites Filter */}
