@@ -837,9 +837,6 @@ export const MiLiveTVList = ({
             }
           }
         } else if (sourceChannel.logo) {
-            data.firstLogo = sourceChannel.logo;
-          }
-        } else if (sourceChannel.logo) {
           data.firstLogo = sourceChannel.logo;
         }
       }
