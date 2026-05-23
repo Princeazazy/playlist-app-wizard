@@ -6,7 +6,7 @@ import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { translateGroupName } from '@/lib/countryUtils';
 import { useTMDBPosters } from '@/hooks/useTMDBPosters';
-import { useAICategoryLogo } from '@/hooks/useAICategoryLogo';
+
 import {
   Select,
   SelectContent,
@@ -114,10 +114,22 @@ import serIslamicLogo from '@/assets/category-logos/islamic-logo.png';
 import serEnglish2022SubLogo from '@/assets/category-logos/ser-english-2022-sub.png';
 import serForeign2023Logo from '@/assets/category-logos/ser-foreign-2023.png';
 import serForeign2026Logo from '@/assets/category-logos/ser-foreign-2026.png';
+import serRamadanMaghreb2023Logo from '@/assets/category-logos/ser-ramadan-maghreb-2023.png';
+import serRamadanMaghreb2024Logo from '@/assets/category-logos/ser-ramadan-maghreb-2024.png';
+import serRamadanMaghreb2025Logo from '@/assets/category-logos/ser-ramadan-maghreb-2025.png';
 import serRamadanMaghreb2026Logo from '@/assets/category-logos/ser-ramadan-maghreb-2026.png';
+import serRamadanEgyptian2023Logo from '@/assets/category-logos/ser-ramadan-egyptian-2023.png';
+import serRamadanEgyptian2024Logo from '@/assets/category-logos/ser-ramadan-egyptian-2024.png';
+import serRamadanEgyptian2025Logo from '@/assets/category-logos/ser-ramadan-egyptian-2025.png';
 import serRamadanEgyptian2026Logo from '@/assets/category-logos/ser-ramadan-egyptian-2026.png';
+import serRamadanGulf2023Logo from '@/assets/category-logos/ser-ramadan-gulf-2023.png';
+import serRamadanGulf2024Logo from '@/assets/category-logos/ser-ramadan-gulf-2024.png';
+import serRamadanGulf2025Logo from '@/assets/category-logos/ser-ramadan-gulf-2025.png';
 import serRamadanGulf2026Logo from '@/assets/category-logos/ser-ramadan-gulf-2026.png';
+import serRamadanLevantine2024Logo from '@/assets/category-logos/ser-ramadan-levantine-2024.png';
+import serRamadanLevantine2025Logo from '@/assets/category-logos/ser-ramadan-levantine-2025.png';
 import serRamadanLevantine2026Logo from '@/assets/category-logos/ser-ramadan-levantine-2026.png';
+import serRamadanMixLogo from '@/assets/category-logos/ser-ramadan-mix.png';
 import serAsiaLogo from '@/assets/category-logos/ser-asia.png';
 import serWorldLogo from '@/assets/category-logos/ser-world.png';
 import serAlbaniaLogo from '@/assets/category-logos/ser-albania.png';
@@ -474,16 +486,10 @@ const CategoryTileLogo = ({
     localLogo = getCategoryLogo(displayName, category);
   }
 
-  // 2. AI fallback when no curated logo. We deliberately do NOT fall back to
-  // `firstLogo` because that's the first item's poster (a movie/series still),
-  // not a category brand mark — using it produces visually-wrong category tiles.
-  const aiLogo = useAICategoryLogo(displayName, category, !localLogo);
-
+  // No AI fallback here: using generated/category-search results caused wrong or generic logos,
+  // and falling back to firstLogo would use a poster/still instead of a category badge.
   if (localLogo) {
     return <img src={localLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
-  }
-  if (aiLogo) {
-    return <img src={aiLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
   }
   return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
 
@@ -706,7 +712,7 @@ export const MiMediaGrid = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const weather = useWeather();
   const isMobile = useIsMobile();
-  const [aiCanonical, setAiCanonical] = useState<Record<string, string>>({});
+  
 
 
   // Voice search handler
@@ -1129,26 +1135,6 @@ export const MiMediaGrid = ({
     }
   }, [groups, selectedGroup]);
 
-  // AI canonicalization — clean up raw category names lazily, persist in DB
-  useEffect(() => {
-    if (groups.length === 0) return;
-    const names = groups.map((g) => g.name).filter((n) => !aiCanonical[n]);
-    if (names.length === 0) return;
-    const timer = setTimeout(async () => {
-      try {
-        const { supabase } = await import('@/integrations/supabase/client');
-        const { data, error } = await supabase.functions.invoke('categorize-playlist', {
-          body: { names, kind: category },
-        });
-        if (!error && data?.mapping) {
-          setAiCanonical((prev) => ({ ...prev, ...data.mapping }));
-        }
-      } catch (e) {
-        console.warn('[AI categorize] failed', e);
-      }
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [groups, category, aiCanonical]);
 
 
   const filteredItems = useMemo(() => {
@@ -1319,7 +1305,7 @@ export const MiMediaGrid = ({
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10" />
                 <CategoryTileLogo
                   rawNames={(group as any).rawNames || [group.name]}
-                  displayName={aiCanonical[group.name] || group.name}
+                  displayName={group.name}
                   firstLogo={group.firstLogo}
                   category={category}
                 />
@@ -1327,7 +1313,7 @@ export const MiMediaGrid = ({
               </div>
               <div className="flex-1 text-left">
                 <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold text-foreground' : ''}`}>
-                  {aiCanonical[group.name] || group.name}
+                  {group.name}
                 </p>
                 {selectedGroup === group.name && (
                   <p className="text-xs text-muted-foreground">{group.count} {title}</p>
