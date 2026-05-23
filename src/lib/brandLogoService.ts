@@ -126,7 +126,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   bet: { logo: WC('5/5b/BET_logo_%282021%29.svg/512px-BET_logo_%282021%29.svg.png'), aliases: ['black entertainment television'] },
   'cartoon network': { logo: WC('8/80/Cartoon_Network_2010_logo.svg/512px-Cartoon_Network_2010_logo.svg.png'), aliases: ['cn', 'cartoonnetwork'] },
   boomerang: { logo: WC('5/52/Boomerang_2014_logo.svg/512px-Boomerang_2014_logo.svg.png'), aliases: [] },
-  nickelodeon: { logo: WC('1/1f/Nickelodeon_2009_logo.svg/512px-Nickelodeon_2009_logo.svg.png'), aliases: ['nick', 'nick jr', 'nicktoons', 'nickelodeon kids'] },
+  nickelodeon: { logo: '/images/nickelodeon-round-logo.png', aliases: ['nick', 'nick jr', 'nicktoons', 'nickelodeon kids'] },
   discovery: { logo: '/images/discovery-round-logo.svg', aliases: ['discovery channel'] },
   history: { logo: WC('9/91/History_Logo.svg/512px-History_Logo.svg.png'), aliases: ['history channel', 'history hd'] },
   'national geographic': { logo: WC('f/fc/Natgeologo.svg/512px-Natgeologo.svg.png'), aliases: ['nat geo', 'natgeo', 'ngc', 'nat geo wild', 'nat geo people'] },

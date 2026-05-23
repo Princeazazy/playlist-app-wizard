@@ -1282,7 +1282,7 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className={`absolute inset-0 z-10 w-full h-full ${isFlagLogo ? 'object-cover bg-muted' : 'object-cover bg-foreground'}`}
+                        className={`absolute inset-0 z-10 w-full h-full ${isFlagLogo ? 'object-cover bg-muted' : 'object-contain p-1.5 bg-white'}`}
                         onError={(event) => {
 
                           event.currentTarget.style.display = 'none';
