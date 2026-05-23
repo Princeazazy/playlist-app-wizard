@@ -433,7 +433,51 @@ const getMovieCategoryLogo = (groupName: string): string | null => {
 const getCategoryLogo = (groupName: string, category?: 'movies' | 'series'): string | null => {
   if (category === 'series') return getSeriesCategoryLogo(groupName);
   return getMovieCategoryLogo(groupName);
+
+// Sidebar category tile logo with AI fallback (Brandfetch → Nano Banana)
+const CategoryTileLogo = ({
+  rawNames,
+  displayName,
+  firstLogo,
+  category,
+}: {
+  rawNames: string[];
+  displayName: string;
+  firstLogo?: string;
+  category: 'movies' | 'series';
+}) => {
+  // 1. Try curated local logo
+  let localLogo: string | null = null;
+  for (const rn of rawNames) {
+    localLogo = getCategoryLogo(rn, category);
+    if (localLogo) break;
+  }
+
+  // 2. AI fallback only when no local logo AND no firstLogo
+  const aiLogo = useAICategoryLogo(displayName, category, !localLogo && !firstLogo);
+
+  if (localLogo) {
+    return <img src={localLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
+  }
+  if (firstLogo) {
+    return (
+      <img
+        src={firstLogo}
+        alt={displayName}
+        className="relative w-[78%] h-[78%] object-contain drop-shadow-[0_0_6px_hsl(var(--accent)/0.5)]"
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+          e.currentTarget.parentElement!.innerHTML = `<span class="relative text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
+        }}
+      />
+    );
+  }
+  if (aiLogo) {
+    return <img src={aiLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
+  }
+  return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
 };
+
 
 const WeatherIcon = ({ icon }: { icon: string }) => {
   switch (icon) {
