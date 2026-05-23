@@ -49,6 +49,13 @@ import theaterPlaysLogo from '@/assets/category-logos/theater-plays-movies.png';
 import worldMoviesLogo from '@/assets/category-logos/world-movies.png';
 import asiaMoviesLogo from '@/assets/category-logos/asia-movies.png';
 import multiLangMoviesLogo from '@/assets/category-logos/multi-lang-movies.png';
+import multiLangNewReleasesLogo from '@/assets/category-logos/multi-lang-new-releases.png';
+import multiLang2020sLogo from '@/assets/category-logos/multi-lang-2020s.png';
+import multiLang2010sLogo from '@/assets/category-logos/multi-lang-2010s.png';
+import multiLang2000sLogo from '@/assets/category-logos/multi-lang-2000s.png';
+import multiLangClassicsLogo from '@/assets/category-logos/multi-lang-classics.png';
+import englishLatestMoviesLogo from '@/assets/category-logos/english-latest-movies.png';
+
 import dcMoviesLogo from '@/assets/category-logos/dc-movies.png';
 import disneyShortsLogo from '@/assets/category-logos/disney-shorts.png';
 import enDramaRomanceLogo from '@/assets/category-logos/en-drama-romance.png';
