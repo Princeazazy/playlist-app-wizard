@@ -595,7 +595,7 @@ export const MiLiveTVList = ({
         { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: CB('skysports.com') },
         { regex: /\bsky\s*news\s*arabia|سكاي\s*نيوز\s*عربية/i, brand: 'Sky News Arabia', logo: CB('skynewsarabia.com') },
         { regex: /\bsky\s*news\b/i, brand: 'Sky News', logo: CB('news.sky.com') },
-        { regex: /\bsky\s*(one|atlantic|showcase|witness|comedy|max)\b/i, brand: 'Sky Entertainment', logo: '/images/sky-entertainment-logo.png' },
+        // (Sky Entertainment handled above with round logo)
         { regex: /\bsky\b/i, brand: 'Sky', logo: CB('sky.com') },
         // UK terrestrial
         { regex: /\bbbc\b/i, brand: 'BBC', logo: CB('bbc.co.uk') },
