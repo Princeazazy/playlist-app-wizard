@@ -149,17 +149,14 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   
   // PPV
   if (g.includes('ppv') || g.includes('pay per view') || g.includes('pay-per-view')) return ppvDaznLogo;
-  // Ramadan - Specific Regions (2026 only) - also check Arabic numerals ٢٠٢٦
+  // Ramadan - region-specific logos apply for ALL years (23/24/25/26 or 2023-2026)
   const isRamadan = g.includes('ramadan') || g.includes('رمضان');
-  const is2026 = g.includes('2026') || g.includes('٢٠٢٦');
-  
-  if (isRamadan && is2026 && (g.includes('egypt') || g.includes('misr') || g.includes('مصر') || g.includes('مصري'))) return serRamadanEgyptian2026Logo;
-  if (isRamadan && is2026 && (g.includes('gulf') || g.includes('khaleej') || g.includes('خليج'))) return serRamadanGulf2026Logo;
-  if (isRamadan && is2026 && (g.includes('levant') || g.includes('cham') || g.includes('shami') || g.includes('shamy') || g.includes('شامي') || g.includes('شام') || g.includes('سوريا') || g.includes('syria') || g.includes('lebanon') || g.includes('لبنان'))) return serRamadanLevantine2026Logo;
-  if (isRamadan && is2026 && (g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب') || g.includes('tunisia') || g.includes('تونس') || g.includes('algeria') || g.includes('جزائر'))) return serRamadanMaghreb2026Logo;
-  if (isRamadan && is2026) return ramadanSeriesLogo;
-  
-  // Ramadan Pre-2026 Fallback
+  if (isRamadan && (g.includes('egypt') || g.includes('misr') || g.includes('مصر') || g.includes('مصري'))) return serRamadanEgyptian2026Logo;
+  if (isRamadan && (g.includes('gulf') || g.includes('khalij') || g.includes('khaleej') || g.includes('خليج'))) return serRamadanGulf2026Logo;
+  if (isRamadan && (g.includes('levant') || g.includes('cham') || g.includes('sham') || g.includes('shami') || g.includes('shamy') || g.includes('شامي') || g.includes('شام') || g.includes('سوريا') || g.includes('syria') || g.includes('lebanon') || g.includes('لبنان'))) return serRamadanLevantine2026Logo;
+  if (isRamadan && (g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب') || g.includes('tunisia') || g.includes('تونس') || g.includes('algeria') || g.includes('جزائر'))) return serRamadanMaghreb2026Logo;
+  if (isRamadan && (g.includes('2026') || g.includes('٢٠٢٦'))) return ramadanSeriesLogo;
+  // Ramadan Pre-2026 / Mix / generic fallback
   if (isRamadan) return serRamadanPre2026Logo;
   
   // Now Showing / Currently Airing
