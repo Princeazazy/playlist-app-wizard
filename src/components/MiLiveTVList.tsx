@@ -481,6 +481,7 @@ export const MiLiveTVList = ({
       secondLogo?: string;
       originalNames: string[];
       displayNameOverride?: string;
+      brandLogo?: string;
     }>();
     const normMap = new Map<string, string[]>();
 
