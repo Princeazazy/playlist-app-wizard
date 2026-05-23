@@ -1265,6 +1265,7 @@ export const MiLiveTVList = ({
             const renderGroupButton = (group: typeof groups[number]) => {
               const groupLogo = getGroupLogo(group);
               const isFlagLogo = isGroupFlagLogo(group, groupLogo);
+              const isFillLogo = !!groupLogo && /round-logo|mbc-(group-)?logo|mbc-logo|alwan|us-lat-logo|us-victory/i.test(groupLogo);
               return (
                 <button
                   key={`${group.name}-${groupLogo ?? 'none'}`}
@@ -1282,7 +1283,7 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className={`absolute inset-0 z-10 w-full h-full ${isFlagLogo ? 'object-cover bg-muted' : 'object-contain p-1.5 bg-white'}`}
+                        className={`absolute inset-0 z-10 w-full h-full ${(isFlagLogo || isFillLogo) ? 'object-cover bg-muted' : 'object-contain p-1.5 bg-white'}`}
                         onError={(event) => {
 
                           event.currentTarget.style.display = 'none';
