@@ -803,8 +803,8 @@ export const getCategoryEmoji = (group: string): string => {
 
 // Merge and sort groups, combining duplicate countries
 export const mergeAndSortGroups = (
-  groupData: Map<string, { count: number; firstLogo?: string; originalNames: string[]; displayNameOverride?: string }>
-): { name: string; displayName: string; count: number; firstLogo?: string; originalNames: string[] }[] => {
+  groupData: Map<string, { count: number; firstLogo?: string; originalNames: string[]; displayNameOverride?: string; brandLogo?: string }>
+): { name: string; displayName: string; count: number; firstLogo?: string; originalNames: string[]; brandLogo?: string }[] => {
   // Merge groups by normalized name
   const mergedGroups = new Map<string, { 
     displayName: string; 
@@ -812,6 +812,7 @@ export const mergeAndSortGroups = (
     firstLogo?: string; 
     originalNames: string[];
     priority: number;
+    brandLogo?: string;
   }>();
 
   for (const [originalName, data] of groupData.entries()) {
@@ -835,6 +836,9 @@ export const mergeAndSortGroups = (
       if (!existing.firstLogo && data.firstLogo) {
         existing.firstLogo = data.firstLogo;
       }
+      if (!existing.brandLogo && data.brandLogo) {
+        existing.brandLogo = data.brandLogo;
+      }
       if (existing.displayName === 'United States' && data.displayNameOverride) {
         existing.displayName = data.displayNameOverride;
       }
@@ -845,6 +849,7 @@ export const mergeAndSortGroups = (
         firstLogo: data.firstLogo,
         originalNames: [...data.originalNames],
         priority: countryInfo?.priority || 999,
+        brandLogo: data.brandLogo,
       });
     }
   }
@@ -911,6 +916,7 @@ export const mergeAndSortGroups = (
       count: data.count,
       firstLogo: data.firstLogo,
       originalNames: data.originalNames,
+      brandLogo: data.brandLogo,
     }))
     .sort((a, b) => {
       const priorityA = getGroupPriority(a.originalNames[0]);
