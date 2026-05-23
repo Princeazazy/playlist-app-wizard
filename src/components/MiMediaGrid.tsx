@@ -161,15 +161,32 @@ const getSeriesCategoryLogo = (groupName: string): string | null => {
   
   // PPV
   if (g.includes('ppv') || g.includes('pay per view') || g.includes('pay-per-view')) return ppvDaznLogo;
-  // Ramadan - region-specific logos apply for ALL years (23/24/25/26 or 2023-2026)
+  // Ramadan - region + year-specific series logos
   const isRamadan = g.includes('ramadan') || g.includes('رمضان');
-  if (isRamadan && (g.includes('egypt') || g.includes('misr') || g.includes('مصر') || g.includes('مصري'))) return serRamadanEgyptian2026Logo;
-  if (isRamadan && (g.includes('gulf') || g.includes('khalij') || g.includes('khaleej') || g.includes('خليج'))) return serRamadanGulf2026Logo;
-  if (isRamadan && (g.includes('levant') || g.includes('cham') || g.includes('sham') || g.includes('shami') || g.includes('shamy') || g.includes('شامي') || g.includes('شام') || g.includes('سوريا') || g.includes('syria') || g.includes('lebanon') || g.includes('لبنان'))) return serRamadanLevantine2026Logo;
-  if (isRamadan && (g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب') || g.includes('tunisia') || g.includes('تونس') || g.includes('algeria') || g.includes('جزائر'))) return serRamadanMaghreb2026Logo;
-  if (isRamadan && (g.includes('2026') || g.includes('٢٠٢٦'))) return ramadanSeriesLogo;
-  // Ramadan Pre-2026 / Mix / generic fallback
-  if (isRamadan) return serRamadanPre2026Logo;
+  if (isRamadan) {
+    const ramYear = g.includes('2026') || g.includes('٢٠٢٦') || /\b26\b/.test(g)
+      ? 2026
+      : g.includes('2025') || /\b25\b/.test(g)
+      ? 2025
+      : g.includes('2024') || /\b24\b/.test(g)
+      ? 2024
+      : g.includes('2023') || /\b23\b/.test(g)
+      ? 2023
+      : 0;
+    const isEgypt = g.includes('egypt') || g.includes('misr') || g.includes('مصر') || g.includes('مصري');
+    const isGulf = g.includes('gulf') || g.includes('khalij') || g.includes('khaleej') || g.includes('خليج');
+    const isLevant = g.includes('levant') || g.includes('cham') || g.includes('sham') || g.includes('shami') || g.includes('shamy') || g.includes('شامي') || g.includes('شام') || g.includes('سوريا') || g.includes('syria') || g.includes('lebanon') || g.includes('لبنان');
+    const isMaghreb = g.includes('maghreb') || g.includes('morocco') || g.includes('مغرب') || g.includes('tunisia') || g.includes('تونس') || g.includes('algeria') || g.includes('جزائر');
+    const isMix = g.includes('mix');
+
+    if (isEgypt) return ramYear === 2023 ? serRamadanEgyptian2023Logo : ramYear === 2024 ? serRamadanEgyptian2024Logo : ramYear === 2025 ? serRamadanEgyptian2025Logo : serRamadanEgyptian2026Logo;
+    if (isGulf) return ramYear === 2023 ? serRamadanGulf2023Logo : ramYear === 2024 ? serRamadanGulf2024Logo : ramYear === 2025 ? serRamadanGulf2025Logo : serRamadanGulf2026Logo;
+    if (isLevant) return ramYear === 2024 ? serRamadanLevantine2024Logo : ramYear === 2025 ? serRamadanLevantine2025Logo : serRamadanLevantine2026Logo;
+    if (isMaghreb) return ramYear === 2023 ? serRamadanMaghreb2023Logo : ramYear === 2024 ? serRamadanMaghreb2024Logo : ramYear === 2025 ? serRamadanMaghreb2025Logo : serRamadanMaghreb2026Logo;
+    if (isMix) return serRamadanMixLogo;
+    if (ramYear === 2026) return ramadanSeriesLogo;
+    return serRamadanPre2026Logo;
+  }
   
   // Now Showing / Currently Airing
   if (g.includes('تعرض حاليا') || g.includes('now showing') || g.includes('currently') || g.includes('airing')) return serNowShowingLogo;
@@ -1051,8 +1068,13 @@ export const MiMediaGrid = ({
       const group = getEffectiveGroup(item);
       if (!map.has(group) && !isIrrelevantGroup(group)) {
         allRawGroups.add(group);
+        const lightClean = group
+          .replace(/^(SRS|SER|MOV|VOD|MOVIES?|SERIES|FILM)\s*[|•\-–]\s*/i, '')
+          .replace(/^[|•\-–]\s*/, '')
+          .trim() || group;
         const shortened = shortenGroupName(group);
-        map.set(group, shortened);
+        const preserveRawSeries = category === 'series' && !/^(Ramadan(?:\s.+)?|Now Showing|Songs|TV Shows|Islamic|Theater|Arabic\s.+|Arabic Classic|Foreign\s.+|Foreign Subtitled|Dubbed Foreign)$/i.test(shortened);
+        map.set(group, preserveRawSeries ? lightClean : shortened);
         const existing = displayNameCounts.get(shortened) || [];
         existing.push(group);
         displayNameCounts.set(shortened, existing);
@@ -1076,7 +1098,7 @@ export const MiMediaGrid = ({
       }
     });
     return map;
-  }, [items, getEffectiveGroup]);
+  }, [items, getEffectiveGroup, category]);
 
   const groups = useMemo(() => {
     // Merge groups that share the same shortened display name
