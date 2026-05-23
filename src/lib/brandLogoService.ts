@@ -34,7 +34,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
 
   // ── Sky family ──
   'sky cinema': { logo: CB('sky.com'), aliases: ['skycinema', 'sky movies'] },
-  'sky sports': { logo: CB('skysports.com'), aliases: ['skysports', 'سكاي سبورت'] },
+  'sky sports': { logo: '/images/sky-sports-logo.png', aliases: ['skysports', 'سكاي سبورت'] },
   'sky sports f1': { logo: CB('skysports.com'), aliases: ['sky f1'] },
   'sky news': { logo: CB('news.sky.com'), aliases: ['sky news arabia', 'سكاي نيوز'] },
   'sky entertainment': { logo: '/images/sky-entertainment-logo.png', aliases: ['sky one', 'sky atlantic', 'sky showcase', 'sky comedy', 'sky witness', 'sky max'] },
@@ -56,6 +56,9 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   motogp: { logo: CB('motogp.com'), aliases: ['moto gp'] },
   nascar: { logo: CB('nascar.com'), aliases: [] },
   'national league': { logo: '/images/national-league-logo.png', aliases: ['vanarama national league', 'efl national'] },
+  'pdc darts': { logo: '/images/pdc-logo.png', aliases: ['pdc', 'professional darts corporation', 'pdc darts', 'pdc dart', 'darts open'] },
+  darts: { logo: '/images/pdc-logo.png', aliases: ['dart'] },
+  'efl championship': { logo: '/images/efl-championship-logo.png', aliases: ['championship', 'sky bet championship'] },
 
   // ── Arab Networks & Platforms ──
   'bein sports': { logo: '/images/bein-logo.png', aliases: ['bein', 'bein sport', 'بي ان سبورت', 'بين سبورت', 'بي ان', 'بين', 'beinsports'] },
@@ -87,8 +90,10 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'serie a': { logo: CB('legaseriea.it'), aliases: ['سيري ا', 'الدوري الايطالي'] },
   bundesliga: { logo: '/images/bundesliga-logo.png', aliases: ['بوندسليغا', 'الدوري الالماني'] },
   'ligue 1': { logo: CB('ligue1.com'), aliases: ['ligue1', 'الدوري الفرنسي'] },
-  'league one': { logo: '/images/league-one-logo-v2.png', aliases: ['league 1', 'efl league one', 'efl league 1', 'efl1', 'الدوري الأول'] },
-  'league two': { logo: '/images/league-two-logo-v2.png', aliases: ['league 2', 'efl league two', 'efl league 2', 'efl2', 'الدوري الثاني'] },
+  'league one': { logo: '/images/league-one-logo-v3.png', aliases: ['league 1', 'efl league one', 'efl league 1', 'efl1', 'الدوري الأول'] },
+  'league two': { logo: '/images/league-two-logo-v3.png', aliases: ['league 2', 'efl league two', 'efl league 2', 'efl2', 'الدوري الثاني'] },
+  christmas: { logo: '/images/christmas-logo.png', aliases: ['xmas', 'holiday channels', 'christmas tv'] },
+  christian: { logo: '/images/christian-logo-v2.png', aliases: ['christian tv', 'church', 'gospel', 'مسيحية', 'المسيحية'] },
 
   // ── General TV Networks ──
   bbc: { logo: CB('bbc.co.uk'), aliases: ['bbc one', 'bbc two', 'bbc three', 'bbc four', 'bbc world', 'بي بي سي'] },
