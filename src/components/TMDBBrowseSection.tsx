@@ -306,7 +306,9 @@ const CategoryRow = ({
   onSelectItem?: (item: TMDBItem) => void;
   loading?: boolean;
 }) => {
-  const scrollRef = useDragScroll();
+  const scrollRef = useInfiniteScroll();
+  const loopItems = React.useMemo(() => [...items, ...items], [items]);
+
 
   return (
     <div className="space-y-3">
