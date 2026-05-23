@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic, Zap, ChevronRight } from 'lucide-react';
+import { Tv, Film, Clapperboard, Trophy, User, RefreshCw, Clock, Search, Mic, ChevronRight } from 'lucide-react';
 import logoVideo from '@/assets/logo-transparent.mp4';
 import { ChromaKeyVideo } from './shared/ChromaKeyVideo';
 import { getProfileInitial, getProfileAvatarSrc } from '@/lib/profileStorage';
