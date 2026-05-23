@@ -77,7 +77,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   mbc: { logo: '/images/mbc-logo.png', aliases: ['mbc hd', 'ام بي سي', 'إم بي سي'] },
   osn: { logo: '/images/osn-logo.png', aliases: ['osn+', 'او اس ان', 'أو إس إن'] },
   rotana: { logo: '/images/rotana-logo.png', aliases: ['روتانا'] },
-  'al jazeera': { logo: WC('Aljazeera_eng.svg'), aliases: ['الجزيرة', 'aljazeera', 'jazeera', 'al jazeera english', 'al jazeera arabic', 'aje', 'ajn', 'al jazeera news'] },
+  'al jazeera': { logo: '/images/aljazeera-logo.png', aliases: ['الجزيرة', 'aljazeera', 'jazeera', 'al jazeera english', 'al jazeera arabic', 'aje', 'ajn', 'al jazeera news'] },
   'al jazeera mubasher': { logo: WC('Aljazeera_mubasher_logo.png'), aliases: ['الجزيرة مباشر', 'mubasher'] },
   'al arabiya': { logo: WC('Al-Arabiya_new_logo.svg'), aliases: ['العربية', 'alarabiya'] },
   'al hadath': { logo: WC('AlHADATH.png'), aliases: ['الحدث'] },
