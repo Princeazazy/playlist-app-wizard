@@ -55,7 +55,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   nba: { logo: CB('nba.com'), aliases: ['nba tv', 'الدوري الأمريكي'] },
   nfl: { logo: CB('nfl.com'), aliases: ['nfl network'] },
   nhl: { logo: CB('nhl.com'), aliases: ['nhl network'] },
-  mlb: { logo: CB('mlb.com'), aliases: ['mlb network'] },
+  mlb: { logo: WC('a/a6/Major_League_Baseball_logo.svg/512px-Major_League_Baseball_logo.svg.png'), aliases: ['mlb network', 'us milb', 'milb', 'minor league baseball'] },
   motogp: { logo: CB('motogp.com'), aliases: ['moto gp'] },
   nascar: { logo: CB('nascar.com'), aliases: [] },
   'national league': { logo: '/images/national-league-logo.png', aliases: ['vanarama national league', 'efl national'] },
