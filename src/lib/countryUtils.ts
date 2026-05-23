@@ -823,9 +823,20 @@ export const mergeAndSortGroups = (
     // For streaming service sub-groups (e.g. "24/7 ENG"), preserve the suffix in the display name
     let resolvedDisplayName = data.displayNameOverride || countryInfo?.name || getDisplayName(sourceName);
     if (countryInfo?.isStreamingService && normalizedKey.includes('_')) {
-      const suffix = normalizedKey.split('_').slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      // Dedupe brand tokens: e.g. "uefa_uefa_ppv" → suffix "Ppv" (not "Uefa Ppv")
+      const brandTokens = new Set(
+        countryInfo.name.toLowerCase().split(/\s+/).filter(Boolean)
+      );
+      const suffixWords = normalizedKey
+        .split('_')
+        .slice(1)
+        .filter(w => w && !brandTokens.has(w.toLowerCase()))
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+      const suffix = suffixWords.join(' ');
       if (suffix) {
         resolvedDisplayName = `${countryInfo.name} ${suffix}`;
+      } else {
+        resolvedDisplayName = countryInfo.name;
       }
     }
     
