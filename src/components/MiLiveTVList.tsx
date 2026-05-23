@@ -837,8 +837,8 @@ export const MiLiveTVList = ({
       const US_NETWORK_LOGOS: Record<string, string> = {
         'HBO': '/images/hbo-logo.png',
         'FOX': '/images/fox-round-logo.svg',
-        'NBC': '/images/nbc-round-logo.svg',
-        'PBS': '/images/pbs-round-logo.svg',
+        'NBC': '/images/nbc-round-logo.png',
+        'PBS': '/images/pbs-round-logo.png',
         'UNIVISION': '/images/univision-round-logo.svg',
         'UNIMAS': '/images/unimas-round-logo.svg',
         'SPECTRUMNEWS': '/images/spectrum-news-round-logo.svg',
@@ -906,7 +906,7 @@ export const MiLiveTVList = ({
   // Section classifier for Live TV sidebar (English / Streaming Platforms / Sports / Other).
   // Arabic groups stay at the top of the list as before (Al Jazeera, country priority).
   type LiveSection = 'arabic' | 'english' | 'streaming' | 'sports' | 'other';
-  const SECTION_ORDER: LiveSection[] = ['arabic', 'english', 'streaming', 'sports', 'other'];
+  const SECTION_ORDER: LiveSection[] = ['arabic', 'streaming', 'english', 'sports', 'other'];
   const SECTION_LABELS: Record<LiveSection, string> = {
     arabic: 'Arabic',
     english: 'English',
