@@ -47,6 +47,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'sky sports f1': { logo: CB('skysports.com'), aliases: ['sky f1'] },
   'sky news': { logo: CB('news.sky.com'), aliases: ['sky news arabia', 'سكاي نيوز'] },
   'sky entertainment': { logo: SKY_ENTERTAINMENT_LOGO, aliases: ['sky one', 'sky atlantic', 'sky showcase', 'sky comedy', 'sky witness', 'sky max'] },
+  'sky documentary': { logo: '/images/sky-documentary-logo.png', aliases: ['sky docs', 'sky doc', 'sky documentaries', 'sd sky'] },
   sky: { logo: CB('sky.com'), aliases: ['سكاي'] },
 
   // ── PPV / Sports networks ──
