@@ -18,6 +18,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+const SKY_ENTERTAINMENT_LOGO = '/images/sky-entertainment-logo.png?v=uploaded-sky-entertainment';
+
 // Live Preview Channel Tile with video preview on hover
 const LivePreviewChannelTile = memo(({
   channel,
@@ -590,7 +592,7 @@ export const MiLiveTVList = ({
       const BRAND_SNIFFERS: { regex: RegExp; brand: string; logo?: string }[] = [
         // Sky family
         { regex: /\bsky\s*cinema\b|\bsky\s*movies?\b/i, brand: 'Sky Cinema', logo: '/images/sky-movies-round-logo.png' },
-        { regex: /\bsky\s*(entertainment|one|atlantic|showcase|witness|comedy|max)\b/i, brand: 'Sky Entertainment', logo: '/images/sky-entertainment-logo.png' },
+        { regex: /\bsky\s*(entertainment|one|atlantic|showcase|witness|comedy|max)\b/i, brand: 'Sky Entertainment', logo: SKY_ENTERTAINMENT_LOGO },
         { regex: /\bsky\s*sports?\s*f1\b/i, brand: 'Sky Sports F1', logo: CB('skysports.com') },
         { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: CB('skysports.com') },
         { regex: /\bsky\s*news\s*arabia|سكاي\s*نيوز\s*عربية/i, brand: 'Sky News Arabia', logo: CB('skynewsarabia.com') },
@@ -1126,6 +1128,11 @@ export const MiLiveTVList = ({
 
   // Get logo for groups - brand logos for services, country flags for countries, AI fallback
   const getGroupLogo = (group: { name: string; displayName: string; firstLogo?: string; originalNames: string[]; brandLogo?: string }): string | null => {
+    const searchableGroupName = [group.name, group.displayName, ...group.originalNames].join(' ');
+    if (/\bsky\s*(entertainment|one|atlantic|showcase|witness|comedy|max)\b/i.test(searchableGroupName)) {
+      return SKY_ENTERTAINMENT_LOGO;
+    }
+
     // Highest priority: explicit brand logo set by generic-name brand sniffer
     if (group.brandLogo) return group.brandLogo;
     // Sports mode: use sports-specific meta
