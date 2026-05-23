@@ -19,6 +19,7 @@ const WC = (pathOrFile: string) => wikiRedirect('commons.wikimedia.org', pathOrF
 const WE = (pathOrFile: string) => wikiRedirect('en.wikipedia.org', pathOrFile);
 // Clearbit logo CDN (fallback for brands without a stable Wikipedia logo)
 const CB = (domain: string) => `https://logo.clearbit.com/${domain}`;
+const SKY_ENTERTAINMENT_LOGO = '/images/sky-entertainment-logo.png?v=uploaded-sky-entertainment';
 
 const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   // ── Streaming Platforms ──
@@ -45,7 +46,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'sky sports': { logo: CB('skysports.com'), aliases: ['skysports', 'سكاي سبورت'] },
   'sky sports f1': { logo: CB('skysports.com'), aliases: ['sky f1'] },
   'sky news': { logo: CB('news.sky.com'), aliases: ['sky news arabia', 'سكاي نيوز'] },
-  'sky entertainment': { logo: '/images/sky-entertainment-logo.png', aliases: ['sky one', 'sky atlantic', 'sky showcase', 'sky comedy', 'sky witness', 'sky max'] },
+  'sky entertainment': { logo: SKY_ENTERTAINMENT_LOGO, aliases: ['sky one', 'sky atlantic', 'sky showcase', 'sky comedy', 'sky witness', 'sky max'] },
   sky: { logo: CB('sky.com'), aliases: ['سكاي'] },
 
   // ── PPV / Sports networks ──
