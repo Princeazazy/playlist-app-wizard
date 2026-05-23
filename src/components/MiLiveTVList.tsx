@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 
 const SKY_ENTERTAINMENT_LOGO = '/images/sky-entertainment-logo.png?v=uploaded-sky-entertainment';
+const SKY_DOCUMENTARY_LOGO = '/images/sky-documentary-logo.png?v=uploaded-sky-documentary';
 
 // Live Preview Channel Tile with video preview on hover
 const LivePreviewChannelTile = memo(({
@@ -406,6 +407,10 @@ export const MiLiveTVList = ({
     if (/eurosport/i.test(name)) return 'Eurosport';
     // BT Sport
     if (/bt\s*sport/i.test(name)) return 'BT Sport';
+    if (/\bmlb\b|major\s*league\s*baseball/i.test(name)) return 'MLB Network';
+    if (/\bnba\b/i.test(name)) return 'NBA TV';
+    if (/\bnfl\b/i.test(name)) return 'NFL Network';
+    if (/\bnhl\b/i.test(name)) return 'NHL Network';
     // PPV
     if (/ppv/i.test(name) || /ppv/i.test(group)) return 'PPV';
 
@@ -482,6 +487,10 @@ export const MiLiveTVList = ({
     'BT Sport': { flagUrl: matchBrandLogo('bt sport') || '', priority: 35, isService: true },
     'StarzPlay': { flagUrl: matchBrandLogo('starz') || '', priority: 36, isService: true },
     'PPV': { flagUrl: '', priority: 37, isService: true },
+    'MLB Network': { flagUrl: '/images/mlb-round-logo.png', priority: 38, isService: true },
+    'NBA TV': { flagUrl: '/images/nba-round-logo.png', priority: 39, isService: true },
+    'NFL Network': { flagUrl: '/images/nfl-round-logo.png', priority: 40, isService: true },
+    'NHL Network': { flagUrl: '/images/nhl-round-logo.png', priority: 41, isService: true },
   };
 
   // Build a mapping from channel id → sports group name (only for sports mode)
@@ -592,7 +601,7 @@ export const MiLiveTVList = ({
       const BRAND_SNIFFERS: { regex: RegExp; brand: string; logo?: string }[] = [
         // Sky family
         { regex: /\bsky\s*cinema\b|\bsky\s*movies?\b/i, brand: 'Sky Cinema', logo: '/images/sky-movies-round-logo.png' },
-        { regex: /\bsky\s*(documentary|documentaries|docs?)\b/i, brand: 'Sky Documentary', logo: '/images/sky-documentary-logo.png' },
+        { regex: /\bsky\s*(documentary|documentaries|docs?)\b/i, brand: 'Sky Documentary', logo: SKY_DOCUMENTARY_LOGO },
         { regex: /\bsky\s*(entertainment|one|atlantic|showcase|witness|comedy|max)\b/i, brand: 'Sky Entertainment', logo: SKY_ENTERTAINMENT_LOGO },
         { regex: /\bsky\s*sports?\s*f1\b/i, brand: 'Sky Sports F1', logo: CB('skysports.com') },
         { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: CB('skysports.com') },
@@ -627,7 +636,7 @@ export const MiLiveTVList = ({
         { regex: /\beuronews\b/i, brand: 'Euronews', logo: CB('euronews.com') },
         { regex: /\bfrance\s*24\b/i, brand: 'France 24', logo: CB('france24.com') },
         { regex: /\bnbc\b/i, brand: 'NBC', logo: matchBrandLogo('nbc') || CB('nbc.com') },
-        { regex: /\bcbs\b/i, brand: 'CBS', logo: CB('cbs.com') },
+        { regex: /\bcbs\b/i, brand: 'CBS', logo: '/images/cbs-round-logo.png?v=uploaded-cbs' },
         { regex: /\babc\b/i, brand: 'ABC', logo: CB('abc.com') },
         { regex: /\bfox\b/i, brand: 'FOX', logo: matchBrandLogo('fox') || CB('fox.com') },
         { regex: /\bcomedy\s*central\b/i, brand: 'Comedy Central', logo: CB('cc.com') },
@@ -642,10 +651,10 @@ export const MiLiveTVList = ({
         { regex: /\bespn\b/i, brand: 'ESPN', logo: CB('espn.com') },
         { regex: /\beurosport\b/i, brand: 'Eurosport', logo: CB('eurosport.com') },
         { regex: /\btnt\s*sports?|bt\s*sport\b/i, brand: 'TNT Sports', logo: CB('tntsports.co.uk') },
-        { regex: /\bnba\b/i, brand: 'NBA', logo: CB('nba.com') },
-        { regex: /\bnfl\b/i, brand: 'NFL', logo: CB('nfl.com') },
-        { regex: /\bnhl\b/i, brand: 'NHL', logo: CB('nhl.com') },
-        { regex: /\bmlb\b/i, brand: 'MLB', logo: CB('mlb.com') },
+        { regex: /\bnba\b/i, brand: 'NBA', logo: '/images/nba-round-logo.png' },
+        { regex: /\bnfl\b/i, brand: 'NFL', logo: '/images/nfl-round-logo.png' },
+        { regex: /\bnhl\b/i, brand: 'NHL', logo: '/images/nhl-round-logo.png' },
+        { regex: /\bmlb\b/i, brand: 'MLB', logo: '/images/mlb-round-logo.png' },
         { regex: /\bmoto\s*gp\b/i, brand: 'MotoGP', logo: CB('motogp.com') },
         { regex: /\bworld\s*cup|كأس\s*العالم|مونديال/i, brand: 'World Cup', logo: '/images/world-cup-logo.png' },
         { regex: /\bchampions\s*league|دوري\s*الابطال/i, brand: 'Champions League', logo: '/images/champions-league-logo.png' },
@@ -933,7 +942,7 @@ export const MiLiveTVList = ({
     const all = `${name} ${orig}`;
     const info = getCountryInfo(group.originalNames?.[0] || group.displayName);
 
-    if (/\b(ba|bosnia|bosna|босна)\b/i.test(all)) return 'other';
+    if (/\b(ba|bosnia|bosna|босна|ireland|irish|portugal|portuguese)\b|\b(?:ie|pt)[_\s|-]/i.test(all)) return 'other';
 
     // Sports first (strong signals beat country detection — e.g. "UK Sports" is Sports, not English)
     const sportsKw = ['sport', 'espn', 'bein', 'dazn', 'fox sports', 'sky sports', 'eurosport', 'bt sport', 'tnt sports', 'nfl', 'nba', 'mlb', 'nhl', 'ufc', 'wwe', 'boxing', ' f1', 'formula 1', 'motogp', 'golf', 'tennis', 'rugby', 'cricket', 'darts', 'pdc', 'la liga', 'premier league', 'champions league', 'world cup', 'league one', 'league two', 'championship', 'ssc', 'bundesliga', 'uefa', 'fifa'];
@@ -1132,6 +1141,9 @@ export const MiLiveTVList = ({
     const searchableGroupName = [group.name, group.displayName, ...group.originalNames].join(' ');
     if (/\bsky\s*(entertainment|one|atlantic|showcase|witness|comedy|max)\b/i.test(searchableGroupName)) {
       return SKY_ENTERTAINMENT_LOGO;
+    }
+    if (/\bsky\s*(documentary|documentaries|docs?)\b/i.test(searchableGroupName)) {
+      return SKY_DOCUMENTARY_LOGO;
     }
 
     // Highest priority: explicit brand logo set by generic-name brand sniffer
