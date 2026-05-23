@@ -404,8 +404,12 @@ export const MiLiveTVList = ({
     if (/rotana/i.test(name)) return 'Rotana';
     // StarzPlay
     if (/starz/i.test(name)) return 'StarzPlay';
+    if (/apple\s*tv\+?|appletv/i.test(name) || /apple\s*tv\+?|appletv/i.test(group)) return 'Apple TV+';
     // DAZN
     if (/dazn/i.test(name)) return 'DAZN';
+    if (/\bufc\b|\bmma\b/i.test(name)) return 'UFC & MMA';
+    if (/formula\s*1|\bf1\b/i.test(name)) return 'Formula 1';
+    if (/cricket|\bicc\b|willow/i.test(name)) return 'Cricket';
     // Sky Sports
     if (/sky\s*sport/i.test(name)) return 'Sky Sports';
     // ESPN
@@ -496,10 +500,14 @@ export const MiLiveTVList = ({
     'BT Sport': { flagUrl: matchBrandLogo('bt sport') || '', priority: 35, isService: true },
     'StarzPlay': { flagUrl: matchBrandLogo('starz') || '', priority: 36, isService: true },
     'PPV': { flagUrl: '', priority: 37, isService: true },
-    'MLB Network': { flagUrl: '/images/mlb-round-logo.png', priority: 38, isService: true },
-    'NBA TV': { flagUrl: '/images/nba-round-logo.png', priority: 39, isService: true },
-    'NFL Network': { flagUrl: '/images/nfl-round-logo.png', priority: 40, isService: true },
-    'NHL Network': { flagUrl: '/images/nhl-round-logo.png', priority: 41, isService: true },
+    'MLB Network': { flagUrl: MLB_NETWORK_LOGO, priority: 38, isService: true },
+    'NBA TV': { flagUrl: NBA_TV_LOGO, priority: 39, isService: true },
+    'NFL Network': { flagUrl: NFL_NETWORK_LOGO, priority: 40, isService: true },
+    'NHL Network': { flagUrl: matchBrandLogo('nhl network') || '', priority: 41, isService: true },
+    'UFC & MMA': { flagUrl: UFC_LOGO, priority: 42, isService: true },
+    'Formula 1': { flagUrl: F1_LOGO, priority: 43, isService: true },
+    'Cricket': { flagUrl: ICC_LOGO, priority: 44, isService: true },
+    'Apple TV+': { flagUrl: matchBrandLogo('apple tv') || '', priority: 45, isService: true },
   };
 
   // Build a mapping from channel id → sports group name (only for sports mode)
