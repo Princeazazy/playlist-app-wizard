@@ -1076,32 +1076,13 @@ export const MiMediaGrid = ({
               `}>
                 {/* Inner glow */}
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10" />
-                {(() => {
-                  const rawNames: string[] = (group as any).rawNames || [group.name];
-                  // Try all raw names to find the best logo match
-                  let logo: string | null = null;
-                  for (const rawName of rawNames) {
-                    logo = getCategoryLogo(rawName, category);
-                    if (logo) break;
-                  }
-                  if (logo) {
-                    return <img src={logo} alt={group.name} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
-                  }
-                  if (group.firstLogo) {
-                    return (
-                      <img 
-                        src={group.firstLogo} 
-                        alt={group.name} 
-                        className="relative w-[78%] h-[78%] object-contain drop-shadow-[0_0_6px_hsl(var(--accent)/0.5)]"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = `<span class="relative text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
-                        }}
-                      />
-                    );
-                  }
-                  return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
-                })()}
+                <CategoryTileLogo
+                  rawNames={(group as any).rawNames || [group.name]}
+                  displayName={group.name}
+                  firstLogo={group.firstLogo}
+                  category={category}
+                />
+
               </div>
               <div className="flex-1 text-left">
                 <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold text-foreground' : ''}`}>
