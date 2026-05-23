@@ -960,7 +960,21 @@ export const MiMediaGrid = ({
         if (a[1].bestPriority !== b[1].bestPriority) return a[1].bestPriority - b[1].bestPriority;
         return a[0].localeCompare(b[0]);
       })
-      .map(([name, data]) => ({ name, count: data.count, firstLogo: data.firstLogo, rawNames: data.rawNames }));
+      .map(([name, data]) => {
+        // If any raw source bucket was tagged "latest/new/أحدث", surface that
+        // in the display label so users see "Latest Arabic Movies" instead of
+        // a generic "Arabic Movies".
+        const rawHaystack = data.rawNames.join(' ').toLowerCase();
+        const rawHaystackRaw = data.rawNames.join(' ');
+        const isLatest = rawHaystack.includes('latest') || rawHaystack.includes(' new ') ||
+          rawHaystack.includes('recent') || rawHaystack.includes('gedida') ||
+          rawHaystack.includes('jadida') || rawHaystack.includes('jdid') ||
+          rawHaystackRaw.includes('جديد') || rawHaystackRaw.includes('أحدث');
+        const alreadyLabeled = /\b(latest|new|recent)\b/i.test(name);
+        const finalName = isLatest && !alreadyLabeled ? `Latest ${name}` : name;
+        return { name: finalName, count: data.count, firstLogo: data.firstLogo, rawNames: data.rawNames };
+      });
+
   }, [items, groupDisplayNameMap, getEffectiveGroup]);
 
   // Set selectedGroup to the first group in the sorted list if not already set
@@ -1034,7 +1048,8 @@ export const MiMediaGrid = ({
       const itemDisplayName = groupDisplayNameMap.get(itemEffectiveGroup) || shortenGroupName(itemEffectiveGroup);
       const matchesGroup = searchQuery.trim() ? true : (effectiveGroupName === 'all' || matchingRawNames.includes(itemEffectiveGroup) || itemDisplayName === effectiveGroupName);
       const matchesFavorites = !showFavoritesOnly || favorites.has(item.id);
-      // Latest bucket: strict — require a determinable year within the window.
+      // Latest bucket: provider already tagged these as latest. Only drop
+      // items that have a KNOWN old year — keep items where year is unknown.
       if (isLatestBucket) {
         let y: number | null = null;
         if (item.year) {
@@ -1042,8 +1057,9 @@ export const MiMediaGrid = ({
           if (parsed) y = parsed;
         }
         if (!y) y = extractYearFromName(item.name);
-        if (!y || y < minLatestYear) return false;
+        if (y && y < minLatestYear) return false;
       }
+
       return matchesSearch && matchesGroup && matchesFavorites;
     });
 
