@@ -86,9 +86,9 @@ const useInfiniteScroll = (speed = 0.85) => {
 
     // Seamless loop: if user scrolls into the duplicated half, wrap back
     const onScroll = () => {
-      const half = el.scrollWidth / 2;
-      if (el.scrollLeft >= half) el.scrollLeft -= half;
-      else if (el.scrollLeft < 0) el.scrollLeft += half;
+      const segment = el.scrollWidth / 5;
+      if (el.scrollLeft >= segment * 2) el.scrollLeft -= segment;
+      else if (el.scrollLeft < 1) el.scrollLeft += segment;
     };
 
     const onDown = (e: MouseEvent) => {
