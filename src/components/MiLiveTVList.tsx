@@ -837,8 +837,8 @@ export const MiLiveTVList = ({
       const US_NETWORK_LOGOS: Record<string, string> = {
         'HBO': '/images/hbo-logo.png',
         'FOX': '/images/fox-round-logo.svg',
-        'NBC': '/images/nbc-round-logo.svg',
-        'PBS': '/images/pbs-round-logo.svg',
+        'NBC': '/images/nbc-round-logo.png',
+        'PBS': '/images/pbs-round-logo.png',
         'UNIVISION': '/images/univision-round-logo.svg',
         'UNIMAS': '/images/unimas-round-logo.svg',
         'SPECTRUMNEWS': '/images/spectrum-news-round-logo.svg',
