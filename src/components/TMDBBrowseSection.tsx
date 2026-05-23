@@ -26,25 +26,57 @@ const getFilledPageItems = <T,>(items: T[], currentPage: number, pageSize: numbe
   return Array.from({ length: maxItems }, (_, index) => items[(start + index) % items.length]);
 };
 
-// Mouse-drag-to-scroll for horizontal carousels (touch works natively)
-const useDragScroll = () => {
+// Mouse-drag-to-scroll + endless auto-scroll for horizontal carousels.
+// Items are expected to be duplicated (rendered 2x) so the scroll can loop seamlessly.
+// Pauses on hover, drag, touch, focus. Resumes shortly after.
+const useInfiniteScroll = (speed = 0.4) => {
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
     let isDown = false;
     let startX = 0;
     let scrollLeft = 0;
     let moved = false;
+    let paused = false;
+    let resumeTimer: number | null = null;
+    let raf = 0;
+
+    const pause = (ms = 2500) => {
+      paused = true;
+      if (resumeTimer) window.clearTimeout(resumeTimer);
+      resumeTimer = window.setTimeout(() => { paused = false; }, ms);
+    };
+
+    const tick = () => {
+      if (!paused && el.scrollWidth > el.clientWidth + 4) {
+        const half = el.scrollWidth / 2;
+        let next = el.scrollLeft + speed;
+        if (next >= half) next -= half;
+        el.scrollLeft = next;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    // Seamless loop: if user scrolls into the duplicated half, wrap back
+    const onScroll = () => {
+      const half = el.scrollWidth / 2;
+      if (el.scrollLeft >= half) el.scrollLeft -= half;
+      else if (el.scrollLeft < 0) el.scrollLeft += half;
+    };
+
     const onDown = (e: MouseEvent) => {
       isDown = true;
       moved = false;
       startX = e.pageX - el.offsetLeft;
       scrollLeft = el.scrollLeft;
       el.style.cursor = 'grabbing';
+      pause(4000);
     };
     const onLeave = () => { isDown = false; el.style.cursor = 'grab'; };
-    const onUp = () => { isDown = false; el.style.cursor = 'grab'; };
+    const onUp = () => { isDown = false; el.style.cursor = 'grab'; pause(2500); };
     const onMove = (e: MouseEvent) => {
       if (!isDown) return;
       e.preventDefault();
@@ -56,22 +88,61 @@ const useDragScroll = () => {
     const onClickCapture = (e: MouseEvent) => {
       if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
     };
+    const onEnter = () => pause(60_000); // keep paused while hovering
+    const onMouseOut = () => pause(1500);
+    const onTouch = () => pause(4000);
+    const onWheel = () => pause(3000);
+    const onFocusIn = () => pause(8000);
+
+    el.addEventListener('scroll', onScroll, { passive: true });
     el.addEventListener('mousedown', onDown);
     el.addEventListener('mouseleave', onLeave);
     el.addEventListener('mouseup', onUp);
     el.addEventListener('mousemove', onMove);
     el.addEventListener('click', onClickCapture, true);
+    el.addEventListener('mouseenter', onEnter);
+    el.addEventListener('mouseout', onMouseOut);
+    el.addEventListener('touchstart', onTouch, { passive: true });
+    el.addEventListener('touchmove', onTouch, { passive: true });
+    el.addEventListener('wheel', onWheel, { passive: true });
+    el.addEventListener('focusin', onFocusIn);
     el.style.cursor = 'grab';
+
+    // Remote/keyboard navigation: arrow keys scroll by one card width when focused/hovered
+    const keyHandler = (e: KeyboardEvent) => {
+      const rect = el.getBoundingClientRect();
+      const hovered = rect.top < window.innerHeight && rect.bottom > 0;
+      if (!hovered) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
+      const first = el.firstElementChild as HTMLElement | null;
+      const step = first ? first.getBoundingClientRect().width + 12 : 220;
+      if (e.key === 'ArrowRight') { el.scrollBy({ left: step, behavior: 'smooth' }); pause(5000); }
+      else if (e.key === 'ArrowLeft') { el.scrollBy({ left: -step, behavior: 'smooth' }); pause(5000); }
+    };
+    window.addEventListener('keydown', keyHandler);
+
     return () => {
+      cancelAnimationFrame(raf);
+      if (resumeTimer) window.clearTimeout(resumeTimer);
+      el.removeEventListener('scroll', onScroll);
       el.removeEventListener('mousedown', onDown);
       el.removeEventListener('mouseleave', onLeave);
       el.removeEventListener('mouseup', onUp);
       el.removeEventListener('mousemove', onMove);
       el.removeEventListener('click', onClickCapture, true);
+      el.removeEventListener('mouseenter', onEnter);
+      el.removeEventListener('mouseout', onMouseOut);
+      el.removeEventListener('touchstart', onTouch);
+      el.removeEventListener('touchmove', onTouch);
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('focusin', onFocusIn);
+      window.removeEventListener('keydown', keyHandler);
     };
-  }, []);
+  }, [speed]);
   return ref;
 };
+
 
 
 // Lightweight card - NO framer-motion, pure CSS transitions
@@ -235,7 +306,9 @@ const CategoryRow = ({
   onSelectItem?: (item: TMDBItem) => void;
   loading?: boolean;
 }) => {
-  const scrollRef = useDragScroll();
+  const scrollRef = useInfiniteScroll();
+  const loopItems = React.useMemo(() => [...items, ...items], [items]);
+
 
   return (
     <div className="space-y-3">
@@ -253,10 +326,10 @@ const CategoryRow = ({
       ) : items.length >= MIN_ITEMS_TO_SHOW_ROW ? (
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 scrollbar-hide"
+          className="flex gap-3 overflow-x-auto snap-x pb-2 -mx-1 px-1 scrollbar-hide"
           style={{ scrollbarWidth: 'none' }}
         >
-          {items.map((item, index) => (
+          {loopItems.map((item, index) => (
             <div
               key={`${item.id}-${item.mediaType}-${index}`}
               className="snap-start flex-shrink-0 w-[33vw] sm:w-[22vw] md:w-[16vw] lg:w-[13vw] max-w-[200px]"
@@ -267,6 +340,7 @@ const CategoryRow = ({
               />
             </div>
           ))}
+
         </div>
       ) : (
         <div className="flex items-center justify-center h-[200px] text-muted-foreground">
@@ -292,7 +366,8 @@ const PlaylistRow = ({
   mediaTypeHint?: 'movie' | 'tv';
 }) => {
   const { getPosterForChannel } = useTMDBPosters(channels, mediaTypeHint);
-  const scrollRef = useDragScroll();
+  const scrollRef = useInfiniteScroll();
+  const loopChannels = React.useMemo(() => [...channels, ...channels], [channels]);
 
   if (channels.length < MIN_ITEMS_TO_SHOW_ROW) return null;
 
@@ -307,10 +382,10 @@ const PlaylistRow = ({
 
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 scrollbar-hide"
+        className="flex gap-3 overflow-x-auto snap-x pb-2 -mx-1 px-1 scrollbar-hide"
         style={{ scrollbarWidth: 'none' }}
       >
-        {channels.map((channel, index) => (
+        {loopChannels.map((channel, index) => (
           <div
             key={`${channel.id}-${index}`}
             className="snap-start flex-shrink-0 w-[33vw] sm:w-[22vw] md:w-[16vw] lg:w-[13vw] max-w-[200px]"
@@ -323,6 +398,7 @@ const PlaylistRow = ({
           </div>
         ))}
       </div>
+
     </div>
   );
 };
