@@ -20,6 +20,15 @@ import {
 
 const SKY_ENTERTAINMENT_LOGO = '/images/sky-entertainment-logo.png?v=uploaded-sky-entertainment';
 const SKY_DOCUMENTARY_LOGO = '/images/sky-documentary-logo.png?v=uploaded-sky-documentary';
+const WIKI_COMMONS_LOGO = (file: string) => `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(file)}?width=512`;
+const WIKI_EN_LOGO = (file: string) => `https://en.wikipedia.org/wiki/Special:Redirect/file/${encodeURIComponent(file)}?width=512`;
+const MLB_NETWORK_LOGO = WIKI_EN_LOGO('MLBNetworkLogo.svg');
+const NBA_TV_LOGO = WIKI_EN_LOGO('NBA_TV.svg');
+const NFL_NETWORK_LOGO = WIKI_EN_LOGO('NFL_Network_logo.svg');
+const F1_LOGO = WIKI_COMMONS_LOGO('F1.svg');
+const UFC_LOGO = WIKI_COMMONS_LOGO('UFC_Logo.svg');
+const ICC_LOGO = WIKI_COMMONS_LOGO('ICC_logo.png');
+const ON_LOGO = WIKI_COMMONS_LOGO('ON_logo.png');
 
 // Live Preview Channel Tile with video preview on hover
 const LivePreviewChannelTile = memo(({
