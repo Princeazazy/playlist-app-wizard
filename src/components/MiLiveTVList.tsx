@@ -644,14 +644,42 @@ export const MiLiveTVList = ({
         { regex: /\bon[\s-]?(tv|e)\b/i, brand: 'ON', logo: CB('ontvegypt.tv') },
         { regex: /\bcbc\b/i, brand: 'CBC', logo: CB('cbc-eg.com') },
         { regex: /\bal[\s-]?nahar|النهار/i, brand: 'Al Nahar', logo: CB('alnaharegypt.com') },
+        { regex: /\bssc\b/i, brand: 'SSC', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Saudi_Sports_Company_logo.svg/512px-Saudi_Sports_Company_logo.svg.png' },
+        { regex: /\babu\s*dhabi|أبوظبي|ابوظبي/i, brand: 'Abu Dhabi', logo: CB('adtv.ae') },
+        { regex: /\bdubai\b|دبي/i, brand: 'Dubai', logo: CB('dmi.ae') },
+        // Niche sports
+        { regex: /\bpdc\b|\bdarts?\b/i, brand: 'PDC Darts', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/0/02/PDC_Darts_logo.svg/512px-PDC_Darts_logo.svg.png' },
+        { regex: /\bcricket\b|\bicc\b|\bwillow\b/i, brand: 'Cricket', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/df/International_Cricket_Council_Logo.svg/512px-International_Cricket_Council_Logo.svg.png' },
+        { regex: /\brugby\b|six\s*nations/i, brand: 'Rugby', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/World_Rugby_logo.svg/512px-World_Rugby_logo.svg.png' },
+        { regex: /\btennis\b|\batp\b|\bwta\b/i, brand: 'Tennis', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/3/3a/ATP_Tour_logo.svg/512px-ATP_Tour_logo.svg.png' },
+        { regex: /\bgolf\b|\bpga\b/i, brand: 'Golf', logo: CB('golfchannel.com') },
+        { regex: /\bboxing\b|\bwbc\b/i, brand: 'Boxing', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/World_Boxing_Council_logo.svg/512px-World_Boxing_Council_logo.svg.png' },
+        { regex: /\bwwe\b|wrestling/i, brand: 'WWE', logo: CB('wwe.com') },
+        { regex: /\bufc\b/i, brand: 'UFC', logo: CB('ufc.com') },
+        { regex: /\bformula\s*1|\bf1\b/i, brand: 'Formula 1', logo: CB('formula1.com') },
+        // US extras
+        { regex: /\bahc\b|american\s*heroes/i, brand: 'American Heroes', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/American_Heroes_Channel.png/512px-American_Heroes_Channel.png' },
+        { regex: /\bhallmark\b/i, brand: 'Hallmark', logo: CB('hallmarkchannel.com') },
+        { regex: /\btravel\s*channel\b/i, brand: 'Travel Channel', logo: CB('travelchannel.com') },
+        { regex: /\bsmithsonian\b/i, brand: 'Smithsonian', logo: CB('smithsonianchannel.com') },
+        { regex: /\bscience\s*(channel)?\b/i, brand: 'Science Channel', logo: CB('sciencechannel.com') },
+        { regex: /\bmotor\s*trend\b/i, brand: 'MotorTrend', logo: CB('motortrend.com') },
+        { regex: /\bcinemax\b/i, brand: 'Cinemax', logo: CB('cinemax.com') },
+        { regex: /\bshowtime\b/i, brand: 'Showtime', logo: CB('sho.com') },
+        { regex: /\boxygen\b/i, brand: 'Oxygen', logo: CB('oxygen.com') },
+        { regex: /\bbravo\b/i, brand: 'Bravo', logo: CB('bravotv.com') },
+        { regex: /\blifetime\b/i, brand: 'Lifetime', logo: CB('mylifetime.com') },
+        { regex: /\binvestigation\s*discovery\b|\bid\s*channel\b/i, brand: 'Investigation Discovery', logo: CB('investigationdiscovery.com') },
+        { regex: /\ba\s*&\s*e\b|\baetv\b/i, brand: 'A&E', logo: CB('aetv.com') },
+        { regex: /\bfxx?\b/i, brand: 'FX', logo: CB('fxnetworks.com') },
+        { regex: /\btnt\s*sports?|bt\s*sport\b/i, brand: 'TNT Sports', logo: CB('tntsports.co.uk') },
       ];
 
       for (const [normKey, data] of groupData.entries()) {
-        // Only retitle groups whose current display is essentially generic
         const baseName = (data.displayNameOverride || data.originalNames[0] || normKey).trim();
-        if (!GENERIC_NAME_REGEX.test(baseName)) continue;
-        // Skip if already retitled by SERVICE_PATTERNS above
+        // Skip if already retitled by SERVICE_PATTERNS above to a non-generic brand
         if (data.displayNameOverride && !GENERIC_NAME_REGEX.test(data.displayNameOverride)) continue;
+        const isGeneric = GENERIC_NAME_REGEX.test(baseName);
 
         const groupOrigNames = normMap.get(normKey) || [];
         const sampleChannels = channels
@@ -661,8 +689,12 @@ export const MiLiveTVList = ({
 
         let bestBrand: { brand: string; logo?: string; count: number } | null = null;
         for (const sniffer of BRAND_SNIFFERS) {
-          const count = sampleChannels.filter(ch => sniffer.regex.test(ch.name || '')).length;
-          if (count >= Math.max(2, Math.ceil(sampleChannels.length * 0.3))) {
+          // Match in channel names AND group name itself (so single-brand groups like "Darts" get sniffed)
+          const nameMatches = sampleChannels.filter(ch => sniffer.regex.test(ch.name || '')).length;
+          const groupNameMatch = sniffer.regex.test(baseName) ? Math.max(2, Math.ceil(sampleChannels.length * 0.5)) : 0;
+          const count = Math.max(nameMatches, groupNameMatch);
+          // Lower threshold (25%) when sniffing, but require group-name OR >=2 channels
+          if (count >= Math.max(2, Math.ceil(sampleChannels.length * 0.25))) {
             if (!bestBrand || count > bestBrand.count) {
               bestBrand = { brand: sniffer.brand, logo: sniffer.logo, count };
             }
@@ -670,12 +702,16 @@ export const MiLiveTVList = ({
         }
         if (!bestBrand) continue;
 
-        // Compose new display name: "{Brand} {Generic}" (preserve generic category word)
-        const genericWordMatch = baseName.match(GENERIC_NAME_REGEX);
-        const genericWord = genericWordMatch
-          ? genericWordMatch[0].charAt(0).toUpperCase() + genericWordMatch[0].slice(1).toLowerCase()
-          : '';
-        data.displayNameOverride = genericWord ? `${bestBrand.brand} ${genericWord}` : bestBrand.brand;
+        // For generic groups: "{Brand} {Generic}". For non-generic: just the brand.
+        if (isGeneric) {
+          const genericWordMatch = baseName.match(GENERIC_NAME_REGEX);
+          const genericWord = genericWordMatch
+            ? genericWordMatch[0].charAt(0).toUpperCase() + genericWordMatch[0].slice(1).toLowerCase()
+            : '';
+          data.displayNameOverride = genericWord ? `${bestBrand.brand} ${genericWord}` : bestBrand.brand;
+        } else {
+          data.displayNameOverride = bestBrand.brand;
+        }
         if (bestBrand.logo) {
           data.brandLogo = bestBrand.logo;
           data.firstLogo = bestBrand.logo;
