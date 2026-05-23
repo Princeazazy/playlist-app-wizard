@@ -960,6 +960,28 @@ export const MiMediaGrid = ({
     }
   }, [groups, selectedGroup]);
 
+  // AI canonicalization — clean up raw category names lazily, persist in DB
+  useEffect(() => {
+    if (groups.length === 0) return;
+    const names = groups.map((g) => g.name).filter((n) => !aiCanonical[n]);
+    if (names.length === 0) return;
+    const timer = setTimeout(async () => {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data, error } = await supabase.functions.invoke('categorize-playlist', {
+          body: { names, kind: category },
+        });
+        if (!error && data?.mapping) {
+          setAiCanonical((prev) => ({ ...prev, ...data.mapping }));
+        }
+      } catch (e) {
+        console.warn('[AI categorize] failed', e);
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [groups, category, aiCanonical]);
+
+
   const filteredItems = useMemo(() => {
     // Find which raw group names belong to the selected merged group
     const selectedMergedGroup = groups.find(g => g.name === selectedGroup);
