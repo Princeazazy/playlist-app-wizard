@@ -589,7 +589,8 @@ export const MiLiveTVList = ({
       const CB = (d: string) => `https://logo.clearbit.com/${d}`;
       const BRAND_SNIFFERS: { regex: RegExp; brand: string; logo?: string }[] = [
         // Sky family
-        { regex: /\bsky\s*cinema\b/i, brand: 'Sky Cinema', logo: CB('sky.com') },
+        { regex: /\bsky\s*cinema\b|\bsky\s*movies?\b/i, brand: 'Sky Cinema', logo: '/images/sky-movies-round-logo.png' },
+        { regex: /\bsky\s*(entertainment|one|atlantic|showcase|witness|comedy|max)\b/i, brand: 'Sky Entertainment', logo: '/images/sky-entertainment-round-logo.png' },
         { regex: /\bsky\s*sports?\s*f1\b/i, brand: 'Sky Sports F1', logo: CB('skysports.com') },
         { regex: /\bsky\s*sports?\b/i, brand: 'Sky Sports', logo: CB('skysports.com') },
         { regex: /\bsky\s*news\s*arabia|سكاي\s*نيوز\s*عربية/i, brand: 'Sky News Arabia', logo: CB('skynewsarabia.com') },
