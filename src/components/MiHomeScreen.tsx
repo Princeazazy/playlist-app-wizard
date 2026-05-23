@@ -103,7 +103,7 @@ const TileCard = ({
   return (
     <button
       onClick={onClick}
-      className={`${sizeClasses[size]} relative rounded-2xl overflow-hidden border transition-all duration-200 group ${className} hover:scale-[1.04] hover:-translate-y-1.5 active:scale-[0.97]`}
+      className={`${sizeClasses[size]} hud-frame relative rounded-2xl overflow-hidden border transition-all duration-200 group ${className} hover:scale-[1.04] hover:-translate-y-1.5 active:scale-[0.97]`}
       style={{
         borderColor: 'hsl(265 30% 22% / 0.6)',
         boxShadow: '0 8px 30px hsl(0 0% 0% / 0.4)',
@@ -231,7 +231,10 @@ export const MiHomeScreen = React.memo(({
 
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-4 md:py-6" style={{ animation: 'fadeSlideIn 0.4s ease-out both' }}>
-        <ChromaKeyVideo src={logoVideo} className="h-20 md:h-28" />
+        <div className="flex items-center gap-4">
+          <ChromaKeyVideo src={logoVideo} className="h-20 md:h-28" />
+          {!isMobile && <span className="hud-chip">System Online</span>}
+        </div>
 
         {!isMobile && (
           <div className="flex items-center gap-3">
@@ -386,8 +389,8 @@ export const MiHomeScreen = React.memo(({
                       <Tv className="w-8 h-8 text-primary" />
                     </PulsingIcon>
                     <div>
-                      <p className="text-4xl font-bold text-foreground tabular-nums">Live TV</p>
-                      <p className="text-muted-foreground mt-1">
+                      <p className="text-4xl font-display font-bold text-foreground tracking-tight">Live TV</p>
+                      <p className="text-muted-foreground mt-1 font-mono text-xs tracking-widest uppercase">
                         {loading ? (
                           <span className="animate-pulse">Loading...</span>
                         ) : (
@@ -395,6 +398,7 @@ export const MiHomeScreen = React.memo(({
                         )}
                       </p>
                     </div>
+
                   </div>
                 </TileCard>
 
