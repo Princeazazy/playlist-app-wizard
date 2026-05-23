@@ -487,6 +487,10 @@ export const MiLiveTVList = ({
     'BT Sport': { flagUrl: matchBrandLogo('bt sport') || '', priority: 35, isService: true },
     'StarzPlay': { flagUrl: matchBrandLogo('starz') || '', priority: 36, isService: true },
     'PPV': { flagUrl: '', priority: 37, isService: true },
+    'MLB Network': { flagUrl: '/images/mlb-round-logo.png', priority: 38, isService: true },
+    'NBA TV': { flagUrl: '/images/nba-round-logo.png', priority: 39, isService: true },
+    'NFL Network': { flagUrl: '/images/nfl-round-logo.png', priority: 40, isService: true },
+    'NHL Network': { flagUrl: '/images/nhl-round-logo.png', priority: 41, isService: true },
   };
 
   // Build a mapping from channel id → sports group name (only for sports mode)
@@ -938,7 +942,7 @@ export const MiLiveTVList = ({
     const all = `${name} ${orig}`;
     const info = getCountryInfo(group.originalNames?.[0] || group.displayName);
 
-    if (/\b(ba|bosnia|bosna|босна)\b/i.test(all)) return 'other';
+    if (/\b(ba|bosnia|bosna|босна|ireland|irish|ie_|portugal|portuguese|pt_)\b/i.test(all)) return 'other';
 
     // Sports first (strong signals beat country detection — e.g. "UK Sports" is Sports, not English)
     const sportsKw = ['sport', 'espn', 'bein', 'dazn', 'fox sports', 'sky sports', 'eurosport', 'bt sport', 'tnt sports', 'nfl', 'nba', 'mlb', 'nhl', 'ufc', 'wwe', 'boxing', ' f1', 'formula 1', 'motogp', 'golf', 'tennis', 'rugby', 'cricket', 'darts', 'pdc', 'la liga', 'premier league', 'champions league', 'world cup', 'league one', 'league two', 'championship', 'ssc', 'bundesliga', 'uefa', 'fifa'];
