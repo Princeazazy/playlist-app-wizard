@@ -9,9 +9,14 @@
 
 // High-quality brand logo URLs from public CDNs / Wikipedia Commons
 // All URLs are HTTPS, high-resolution, and stable
-// Wikipedia Commons / English Wikipedia (most reliable - publicly hosted)
-const WC = (path: string) => `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}`;
-const WE = (path: string) => `https://upload.wikimedia.org/wikipedia/en/thumb/${path}`;
+// Wikipedia Commons / English Wikipedia (stable redirect by filename; avoids broken thumb hash paths)
+const wikiRedirect = (host: 'commons.wikimedia.org' | 'en.wikipedia.org', pathOrFile: string) => {
+  const rawFile = pathOrFile.split('/')[2] || pathOrFile;
+  const file = decodeURIComponent(rawFile);
+  return `https://${host}/wiki/Special:Redirect/file/${encodeURIComponent(file)}?width=512`;
+};
+const WC = (pathOrFile: string) => wikiRedirect('commons.wikimedia.org', pathOrFile);
+const WE = (pathOrFile: string) => wikiRedirect('en.wikipedia.org', pathOrFile);
 // Clearbit logo CDN (fallback for brands without a stable Wikipedia logo)
 const CB = (domain: string) => `https://logo.clearbit.com/${domain}`;
 
@@ -59,12 +64,12 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   motogp: { logo: CB('motogp.com'), aliases: ['moto gp'] },
   nascar: { logo: CB('nascar.com'), aliases: [] },
   'national league': { logo: '/images/national-league-logo.png', aliases: ['vanarama national league', 'efl national'] },
-  'pdc': { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/0/02/PDC_Darts_logo.svg/512px-PDC_Darts_logo.svg.png', aliases: ['pdc darts', 'darts', 'professional darts corporation', 'world darts'] },
-  cricket: { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/df/International_Cricket_Council_Logo.svg/512px-International_Cricket_Council_Logo.svg.png', aliases: ['icc', 'world cricket'] },
-  rugby: { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/World_Rugby_logo.svg/512px-World_Rugby_logo.svg.png', aliases: ['world rugby', 'six nations'] },
-  tennis: { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/3/3a/ATP_Tour_logo.svg/512px-ATP_Tour_logo.svg.png', aliases: ['atp', 'wta', 'tennis channel'] },
-  golf: { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/76/PGA_Tour_logo.svg/512px-PGA_Tour_logo.svg.png', aliases: ['pga', 'pga tour', 'european tour'] },
-  boxing: { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/World_Boxing_Council_logo.svg/512px-World_Boxing_Council_logo.svg.png', aliases: ['wbc', 'boxing channel'] },
+  'pdc': { logo: WC('World_Series_of_Darts_-_Logo.svg'), aliases: ['pdc darts', 'darts', 'professional darts corporation', 'world darts'] },
+  cricket: { logo: WE('International_Cricket_Council_Logo.svg'), aliases: ['icc', 'world cricket'] },
+  rugby: { logo: WE('World_Rugby_logo.svg'), aliases: ['world rugby', 'six nations'] },
+  tennis: { logo: WE('ATP_Tour_logo.svg'), aliases: ['atp', 'wta', 'tennis channel'] },
+  golf: { logo: WE('PGA_Tour_logo.svg'), aliases: ['pga', 'pga tour', 'european tour'] },
+  boxing: { logo: WC('World_Boxing_Council_logo.svg'), aliases: ['wbc', 'boxing channel'] },
 
   // ── Arab Networks & Platforms ──
   'bein sports': { logo: '/images/bein-logo.png', aliases: ['bein', 'bein sport', 'بي ان سبورت', 'بين سبورت', 'بي ان', 'بين', 'beinsports'] },
@@ -72,17 +77,17 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   mbc: { logo: '/images/mbc-logo.png', aliases: ['mbc hd', 'ام بي سي', 'إم بي سي'] },
   osn: { logo: '/images/osn-logo.png', aliases: ['osn+', 'او اس ان', 'أو إس إن'] },
   rotana: { logo: '/images/rotana-logo.png', aliases: ['روتانا'] },
-  'al jazeera': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Aljazeera.svg/512px-Aljazeera.svg.png', aliases: ['الجزيرة', 'aljazeera', 'jazeera', 'al jazeera english', 'al jazeera arabic', 'aje', 'ajn', 'al jazeera news'] },
-  'al jazeera mubasher': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Aljazeera_mubasher_logo.png/512px-Aljazeera_mubasher_logo.png', aliases: ['الجزيرة مباشر', 'mubasher'] },
-  'al arabiya': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Al_Arabiya_new_logo.svg/512px-Al_Arabiya_new_logo.svg.png', aliases: ['العربية', 'alarabiya'] },
-  'al hadath': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Al-Hadath_TV_Channel_logo.svg/512px-Al-Hadath_TV_Channel_logo.svg.png', aliases: ['الحدث'] },
-  'al mayadeen': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Al-Mayadeen_logo.svg/512px-Al-Mayadeen_logo.svg.png', aliases: ['الميادين'] },
+  'al jazeera': { logo: WC('Aljazeera_eng.svg'), aliases: ['الجزيرة', 'aljazeera', 'jazeera', 'al jazeera english', 'al jazeera arabic', 'aje', 'ajn', 'al jazeera news'] },
+  'al jazeera mubasher': { logo: WC('Aljazeera_mubasher_logo.png'), aliases: ['الجزيرة مباشر', 'mubasher'] },
+  'al arabiya': { logo: WC('Al-Arabiya_new_logo.svg'), aliases: ['العربية', 'alarabiya'] },
+  'al hadath': { logo: WC('AlHADATH.png'), aliases: ['الحدث'] },
+  'al mayadeen': { logo: WC('Al-Mayadeen_logo.svg'), aliases: ['الميادين'] },
   'sky news arabia': { logo: CB('skynewsarabia.com'), aliases: ['سكاي نيوز عربية'] },
   dmc: { logo: CB('dmc.eg'), aliases: ['دي ام سي'] },
   ontv: { logo: CB('ontvegypt.tv'), aliases: ['on tv', 'on e', 'اون تي في'] },
   cbc: { logo: CB('cbc-eg.com'), aliases: ['سي بي سي'] },
   'al nahar': { logo: CB('alnaharegypt.com'), aliases: ['النهار'] },
-  ssc: { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Saudi_Sports_Company_logo.svg/512px-Saudi_Sports_Company_logo.svg.png', aliases: ['ssc sports', 'saudi sports', 'ssc1', 'ssc2', 'ssc3', 'ssc4', 'ssc5'] },
+  ssc: { logo: WC('Saudi_Sports_Company_logo.svg'), aliases: ['ssc sports', 'saudi sports', 'ssc1', 'ssc2', 'ssc3', 'ssc4', 'ssc5'] },
   'abu dhabi': { logo: WC('5/5c/Abu_Dhabi_TV_logo.svg/512px-Abu_Dhabi_TV_logo.svg.png'), aliases: ['ad sports', 'abu dhabi sports', 'abu dhabi tv', 'أبوظبي', 'ابوظبي'] },
   dubai: { logo: WC('4/45/Dubai_TV_logo.svg/512px-Dubai_TV_logo.svg.png'), aliases: ['dubai tv', 'dubai sports', 'دبي'] },
 

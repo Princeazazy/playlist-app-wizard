@@ -252,6 +252,25 @@ const LivePreviewChannelTile = memo(({
   );
 });
 
+const getCategoryInitials = (name: string) => {
+  const cleaned = name.replace(/[^\p{L}\p{N}&+\s/]/gu, ' ').trim();
+  if (!cleaned) return 'TV';
+    if (/24\s*\/\s*7|247/.test(cleaned)) return '24/7';
+    if (cleaned.length <= 5 && /^[A-Za-z0-9&+]+$/.test(cleaned)) return cleaned.toUpperCase();
+  const words = cleaned.split(/[\s/]+/).filter(Boolean);
+  const shortAllCaps = words.find((word) => /^[A-Z0-9&+]{2,5}$/.test(word));
+  if (shortAllCaps) return shortAllCaps.slice(0, 4);
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase()).join('') || 'TV';
+};
+
+const CategoryLogoFallback = ({ name }: { name: string }) => (
+  <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/35 via-card to-accent/25 border border-border/40 flex items-center justify-center shadow-inner">
+    <span className="text-[11px] font-bold text-foreground tracking-wide max-w-[42px] truncate">
+      {getCategoryInitials(name)}
+    </span>
+  </div>
+);
+
 interface MiLiveTVListProps {
   channels: Channel[];
   currentChannel: Channel | null;
@@ -633,10 +652,10 @@ export const MiLiveTVList = ({
         { regex: /\bard\b/i, brand: 'ARD', logo: CB('ard.de') },
         { regex: /\brai\b/i, brand: 'RAI', logo: CB('rai.it') },
         // Arabic
-        { regex: /\bal[\s-]?jazeera|الجزيرة/i, brand: 'Al Jazeera', logo: CB('aljazeera.com') },
-        { regex: /\bal[\s-]?arabiya|العربية/i, brand: 'Al Arabiya', logo: CB('alarabiya.net') },
-        { regex: /\bal[\s-]?hadath|الحدث/i, brand: 'Al Hadath', logo: CB('alarabiya.net') },
-        { regex: /\bal[\s-]?mayadeen|الميادين/i, brand: 'Al Mayadeen', logo: CB('almayadeen.net') },
+        { regex: /\bal[\s-]?jazeera|الجزيرة/i, brand: 'Al Jazeera', logo: matchBrandLogo('al jazeera') || CB('aljazeera.com') },
+        { regex: /\bal[\s-]?arabiya|العربية/i, brand: 'Al Arabiya', logo: matchBrandLogo('al arabiya') || CB('alarabiya.net') },
+        { regex: /\bal[\s-]?hadath|الحدث/i, brand: 'Al Hadath', logo: matchBrandLogo('al hadath') || CB('alarabiya.net') },
+        { regex: /\bal[\s-]?mayadeen|الميادين/i, brand: 'Al Mayadeen', logo: matchBrandLogo('al mayadeen') || CB('almayadeen.net') },
         { regex: /\bmbc\b/i, brand: 'MBC', logo: '/images/mbc-group-logo.png' },
         { regex: /\brotana\b|روتانا/i, brand: 'Rotana', logo: '/images/rotana-logo.png' },
         { regex: /\bosn\b/i, brand: 'OSN', logo: '/images/osn-logo.png' },
@@ -644,14 +663,14 @@ export const MiLiveTVList = ({
         { regex: /\bon[\s-]?(tv|e)\b/i, brand: 'ON', logo: CB('ontvegypt.tv') },
         { regex: /\bcbc\b/i, brand: 'CBC', logo: CB('cbc-eg.com') },
         { regex: /\bal[\s-]?nahar|النهار/i, brand: 'Al Nahar', logo: CB('alnaharegypt.com') },
-        { regex: /\bssc\b/i, brand: 'SSC', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Saudi_Sports_Company_logo.svg/512px-Saudi_Sports_Company_logo.svg.png' },
+        { regex: /\bssc\b/i, brand: 'SSC', logo: matchBrandLogo('ssc') || undefined },
         { regex: /\babu\s*dhabi|أبوظبي|ابوظبي/i, brand: 'Abu Dhabi', logo: CB('adtv.ae') },
         { regex: /\bdubai\b|دبي/i, brand: 'Dubai', logo: CB('dmi.ae') },
         // Niche sports
-        { regex: /\bpdc\b|\bdarts?\b/i, brand: 'PDC Darts', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/0/02/PDC_Darts_logo.svg/512px-PDC_Darts_logo.svg.png' },
-        { regex: /\bcricket\b|\bicc\b|\bwillow\b/i, brand: 'Cricket', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/df/International_Cricket_Council_Logo.svg/512px-International_Cricket_Council_Logo.svg.png' },
-        { regex: /\brugby\b|six\s*nations/i, brand: 'Rugby', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/World_Rugby_logo.svg/512px-World_Rugby_logo.svg.png' },
-        { regex: /\btennis\b|\batp\b|\bwta\b/i, brand: 'Tennis', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/3/3a/ATP_Tour_logo.svg/512px-ATP_Tour_logo.svg.png' },
+        { regex: /\bpdc\b|\bdarts?\b/i, brand: 'PDC Darts', logo: matchBrandLogo('pdc') || undefined },
+        { regex: /\bcricket\b|\bicc\b|\bwillow\b/i, brand: 'Cricket', logo: matchBrandLogo('cricket') || undefined },
+        { regex: /\brugby\b|six\s*nations/i, brand: 'Rugby', logo: matchBrandLogo('rugby') || undefined },
+        { regex: /\btennis\b|\batp\b|\bwta\b/i, brand: 'Tennis', logo: matchBrandLogo('tennis') || undefined },
         { regex: /\bgolf\b|\bpga\b/i, brand: 'Golf', logo: CB('golfchannel.com') },
         { regex: /\bboxing\b|\bwbc\b/i, brand: 'Boxing', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/World_Boxing_Council_logo.svg/512px-World_Boxing_Council_logo.svg.png' },
         { regex: /\bwwe\b|wrestling/i, brand: 'WWE', logo: CB('wwe.com') },
@@ -1008,11 +1027,11 @@ export const MiLiveTVList = ({
       }
     };
 
-    // Process in batches of 5
+    // Process in batches of 8 so every visible Live TV group quickly gets a logo attempt
     const run = async () => {
-      for (let i = 0; i < needLogos.length; i += 5) {
-        await fetchBatch(needLogos.slice(i, i + 5));
-        if (i + 5 < needLogos.length) await new Promise(r => setTimeout(r, 1500));
+      for (let i = 0; i < needLogos.length; i += 8) {
+        await fetchBatch(needLogos.slice(i, i + 8));
+        if (i + 8 < needLogos.length) await new Promise(r => setTimeout(r, 650));
       }
     };
     run();
@@ -1028,14 +1047,11 @@ export const MiLiveTVList = ({
       if (meta?.flagUrl) return meta.flagUrl;
       const brandLogo = matchBrandLogo(group.name);
       if (brandLogo) return brandLogo;
-      if (group.firstLogo) return group.firstLogo;
       return aiGroupLogos[group.displayName] || null;
     }
 
     // US sub-groups: prioritize channel-derived logo over flag
-    if (group.name.startsWith('us_') && group.firstLogo) {
-      return group.firstLogo;
-    }
+    if (group.name.startsWith('us_')) return group.firstLogo || aiGroupLogos[group.displayName] || null;
 
     // 1. Try brand logo matching first
     const brandLogo = matchBrandLogo(group.displayName);
@@ -1050,8 +1066,6 @@ export const MiLiveTVList = ({
     
     if (countryInfo?.isStreamingService) {
       if (countryInfo.flagUrl) return countryInfo.flagUrl;
-      // Use first channel logo for services without a defined logo (TOD, Jawy, etc.)
-      if (group.firstLogo) return group.firstLogo;
       return aiGroupLogos[group.displayName] || null;
     }
     
@@ -1061,16 +1075,13 @@ export const MiLiveTVList = ({
     const isPremiumGroup = group.displayName.toLowerCase().includes('premium');
     if ((isMainCountryGroup || isPremiumGroup) && countryInfo?.flagUrl) return countryInfo.flagUrl;
     
-    // For other sub-groups like "USA Entertainment", use first channel logo
-    if (countryInfo && !isMainCountryGroup && group.firstLogo) return group.firstLogo;
+    // For other sub-groups like "USA Entertainment", wait for the category logo resolver instead of showing random channel art
+    if (countryInfo && !isMainCountryGroup) return aiGroupLogos[group.displayName] || null;
     
     for (const origName of group.originalNames) {
       const flag = getCountryFlagUrl(origName);
       if (flag) return flag;
     }
-    
-    // Use first channel's logo as fallback (e.g., for US sub-groups)
-    if (group.firstLogo) return group.firstLogo;
     
     // AI-resolved logo fallback
     return aiGroupLogos[group.displayName] || null;
@@ -1168,7 +1179,6 @@ export const MiLiveTVList = ({
 
           {groups.map((group) => {
             const groupLogo = getGroupLogo(group);
-            const useContainedLogo = !!groupLogo && !groupLogo.includes('flagcdn.com');
 
             return (
               <button
@@ -1180,22 +1190,23 @@ export const MiLiveTVList = ({
                     : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
                 }`}
               >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${
-                  groupLogo ? 'bg-muted' : 'bg-primary/10'
-                }`}>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-muted relative">
                   {groupLogo ? (
                     <img
                       src={groupLogo}
                       alt={group.displayName}
-                      className="w-full h-full object-cover scale-110"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      className="absolute inset-0 z-10 w-full h-full object-contain p-1.5 bg-muted"
+                      onError={(event) => {
+                        event.currentTarget.style.display = 'none';
+                        event.currentTarget.parentElement?.classList.add('category-logo-failed');
+                      }}
                     />
-                  ) : aiGroupLogosFetchedRef.current.has(group.displayName) && !aiGroupLogos[group.displayName] ? (
-                    <Tv className="w-5 h-5 text-primary/60" />
-                  ) : !aiGroupLogosFetchedRef.current.has(group.displayName) ? (
-                    <Loader2 className="w-5 h-5 text-primary/40 animate-spin" />
                   ) : (
-                    <Tv className="w-5 h-5 text-primary/60" />
+                    <CategoryLogoFallback name={group.displayName} />
                   )}
+                  {groupLogo && <CategoryLogoFallback name={group.displayName} />}
                 </div>
                 {(!sidebarCollapsed || isMobile) && (
                   <div className="flex-1 text-left min-w-0">
