@@ -26,9 +26,11 @@ const getFilledPageItems = <T,>(items: T[], currentPage: number, pageSize: numbe
   return Array.from({ length: maxItems }, (_, index) => items[(start + index) % items.length]);
 };
 
+let activeInfiniteCarousel: HTMLDivElement | null = null;
+
 // Mouse-drag-to-scroll + endless auto-scroll for horizontal carousels.
 // Items are expected to be duplicated (rendered 2x) so the scroll can loop seamlessly.
-// Pauses on hover, drag, touch, focus. Resumes shortly after.
+// Only the carousel being hovered/focused/touched pauses; every other row keeps spinning.
 const useInfiniteScroll = (speed = 0.4) => {
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
@@ -39,18 +41,35 @@ const useInfiniteScroll = (speed = 0.4) => {
     let startX = 0;
     let scrollLeft = 0;
     let moved = false;
-    let paused = false;
+    let pauseUntil = 0;
     let resumeTimer: number | null = null;
     let raf = 0;
 
-    const pause = (ms = 2500) => {
-      paused = true;
+    const temporarilyPause = (ms = 2500) => {
+      activeInfiniteCarousel = el;
+      pauseUntil = performance.now() + ms;
       if (resumeTimer) window.clearTimeout(resumeTimer);
-      resumeTimer = window.setTimeout(() => { paused = false; }, ms);
+      resumeTimer = window.setTimeout(() => {
+        if (activeInfiniteCarousel === el && performance.now() >= pauseUntil) {
+          activeInfiniteCarousel = null;
+        }
+      }, ms);
+    };
+
+    const activate = () => {
+      activeInfiniteCarousel = el;
+      if (resumeTimer) window.clearTimeout(resumeTimer);
+    };
+
+    const release = () => {
+      if (activeInfiniteCarousel === el && !isDown && !el.contains(document.activeElement)) {
+        activeInfiniteCarousel = null;
+      }
     };
 
     const tick = () => {
-      if (!paused && el.scrollWidth > el.clientWidth + 4) {
+      const isActive = activeInfiniteCarousel === el || isDown || performance.now() < pauseUntil;
+      if (!isActive && el.scrollWidth > el.clientWidth + 4) {
         const half = el.scrollWidth / 2;
         let next = el.scrollLeft + speed;
         if (next >= half) next -= half;
@@ -73,10 +92,11 @@ const useInfiniteScroll = (speed = 0.4) => {
       startX = e.pageX - el.offsetLeft;
       scrollLeft = el.scrollLeft;
       el.style.cursor = 'grabbing';
-      pause(4000);
+      activate();
     };
-    const onLeave = () => { isDown = false; el.style.cursor = 'grab'; };
-    const onUp = () => { isDown = false; el.style.cursor = 'grab'; pause(2500); };
+    const onEnter = () => activate();
+    const onLeave = () => { isDown = false; el.style.cursor = 'grab'; release(); };
+    const onUp = () => { isDown = false; el.style.cursor = 'grab'; temporarilyPause(1600); };
     const onMove = (e: MouseEvent) => {
       if (!isDown) return;
       e.preventDefault();
@@ -88,48 +108,57 @@ const useInfiniteScroll = (speed = 0.4) => {
     const onClickCapture = (e: MouseEvent) => {
       if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
     };
-    const onTouch = () => pause(4000);
-    const onWheel = () => pause(3000);
+    const onTouchStart = () => activate();
+    const onTouchEnd = () => temporarilyPause(1800);
+    const onWheel = () => temporarilyPause(2200);
+    const onFocusIn = () => activate();
+    const onFocusOut = () => window.setTimeout(release, 0);
 
 
     el.addEventListener('scroll', onScroll, { passive: true });
+    el.addEventListener('mouseenter', onEnter);
     el.addEventListener('mousedown', onDown);
     el.addEventListener('mouseleave', onLeave);
     el.addEventListener('mouseup', onUp);
     el.addEventListener('mousemove', onMove);
     el.addEventListener('click', onClickCapture, true);
-    el.addEventListener('touchstart', onTouch, { passive: true });
-    el.addEventListener('touchmove', onTouch, { passive: true });
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
     el.addEventListener('wheel', onWheel, { passive: true });
+    el.addEventListener('focusin', onFocusIn);
+    el.addEventListener('focusout', onFocusOut);
 
     el.style.cursor = 'grab';
 
-    // Remote/keyboard navigation: arrow keys scroll by one card width when focused/hovered
+    // Remote/keyboard navigation: arrow keys scroll only the active row by one card width.
     const keyHandler = (e: KeyboardEvent) => {
-      const rect = el.getBoundingClientRect();
-      const hovered = rect.top < window.innerHeight && rect.bottom > 0;
-      if (!hovered) return;
+      const isActive = activeInfiniteCarousel === el || el.contains(document.activeElement);
+      if (!isActive) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
       const first = el.firstElementChild as HTMLElement | null;
       const step = first ? first.getBoundingClientRect().width + 12 : 220;
-      if (e.key === 'ArrowRight') { el.scrollBy({ left: step, behavior: 'smooth' }); pause(5000); }
-      else if (e.key === 'ArrowLeft') { el.scrollBy({ left: -step, behavior: 'smooth' }); pause(5000); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); el.scrollBy({ left: step, behavior: 'smooth' }); temporarilyPause(2500); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); el.scrollBy({ left: -step, behavior: 'smooth' }); temporarilyPause(2500); }
     };
     window.addEventListener('keydown', keyHandler);
 
     return () => {
       cancelAnimationFrame(raf);
       if (resumeTimer) window.clearTimeout(resumeTimer);
+      if (activeInfiniteCarousel === el) activeInfiniteCarousel = null;
       el.removeEventListener('scroll', onScroll);
+      el.removeEventListener('mouseenter', onEnter);
       el.removeEventListener('mousedown', onDown);
       el.removeEventListener('mouseleave', onLeave);
       el.removeEventListener('mouseup', onUp);
       el.removeEventListener('mousemove', onMove);
       el.removeEventListener('click', onClickCapture, true);
-      el.removeEventListener('touchstart', onTouch);
-      el.removeEventListener('touchmove', onTouch);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchend', onTouchEnd);
       el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('focusin', onFocusIn);
+      el.removeEventListener('focusout', onFocusOut);
 
       window.removeEventListener('keydown', keyHandler);
     };
