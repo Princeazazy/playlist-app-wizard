@@ -448,11 +448,17 @@ const CategoryTileLogo = ({
   firstLogo?: string;
   category: 'movies' | 'series';
 }) => {
-  // 1. Try curated local logo
+  // 1. Try curated local logo — first against raw names, then against the
+  // (cleaner) display name. Display name often catches cases like raw "EN"
+  // that gets normalized to "ENGLISH" — without this the local match misses
+  // and we fall back to the AI logo (which tends to be wrong / generic).
   let localLogo: string | null = null;
   for (const rn of rawNames) {
     localLogo = getCategoryLogo(rn, category);
     if (localLogo) break;
+  }
+  if (!localLogo) {
+    localLogo = getCategoryLogo(displayName, category);
   }
 
   // 2. AI fallback when no curated logo. We deliberately do NOT fall back to
@@ -467,6 +473,7 @@ const CategoryTileLogo = ({
     return <img src={aiLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
   }
   return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
+
 };
 
 
