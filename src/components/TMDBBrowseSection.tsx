@@ -366,7 +366,8 @@ const PlaylistRow = ({
   mediaTypeHint?: 'movie' | 'tv';
 }) => {
   const { getPosterForChannel } = useTMDBPosters(channels, mediaTypeHint);
-  const scrollRef = useDragScroll();
+  const scrollRef = useInfiniteScroll();
+  const loopChannels = React.useMemo(() => [...channels, ...channels], [channels]);
 
   if (channels.length < MIN_ITEMS_TO_SHOW_ROW) return null;
 
@@ -384,7 +385,7 @@ const PlaylistRow = ({
         className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 scrollbar-hide"
         style={{ scrollbarWidth: 'none' }}
       >
-        {channels.map((channel, index) => (
+        {loopChannels.map((channel, index) => (
           <div
             key={`${channel.id}-${index}`}
             className="snap-start flex-shrink-0 w-[33vw] sm:w-[22vw] md:w-[16vw] lg:w-[13vw] max-w-[200px]"
@@ -397,6 +398,7 @@ const PlaylistRow = ({
           </div>
         ))}
       </div>
+
     </div>
   );
 };
