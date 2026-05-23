@@ -384,12 +384,8 @@ export const MiHomeScreen = React.memo(({
                       </div>
                       <div>
                         <p className="text-5xl font-display font-bold text-foreground tracking-tight leading-tight">Live TV</p>
-                        <p className="mt-3 font-mono text-[11px] tracking-[0.2em] uppercase" style={{ color: 'hsl(200 90% 70% / 0.85)' }}>
-                          {loading ? (
-                            <span className="animate-pulse">Loading...</span>
-                          ) : (
-                            <span>+{animChannels.toLocaleString()} Channels</span>
-                          )}
+                        <p className="text-muted-foreground text-sm font-medium mt-1">
+                          {loading ? '...' : `+${animChannels.toLocaleString()} Channels`}
                         </p>
                       </div>
                     </div>
