@@ -664,8 +664,8 @@ export const MiLiveTVList = ({
         { regex: /\bcbc\b/i, brand: 'CBC', logo: CB('cbc-eg.com') },
         { regex: /\bal[\s-]?nahar|النهار/i, brand: 'Al Nahar', logo: CB('alnaharegypt.com') },
         { regex: /\bssc\b/i, brand: 'SSC', logo: matchBrandLogo('ssc') || undefined },
-        { regex: /\babu\s*dhabi|أبوظبي|ابوظبي/i, brand: 'Abu Dhabi', logo: CB('adtv.ae') },
-        { regex: /\bdubai\b|دبي/i, brand: 'Dubai', logo: CB('dmi.ae') },
+        // Abu Dhabi & Dubai are emirates — treated as UAE via country detection, no sniffer override
+
         // Niche sports
         { regex: /\bpdc\b|\bdarts?\b/i, brand: 'PDC Darts', logo: matchBrandLogo('pdc') || undefined },
         { regex: /\bcricket\b|\bicc\b|\bwillow\b/i, brand: 'Cricket', logo: matchBrandLogo('cricket') || undefined },
