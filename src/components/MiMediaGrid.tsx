@@ -1148,7 +1148,7 @@ export const MiMediaGrid = ({
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10" />
                 <CategoryTileLogo
                   rawNames={(group as any).rawNames || [group.name]}
-                  displayName={group.name}
+                  displayName={aiCanonical[group.name] || group.name}
                   firstLogo={group.firstLogo}
                   category={category}
                 />
@@ -1156,12 +1156,13 @@ export const MiMediaGrid = ({
               </div>
               <div className="flex-1 text-left">
                 <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold text-foreground' : ''}`}>
-                  {group.name}
+                  {aiCanonical[group.name] || group.name}
                 </p>
                 {selectedGroup === group.name && (
                   <p className="text-xs text-muted-foreground">{group.count} {title}</p>
                 )}
               </div>
+
             </button>
           ))}
         </div>
