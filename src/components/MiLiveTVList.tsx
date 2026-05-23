@@ -1178,7 +1178,6 @@ export const MiLiveTVList = ({
 
           {groups.map((group) => {
             const groupLogo = getGroupLogo(group);
-            const useContainedLogo = !!groupLogo && !groupLogo.includes('flagcdn.com');
 
             return (
               <button
@@ -1190,22 +1189,23 @@ export const MiLiveTVList = ({
                     : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
                 }`}
               >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${
-                  groupLogo ? 'bg-muted' : 'bg-primary/10'
-                }`}>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-muted">
                   {groupLogo ? (
                     <img
                       src={groupLogo}
                       alt={group.displayName}
-                      className="w-full h-full object-cover scale-110"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-contain p-1.5"
+                      onError={(event) => {
+                        event.currentTarget.style.display = 'none';
+                        event.currentTarget.parentElement?.classList.add('category-logo-failed');
+                      }}
                     />
-                  ) : aiGroupLogosFetchedRef.current.has(group.displayName) && !aiGroupLogos[group.displayName] ? (
-                    <Tv className="w-5 h-5 text-primary/60" />
-                  ) : !aiGroupLogosFetchedRef.current.has(group.displayName) ? (
-                    <Loader2 className="w-5 h-5 text-primary/40 animate-spin" />
                   ) : (
-                    <Tv className="w-5 h-5 text-primary/60" />
+                    <CategoryLogoFallback name={group.displayName} />
                   )}
+                  {groupLogo && <CategoryLogoFallback name={group.displayName} />}
                 </div>
                 {(!sidebarCollapsed || isMobile) && (
                   <div className="flex-1 text-left min-w-0">
