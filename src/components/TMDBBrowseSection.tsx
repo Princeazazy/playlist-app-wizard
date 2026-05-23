@@ -354,13 +354,13 @@ const CategoryRow = ({
       ) : items.length >= MIN_ITEMS_TO_SHOW_ROW ? (
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto snap-x pb-2 -mx-1 px-1 scrollbar-hide"
+          className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide"
           style={{ scrollbarWidth: 'none' }}
         >
           {loopItems.map((item, index) => (
             <div
               key={`${item.id}-${item.mediaType}-${index}`}
-              className="snap-start flex-shrink-0 w-[33vw] sm:w-[22vw] md:w-[16vw] lg:w-[13vw] max-w-[200px]"
+              className="flex-shrink-0 w-[33vw] sm:w-[22vw] md:w-[16vw] lg:w-[13vw] max-w-[200px]"
             >
               <MediaCard
                 item={item}
@@ -410,13 +410,13 @@ const PlaylistRow = ({
 
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto snap-x pb-2 -mx-1 px-1 scrollbar-hide"
+        className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide"
         style={{ scrollbarWidth: 'none' }}
       >
         {loopChannels.map((channel, index) => (
           <div
             key={`${channel.id}-${index}`}
-            className="snap-start flex-shrink-0 w-[33vw] sm:w-[22vw] md:w-[16vw] lg:w-[13vw] max-w-[200px]"
+            className="flex-shrink-0 w-[33vw] sm:w-[22vw] md:w-[16vw] lg:w-[13vw] max-w-[200px]"
           >
             <PlaylistCard
               channel={channel}
