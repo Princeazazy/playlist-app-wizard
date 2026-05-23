@@ -20,6 +20,7 @@ const WE = (pathOrFile: string) => wikiRedirect('en.wikipedia.org', pathOrFile);
 // Clearbit logo CDN (fallback for brands without a stable Wikipedia logo)
 const CB = (domain: string) => `https://logo.clearbit.com/${domain}`;
 const SKY_ENTERTAINMENT_LOGO = '/images/sky-entertainment-logo.png?v=uploaded-sky-entertainment';
+const SKY_DOCUMENTARY_LOGO = '/images/sky-documentary-logo.png?v=uploaded-sky-documentary';
 
 const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   // ── Streaming Platforms ──
@@ -47,7 +48,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'sky sports f1': { logo: CB('skysports.com'), aliases: ['sky f1'] },
   'sky news': { logo: CB('news.sky.com'), aliases: ['sky news arabia', 'سكاي نيوز'] },
   'sky entertainment': { logo: SKY_ENTERTAINMENT_LOGO, aliases: ['sky one', 'sky atlantic', 'sky showcase', 'sky comedy', 'sky witness', 'sky max'] },
-  'sky documentary': { logo: '/images/sky-documentary-logo.png', aliases: ['sky docs', 'sky doc', 'sky documentaries', 'sd sky'] },
+  'sky documentary': { logo: SKY_DOCUMENTARY_LOGO, aliases: ['sky docs', 'sky doc', 'sky documentaries', 'sd sky'] },
   sky: { logo: CB('sky.com'), aliases: ['سكاي'] },
 
   // ── PPV / Sports networks ──
@@ -59,10 +60,10 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'champions league': { logo: '/images/champions-league-logo.png', aliases: ['uefa champions league', 'ucl', 'دوري الابطال'] },
   'europa league': { logo: CB('uefa.com'), aliases: ['uel', 'الدوري الأوروبي'] },
   uefa: { logo: '/images/uefa-logo.png', aliases: ['يويفا'] },
-  nba: { logo: CB('nba.com'), aliases: ['nba tv', 'الدوري الأمريكي'] },
-  nfl: { logo: CB('nfl.com'), aliases: ['nfl network'] },
-  nhl: { logo: CB('nhl.com'), aliases: ['nhl network'] },
-  mlb: { logo: WC('a/a6/Major_League_Baseball_logo.svg/512px-Major_League_Baseball_logo.svg.png'), aliases: ['mlb network', 'us milb', 'milb', 'minor league baseball'] },
+  nba: { logo: '/images/nba-round-logo.png', aliases: ['nba tv', 'الدوري الأمريكي'] },
+  nfl: { logo: '/images/nfl-round-logo.png', aliases: ['nfl network'] },
+  nhl: { logo: '/images/nhl-round-logo.png', aliases: ['nhl network'] },
+  mlb: { logo: '/images/mlb-round-logo.png', aliases: ['mlb network', 'us milb', 'milb', 'minor league baseball'] },
   motogp: { logo: CB('motogp.com'), aliases: ['moto gp'] },
   nascar: { logo: CB('nascar.com'), aliases: [] },
   'national league': { logo: '/images/national-league-logo.png', aliases: ['vanarama national league', 'efl national'] },
@@ -119,7 +120,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   msnbc: { logo: WC('1/14/MSNBC_logo_%282021%29.svg/512px-MSNBC_logo_%282021%29.svg.png'), aliases: [] },
   'fox news': { logo: WC('6/67/Fox_News_Channel_logo.svg/512px-Fox_News_Channel_logo.svg.png'), aliases: ['fox news channel'] },
   nbc: { logo: '/images/nbc-round-logo.png', aliases: ['nbc news'] },
-  cbs: { logo: WC('4/4f/CBS_logo_%282020%29.svg/512px-CBS_logo_%282020%29.svg.png'), aliases: ['cbs news'] },
+  cbs: { logo: '/images/cbs-round-logo.png?v=uploaded-cbs', aliases: ['cbs news'] },
   abc: { logo: WC('8/8e/American_Broadcasting_Company_Logo.svg/512px-American_Broadcasting_Company_Logo.svg.png'), aliases: ['abc news'] },
   fox: { logo: '/images/fox-round-logo.svg', aliases: ['fox network'] },
   'comedy central': { logo: WC('a/aa/Comedy_Central_2018.svg/512px-Comedy_Central_2018.svg.png'), aliases: ['comedycentral'] },
