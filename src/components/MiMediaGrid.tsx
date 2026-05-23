@@ -750,6 +750,118 @@ export const MiMediaGrid = ({
       g.includes('amazon') || g.includes('prime') || g.includes('apple') || g.includes('paramount') || g.includes('hulu') || g.includes('peacock') ||
       g.includes('starz') || g.includes('showtime') || g.includes('star wars') || g.includes('pixar') || g.includes('shahid') || g.includes('osn');
 
+    const isRamadan = g.includes('ramadan') || groupName.includes('رمضان');
+    const isAnime = g.includes('anime') || g.includes(' anm') || groupName.includes('انمي') || groupName.includes('أنمي');
+    const isTvShows = g.includes('tv show') || g.includes('tvshow') || g.includes('program') || groupName.includes('برامج');
+
+    // ═══════════ SERIES-SPECIFIC ORDERING ═══════════
+    // User-requested: English → TV Shows → Streaming → Arabic → … → Ramadan(bottom)
+    if (cat === 'series') {
+      // Push Ramadan to the bottom regardless of region/year
+      if (isRamadan) {
+        if (g.includes('egypt') || groupName.includes('مصر')) return 880;
+        if (g.includes('gulf') || g.includes('khalij') || groupName.includes('خليج')) return 882;
+        if (g.includes('levant') || g.includes('shami') || groupName.includes('شام')) return 884;
+        if (g.includes('maghreb') || g.includes('morocco') || groupName.includes('مغرب')) return 886;
+        if (year) return 888 + yearRank;
+        return 890;
+      }
+
+      // 10-19: Plain English / Multi-lang (no year, no genre, no streaming)
+      if ((isEnglish || isMultiLang) && !year && !isStreaming && !isAnime && !isTvShows) {
+        if (isLatestTag) return 10;
+        return 15;
+      }
+
+      // 20-29: TV Shows / Programs
+      if (isTvShows && !isArabic) return 20;
+
+      // 30-99: Streaming platforms
+      if (isStreaming) {
+        if (g.includes('netflix')) return 30;
+        if (g.includes('disney')) return 32;
+        if (g.includes('marvel')) return 34;
+        if (/\bdc\b/.test(g)) return 36;
+        if (g.includes('hbo') || g.includes('max')) return 38;
+        if (g.includes('amazon') || g.includes('prime')) return 40;
+        if (g.includes('apple')) return 42;
+        if (g.includes('paramount')) return 44;
+        if (g.includes('hulu')) return 46;
+        if (g.includes('peacock')) return 48;
+        if (g.includes('starz')) return 50;
+        if (g.includes('showtime')) return 52;
+        if (g.includes('shahid')) return 54;
+        if (g.includes('osn')) return 56;
+        if (g.includes('star wars') || g.includes('pixar')) return 58;
+        return 70;
+      }
+
+      // 100-149: English/Multi-lang with year (newest first)
+      if ((isEnglish || isMultiLang) && year && !isArabic) return 100 + yearRank;
+
+      // 150-189: English/Multi-lang genres (no year)
+      if ((isEnglish || isMultiLang) && !isArabic && !isAnime) {
+        if (g.includes('action') || g.includes('adventure')) return 150;
+        if (g.includes('comedy')) return 152;
+        if (g.includes('drama') || g.includes('romance')) return 154;
+        if (g.includes('horror') || g.includes('thriller')) return 156;
+        if (g.includes('scifi') || g.includes('sci-fi') || g.includes('fantasy')) return 158;
+        if (g.includes('crime') || g.includes('mystery')) return 160;
+        if (g.includes('documentary')) return 162;
+        if (g.includes('kids') || g.includes('family')) return 164;
+        return 180;
+      }
+
+      // 200-299: Arabic
+      if (isLatestTag && isArabic) return 200;
+      if (isArabic && year) return 210 + yearRank;
+      if (isArabic) {
+        if (groupName.includes('مصر') || g.includes('egypt')) return 300;
+        if (groupName.includes('خليج') || g.includes('gulf') || g.includes('khalij')) return 302;
+        if (groupName.includes('شام') || g.includes('levant') || groupName.includes('سوري') || groupName.includes('لبنان')) return 304;
+        if (groupName.includes('مغرب') || g.includes('maghreb') || g.includes('morocco')) return 306;
+        if (g.includes('classic') || g.includes('old')) return 320;
+        if (g.includes('masrah') || groupName.includes('مسرح')) return 340;
+        if (g.includes('islamic') || groupName.includes('إسلام') || groupName.includes('اسلام')) return 342;
+        return 350;
+      }
+
+      // 400s: Other regional
+      if (isTurkish) return 400;
+      if (g.includes('korean') || g.includes('kdrama') || g.includes('k-drama') || groupName.includes('كوري')) return 410;
+      if (g.includes('indian') || g.includes('bollywood') || groupName.includes('هند')) return 420;
+      if (g.includes('asia') || groupName.includes('آسي')) return 430;
+      if (g.includes('french') || /\bfr\b/.test(g)) return 440;
+      if (g.includes('german') || g.includes('deutsch')) return 450;
+      if (g.includes('albania')) return 460;
+      if (g.includes('world') || groupName.includes('عالم')) return 470;
+
+      // 500s: Anime / Cartoon / Kids
+      if (isAnime) return 500;
+      if (g.includes('cartoon') || groupName.includes('كرتون') || g.includes('animation')) return 510;
+      if (g.includes('kids') || g.includes('family') || groupName.includes('أطفال')) return 520;
+
+      // 600s: Foreign / sub
+      if (isForeign && year) return 600 + yearRank;
+      if (isForeign) return 700;
+
+      // 750s: Generic genres
+      if (g.includes('action') || g.includes('adventure')) return 750;
+      if (g.includes('comedy') || groupName.includes('كوميد')) return 752;
+      if (g.includes('drama') || g.includes('romance')) return 754;
+      if (g.includes('horror') || g.includes('thriller')) return 756;
+      if (g.includes('scifi') || g.includes('sci-fi') || g.includes('fantasy')) return 758;
+      if (g.includes('crime') || g.includes('mystery')) return 760;
+      if (g.includes('documentary') || groupName.includes('وثائق')) return 762;
+      if (g.includes('sport') || g.includes('ufc') || g.includes('wwe')) return 764;
+
+      if (year) return 800 + yearRank;
+      if (g.includes('song') || groupName.includes('أغاني') || groupName.includes('اغاني')) return 999;
+      return 950;
+    }
+    // ═══════════ END SERIES-SPECIFIC ═══════════
+
+
     // ───────── 1. ENGLISH / MULTI-LANG: latest → chronological → genres ─────────
     // 10-19: Latest tags (English / Multi-lang)
     if (isLatestTag && (isEnglish || isMultiLang)) return 10;
