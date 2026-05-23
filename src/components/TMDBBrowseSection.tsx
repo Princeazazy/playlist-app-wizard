@@ -335,7 +335,7 @@ const CategoryRow = ({
   loading?: boolean;
 }) => {
   const scrollRef = useInfiniteScroll();
-  const loopItems = React.useMemo(() => [...items, ...items], [items]);
+  const loopItems = React.useMemo(() => buildLoopItems(items), [items]);
 
 
   return (
@@ -395,7 +395,7 @@ const PlaylistRow = ({
 }) => {
   const { getPosterForChannel } = useTMDBPosters(channels, mediaTypeHint);
   const scrollRef = useInfiniteScroll();
-  const loopChannels = React.useMemo(() => [...channels, ...channels], [channels]);
+  const loopChannels = React.useMemo(() => buildLoopItems(channels), [channels]);
 
   if (channels.length < MIN_ITEMS_TO_SHOW_ROW) return null;
 
