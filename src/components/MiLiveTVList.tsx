@@ -252,6 +252,24 @@ const LivePreviewChannelTile = memo(({
   );
 });
 
+const getCategoryInitials = (name: string) => {
+  const cleaned = name.replace(/[^\p{L}\p{N}&+\s/]/gu, ' ').trim();
+  if (!cleaned) return 'TV';
+  if (/24\s*\/\s*7|247/.test(cleaned)) return '24/7';
+  const words = cleaned.split(/[\s/]+/).filter(Boolean);
+  const shortAllCaps = words.find((word) => /^[A-Z0-9&+]{2,5}$/.test(word));
+  if (shortAllCaps) return shortAllCaps.slice(0, 4);
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase()).join('') || 'TV';
+};
+
+const CategoryLogoFallback = ({ name }: { name: string }) => (
+  <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/35 via-card to-accent/25 border border-border/40 flex items-center justify-center shadow-inner">
+    <span className="text-[11px] font-bold text-foreground tracking-wide max-w-[42px] truncate">
+      {getCategoryInitials(name)}
+    </span>
+  </div>
+);
+
 interface MiLiveTVListProps {
   channels: Channel[];
   currentChannel: Channel | null;
