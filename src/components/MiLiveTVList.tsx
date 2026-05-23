@@ -937,16 +937,18 @@ export const MiLiveTVList = ({
   // Group sorted groups into sections for the Live category sidebar
   const sectionedGroups = useMemo(() => {
     if (category !== 'live') return null;
-    const buckets: Record<LiveSection, typeof groups> = {
+    type GroupItem = (typeof groups)[number];
+    const buckets: Record<LiveSection, GroupItem[]> = {
       arabic: [], english: [], streaming: [], sports: [], other: [],
     };
-    for (const g of groups) {
-      buckets[classifyLiveSection(g)].push(g);
+    for (const g of groups as GroupItem[]) {
+      buckets[classifyLiveSection(g as any)].push(g);
     }
     return SECTION_ORDER
       .map(section => ({ section, label: SECTION_LABELS[section], items: buckets[section] }))
       .filter(s => s.items.length > 0);
   }, [groups, category, classifyLiveSection]);
+
 
 
   // Auto-select first group when groups load and no group is selected
