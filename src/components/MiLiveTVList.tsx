@@ -766,6 +766,10 @@ export const MiLiveTVList = ({
         ESPN2: 'ESPN 2',
         FS1: 'Fox Sports 1',
         FS2: 'Fox Sports 2',
+        BTN: 'Big Ten Network',
+        BIGTEN: 'Big Ten Network',
+        SPECTRUM: 'Spectrum News',
+        SPECTRUMNEWS: 'Spectrum News',
         MLB: 'MLB Network',
         NFL: 'NFL Network',
         NHL: 'NHL Network',
@@ -800,6 +804,8 @@ export const MiLiveTVList = ({
         BLOOMBERG: 'Bloomberg',
         TELEMUNDO: 'Telemundo',
         UNIVISION: 'Univision',
+        UNIMAS: 'UniMás',
+        UNIMÁS: 'UniMás',
         UNI: 'Univision',
       };
 
@@ -809,7 +815,7 @@ export const MiLiveTVList = ({
           .replace(/^(?:MYHD\s*-\s*|AM\s*\|\s*|AR\s*\|\s*|US\s*\|\s*)/i, '')
           .trim();
 
-        const explicitMatch = cleaned.match(/\b(?:US[\s-]*)?(ABC|CBS|NBC|FOX|CW|PBS|ION|MYTV|MYTV9|TELEMUNDO|UNIVISION|UNI|TBS|TNT|AMC|A&E|FX|FXX|USA|SYFY|HBO|SHOWTIME|STARZ|DISCOVERY|HISTORY|LIFETIME|BRAVO|E!|HGTV|FOOD|TRUTV|COMEDY\s*CENTRAL|NICK|DISNEY|CARTOON\s*NETWORK|AHC|AHL|HALLMARK|TRAVEL|SMITHSONIAN|SCIENCE|MOTORTREND|CINEMAX|OXYGEN|ESPN2?|FS1|FS2|MLB|NFL|NHL|NBA)\b/i);
+        const explicitMatch = cleaned.match(/\b(?:US[\s-]*)?(ABC|CBS|NBC|FOX|CW|PBS|ION|MYTV|MYTV9|TELEMUNDO|UNIM[ÁA]S|UNIVISION|UNI|TBS|TNT|AMC|A&E|FX|FXX|USA|SYFY|HBO|SHOWTIME|STARZ|DISCOVERY|HISTORY|LIFETIME|BRAVO|E!|HGTV|FOOD|TRUTV|COMEDY\s*CENTRAL|NICK|DISNEY|CARTOON\s*NETWORK|AHC|AHL|HALLMARK|TRAVEL|SMITHSONIAN|SCIENCE|MOTORTREND|CINEMAX|OXYGEN|ESPN2?|FS1|FS2|BTN|BIG\s*TEN|SPECTRUM(?:\s*NEWS)?|MLB|NFL|NHL|NBA)\b/i);
         if (explicitMatch) {
           const network = explicitMatch[1].toUpperCase().replace(/\s+/g, '');
           return US_NETWORK_EXPANSIONS[network] || network;
