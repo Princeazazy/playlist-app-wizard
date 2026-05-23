@@ -889,6 +889,68 @@ export const MiLiveTVList = ({
     return mergeAndSortGroups(groupsWithLogos);
   }, [groupsWithLogos, category]);
 
+  // Section classifier for Live TV sidebar (English / Streaming Platforms / Sports / Other).
+  // Arabic groups stay at the top of the list as before (Al Jazeera, country priority).
+  type LiveSection = 'arabic' | 'english' | 'streaming' | 'sports' | 'other';
+  const SECTION_ORDER: LiveSection[] = ['arabic', 'english', 'streaming', 'sports', 'other'];
+  const SECTION_LABELS: Record<LiveSection, string> = {
+    arabic: 'Arabic',
+    english: 'English',
+    streaming: 'Streaming Platforms',
+    sports: 'Sports',
+    other: 'Other',
+  };
+
+  const classifyLiveSection = useCallback((group: { name: string; displayName: string; originalNames: string[] }): LiveSection => {
+    const name = (group.displayName || '').toLowerCase();
+    const orig = (group.originalNames?.[0] || '').toLowerCase();
+    const all = `${name} ${orig}`;
+    const info = getCountryInfo(group.originalNames?.[0] || group.displayName);
+
+    // Sports first (strong signals beat country detection — e.g. "UK Sports" is Sports, not English)
+    const sportsKw = ['sport', 'espn', 'bein', 'dazn', 'fox sports', 'sky sports', 'eurosport', 'bt sport', 'tnt sports', 'nfl', 'nba', 'mlb', 'nhl', 'ufc', 'wwe', 'boxing', ' f1', 'formula 1', 'motogp', 'golf', 'tennis', 'rugby', 'cricket', 'darts', 'pdc', 'la liga', 'premier league', 'champions league', 'world cup', 'league one', 'league two', 'championship', 'ssc', 'bundesliga', 'uefa', 'fifa'];
+    if (sportsKw.some(k => all.includes(k))) return 'sports';
+
+    // Streaming services / premium brand groups
+    if (info?.isStreamingService) return 'streaming';
+    const streamingKw = ['netflix', 'disney', ' hbo', 'hbo ', ' max', 'apple tv', 'hulu', 'paramount', 'peacock', 'starz', 'showtime', 'prime video', 'amazon', 'shahid', 'mbc', 'osn', 'rotana', 'jawwy', 'tod', 'starzplay', 'sky cinema', 'sky entertainment', 'sky atlantic', 'sky one', 'pluto', 'tubi', 'fubo', 'crave', 'stan', 'binge'];
+    if (streamingKw.some(k => all.includes(k))) return 'streaming';
+
+    // Arabic — countries, Arabic script, or known Arabic networks
+    const arabicCountries = ['egypt', 'saudi arabia', 'uae', 'qatar', 'kuwait', 'bahrain', 'oman', 'jordan', 'lebanon', 'iraq', 'palestine', 'morocco', 'tunisia', 'algeria', 'libya', 'sudan', 'syria', 'yemen', 'arabic', 'arab', 'gulf'];
+    if (info && arabicCountries.includes(info.name.toLowerCase())) return 'arabic';
+    if (arabicCountries.some(k => all.includes(k))) return 'arabic';
+    if (/[\u0600-\u06FF]/.test(group.displayName)) return 'arabic';
+    if (/(al[\s-]?jazeera|al[\s-]?arabiya|al[\s-]?hadath|al[\s-]?mayadeen|abu dhabi|dubai|dmc|cbc|nahar)/i.test(all)) return 'arabic';
+
+    // English-speaking countries + English networks
+    const englishCountries = ['united states', 'usa', 'united kingdom', 'uk', 'canada', 'australia', 'ireland', 'new zealand'];
+    if (info && englishCountries.includes(info.name.toLowerCase())) return 'english';
+    if (englishCountries.some(k => all.includes(k))) return 'english';
+    if (/^(us_|uk_|ca_|au_|ie_|nz_|gb_)/.test(group.name)) return 'english';
+    const englishNetworks = ['abc', 'cbs', 'nbc', ' fox', 'fox ', 'cnn', 'msnbc', 'bbc', 'itv', 'channel 4', 'channel 5', 'pbs', 'amc', 'tnt', 'tbs', ' fx', 'fx ', 'syfy', 'usa network', 'bravo', 'lifetime', 'hallmark', 'discovery', 'history', 'national geographic', 'animal planet', 'tlc', 'hgtv', 'food network', 'cartoon network', 'nickelodeon', 'mtv', 'vh1', 'comedy central', 'bloomberg', 'euronews', 'france 24', 'cinemax', 'a&e', 'cnbc', 'bet', 'travel channel', 'smithsonian', 'motortrend', 'oxygen', 'investigation discovery'];
+    if (englishNetworks.some(k => all.includes(k))) return 'english';
+
+    return 'other';
+  }, []);
+
+  // Group sorted groups into sections for the Live category sidebar
+  const sectionedGroups = useMemo(() => {
+    if (category !== 'live') return null;
+    type GroupItem = (typeof groups)[number];
+    const buckets: Record<LiveSection, GroupItem[]> = {
+      arabic: [], english: [], streaming: [], sports: [], other: [],
+    };
+    for (const g of groups as GroupItem[]) {
+      buckets[classifyLiveSection(g as any)].push(g);
+    }
+    return SECTION_ORDER
+      .map(section => ({ section, label: SECTION_LABELS[section], items: buckets[section] }))
+      .filter(s => s.items.length > 0);
+  }, [groups, category, classifyLiveSection]);
+
+
+
   // Auto-select first group when groups load and no group is selected
   useEffect(() => {
     if (category === 'sports' && !selectedGroup) {
@@ -1177,47 +1239,66 @@ export const MiLiveTVList = ({
             </button>
           )}
 
-          {groups.map((group) => {
-            const groupLogo = getGroupLogo(group);
-
-            return (
-              <button
-                key={`${group.name}-${groupLogo ?? 'none'}`}
-                onClick={() => handleGroupSelect(group.name)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
-                  selectedGroup === group.name
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
-                }`}
-              >
-                <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-muted relative">
-                  {groupLogo ? (
-                    <img
-                      src={groupLogo}
-                      alt={group.displayName}
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                      className="absolute inset-0 z-10 w-full h-full object-contain p-1.5 bg-muted"
-                      onError={(event) => {
-                        event.currentTarget.style.display = 'none';
-                        event.currentTarget.parentElement?.classList.add('category-logo-failed');
-                      }}
-                    />
-                  ) : (
-                    <CategoryLogoFallback name={group.displayName} />
-                  )}
-                  {groupLogo && <CategoryLogoFallback name={group.displayName} />}
-                </div>
-                {(!sidebarCollapsed || isMobile) && (
-                  <div className="flex-1 text-left min-w-0">
-                    <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
-                      {translateGroupName(group.displayName)}
-                    </p>
+          {(() => {
+            const renderGroupButton = (group: typeof groups[number]) => {
+              const groupLogo = getGroupLogo(group);
+              return (
+                <button
+                  key={`${group.name}-${groupLogo ?? 'none'}`}
+                  onClick={() => handleGroupSelect(group.name)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                    selectedGroup === group.name
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:bg-card/50 hover:text-foreground'
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 bg-muted relative">
+                    {groupLogo ? (
+                      <img
+                        src={groupLogo}
+                        alt={group.displayName}
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        className="absolute inset-0 z-10 w-full h-full object-contain p-1.5 bg-muted"
+                        onError={(event) => {
+                          event.currentTarget.style.display = 'none';
+                          event.currentTarget.parentElement?.classList.add('category-logo-failed');
+                        }}
+                      />
+                    ) : (
+                      <CategoryLogoFallback name={group.displayName} />
+                    )}
+                    {groupLogo && <CategoryLogoFallback name={group.displayName} />}
                   </div>
-                )}
-              </button>
-            );
-          })}
+                  {(!sidebarCollapsed || isMobile) && (
+                    <div className="flex-1 text-left min-w-0">
+                      <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold' : ''}`}>
+                        {translateGroupName(group.displayName)}
+                      </p>
+                    </div>
+                  )}
+                </button>
+              );
+            };
+
+            if (sectionedGroups) {
+              return sectionedGroups.map(({ section, label, items }) => (
+                <div key={section} className="space-y-1">
+                  {(!sidebarCollapsed || isMobile) ? (
+                    <div className="pt-3 pb-1 px-3 text-[10px] uppercase tracking-[0.15em] font-semibold text-muted-foreground/70">
+                      {label}
+                    </div>
+                  ) : (
+                    <div className="pt-3 pb-1 mx-3 border-t border-border/40" />
+                  )}
+                  {items.map(renderGroupButton)}
+                </div>
+              ));
+            }
+
+            return groups.map(renderGroupButton);
+          })()}
+
         </div>
 
         {/* Bottom Nav - Favorites Filter */}
