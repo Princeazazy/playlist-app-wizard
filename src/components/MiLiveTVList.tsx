@@ -1313,7 +1313,7 @@ export const MiLiveTVList = ({
             const renderGroupButton = (group: typeof groups[number]) => {
               const groupLogo = getGroupLogo(group);
               const isFlagLogo = isGroupFlagLogo(group, groupLogo);
-              const isFillLogo = !!groupLogo && /round-logo|mbc-(group-)?logo|mbc-logo|alwan|us-lat-logo|us-victory|sky-entertainment-logo/i.test(groupLogo);
+              const needsReadableBadge = !!groupLogo && /(The_CW_2024|Telemundo_logo_2018|Apple_TV_Plus_Logo|MLBNetworkLogo|NBA_TV|NFL_Network_logo|F1\.svg|UFC_Logo|ICC_logo|ON_logo|logo\.clearbit\.com\/nhl\.com)/i.test(groupLogo);
               return (
                 <button
                   key={`${group.name}-${groupLogo ?? 'none'}`}
@@ -1331,7 +1331,7 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className="absolute inset-0 z-10 w-full h-full object-cover bg-muted"
+                        className={`absolute inset-0 z-10 w-full h-full ${needsReadableBadge ? 'object-contain bg-white p-1.5' : 'object-cover bg-muted'}`}
                         onError={(event) => {
 
                           event.currentTarget.style.display = 'none';
