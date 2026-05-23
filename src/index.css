@@ -671,3 +671,136 @@
 .animate-screensaver-zoom {
   animation: screensaver-zoom 10s ease-out forwards;
 }
+
+/* ===== Futuristic HUD utilities ===== */
+
+/* Corner-bracket HUD frame — adds 4 neon L-brackets around any element */
+.hud-frame {
+  position: relative;
+}
+.hud-frame::before,
+.hud-frame::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: hsl(var(--primary) / 0.7);
+  border-style: solid;
+  border-width: 0;
+  pointer-events: none;
+  transition: border-color 0.25s ease, width 0.25s ease, height 0.25s ease;
+}
+.hud-frame::before {
+  top: 6px; left: 6px;
+  border-top-width: 1.5px;
+  border-left-width: 1.5px;
+  border-top-left-radius: 4px;
+}
+.hud-frame::after {
+  bottom: 6px; right: 6px;
+  border-bottom-width: 1.5px;
+  border-right-width: 1.5px;
+  border-bottom-right-radius: 4px;
+}
+.hud-frame:hover::before,
+.hud-frame:hover::after {
+  width: 22px;
+  height: 22px;
+  border-color: hsl(var(--primary));
+}
+
+/* Neon glow ring on focus/hover */
+.neon-ring {
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.25),
+    0 0 18px hsl(var(--primary) / 0.25),
+    inset 0 0 12px hsl(var(--primary) / 0.05);
+}
+.neon-ring-accent {
+  box-shadow:
+    0 0 0 1px hsl(var(--accent) / 0.3),
+    0 0 22px hsl(var(--accent) / 0.3);
+}
+
+/* Subtle CRT scanlines overlay — drop on any container */
+.scanlines {
+  position: relative;
+}
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    0deg,
+    hsl(var(--primary) / 0.035) 0px,
+    hsl(var(--primary) / 0.035) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+  border-radius: inherit;
+}
+
+/* HUD chip — small uppercase status pill */
+.hud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.08);
+  border: 1px solid hsl(var(--primary) / 0.3);
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+}
+.hud-chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  box-shadow: 0 0 8px hsl(var(--primary));
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Heading display — uppercase mono-tracked HUD label */
+.font-hud {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 500;
+}
+
+/* Animated holographic gradient text */
+.holo-text {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary)) 0%,
+    hsl(280 90% 70%) 35%,
+    hsl(var(--accent)) 65%,
+    hsl(var(--primary)) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-shift 6s linear infinite;
+}
+
+/* Diagonal data-stripe pattern — for headers/dividers */
+.data-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    hsl(var(--primary) / 0.12) 0,
+    hsl(var(--primary) / 0.12) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+}
+
