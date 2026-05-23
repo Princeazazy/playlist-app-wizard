@@ -255,7 +255,8 @@ const LivePreviewChannelTile = memo(({
 const getCategoryInitials = (name: string) => {
   const cleaned = name.replace(/[^\p{L}\p{N}&+\s/]/gu, ' ').trim();
   if (!cleaned) return 'TV';
-  if (/24\s*\/\s*7|247/.test(cleaned)) return '24/7';
+    if (/24\s*\/\s*7|247/.test(cleaned)) return '24/7';
+    if (cleaned.length <= 5 && /^[A-Za-z0-9&+]+$/.test(cleaned)) return cleaned.toUpperCase();
   const words = cleaned.split(/[\s/]+/).filter(Boolean);
   const shortAllCaps = words.find((word) => /^[A-Z0-9&+]{2,5}$/.test(word));
   if (shortAllCaps) return shortAllCaps.slice(0, 4);
