@@ -166,17 +166,20 @@ const ActionButton = ({
 }) => (
   <button
     onClick={onClick}
-    className="relative w-full flex items-center gap-4 px-5 py-4 rounded-xl overflow-hidden border border-white/5 group hover:scale-[1.02] active:scale-[0.97] transition-transform duration-150"
-    style={{ background: 'linear-gradient(145deg, hsl(265 45% 14%) 0%, hsl(265 40% 9%) 100%)' }}
+    className="relative w-full flex items-center gap-5 p-5 rounded-2xl overflow-hidden border border-white/10 group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+    style={{ background: 'linear-gradient(135deg, hsl(0 0% 100% / 0.06) 0%, hsl(0 0% 100% / 0.01) 100%)' }}
   >
     <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-    <div className="relative w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'hsl(200 90% 55% / 0.12)', border: '1px solid hsl(200 90% 55% / 0.2)' }}>
-      <Icon className={`w-4 h-4 text-primary ${spinning ? 'animate-spin' : ''}`} />
+    <div
+      className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-700 ${spinning ? '' : 'group-hover:scale-110'}`}
+      style={{ background: 'hsl(200 90% 55% / 0.12)', border: '1px solid hsl(200 90% 55% / 0.25)' }}
+    >
+      <Icon className={`w-5 h-5 text-primary ${spinning ? 'animate-spin' : ''}`} />
     </div>
-    <span className="relative text-foreground font-medium">{label}</span>
+    <span className="relative text-lg font-semibold text-foreground">{label}</span>
     <ChevronRight className="w-4 h-4 text-primary/60 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
   </button>
+
 );
 
 export const MiHomeScreen = React.memo(({
