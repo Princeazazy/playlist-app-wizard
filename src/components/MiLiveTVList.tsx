@@ -836,8 +836,16 @@ export const MiLiveTVList = ({
       // Predefined logos for known US networks (by network token, post-expansion key)
       const US_NETWORK_LOGOS: Record<string, string> = {
         'HBO': '/images/hbo-logo.png',
-        'FOX': '/images/fox-news-logo.png',
-        'PBS': '/images/pbs-logo.png',
+        'FOX': '/images/fox-round-logo.svg',
+        'NBC': '/images/nbc-round-logo.svg',
+        'PBS': '/images/pbs-round-logo.svg',
+        'UNIVISION': '/images/univision-round-logo.svg',
+        'UNIMAS': '/images/unimas-round-logo.svg',
+        'SPECTRUMNEWS': '/images/spectrum-news-round-logo.svg',
+        'BIGTENNETWORK': '/images/big-ten-round-logo.svg',
+        'AMERICANHEROES': '/images/american-heroes-round-logo.svg',
+        'DISCOVERY': '/images/discovery-round-logo.svg',
+        'USCM': '/images/cinemania-round-logo.svg',
       };
 
       for (const [normKey, data] of groupData.entries()) {
