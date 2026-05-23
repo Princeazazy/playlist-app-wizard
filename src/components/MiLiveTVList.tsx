@@ -509,14 +509,18 @@ export const MiLiveTVList = ({
       // Sports mode: use smart categorization
       for (const ch of channels) {
         const sportsGroup = sportsChannelGroupMap.get(ch.id) || 'Other';
+        const brandLogo = matchBrandLogo(`${sportsGroup} ${ch.name || ''} ${ch.group || ''}`) || undefined;
+        const preferredLogo = brandLogo || (!isLowValueGroupLogo(ch.logo) ? ch.logo : undefined);
         const existing = groupData.get(sportsGroup);
         if (!existing) {
-          groupData.set(sportsGroup, { count: 1, firstLogo: ch.logo, originalNames: [sportsGroup] });
+          groupData.set(sportsGroup, { count: 1, firstLogo: preferredLogo, brandLogo, originalNames: [sportsGroup] });
           normMap.set(sportsGroup, [sportsGroup]);
         } else {
           existing.count++;
-          if (existing.count === 2 && ch.logo && !existing.secondLogo) {
-            existing.secondLogo = ch.logo;
+          if (!existing.brandLogo && brandLogo) existing.brandLogo = brandLogo;
+          if (!existing.firstLogo && preferredLogo) existing.firstLogo = preferredLogo;
+          if (existing.count === 2 && preferredLogo && !existing.secondLogo) {
+            existing.secondLogo = preferredLogo;
           }
         }
       }
@@ -524,14 +528,18 @@ export const MiLiveTVList = ({
       for (const ch of channels) {
         const group = ch.group || 'Uncategorized';
         const normalizedKey = normalizeGroupName(group);
+        const brandLogo = matchBrandLogo(`${group} ${ch.name || ''}`) || undefined;
+        const preferredLogo = brandLogo || (!isLowValueGroupLogo(ch.logo) ? ch.logo : undefined);
         const existing = groupData.get(normalizedKey);
         if (!existing) {
-          groupData.set(normalizedKey, { count: 1, firstLogo: ch.logo, originalNames: [group] });
+          groupData.set(normalizedKey, { count: 1, firstLogo: preferredLogo, brandLogo, originalNames: [group] });
           normMap.set(normalizedKey, [group]);
         } else {
           existing.count++;
-          if (existing.count === 2 && ch.logo && !existing.secondLogo) {
-            existing.secondLogo = ch.logo;
+          if (!existing.brandLogo && brandLogo) existing.brandLogo = brandLogo;
+          if (!existing.firstLogo && preferredLogo) existing.firstLogo = preferredLogo;
+          if (existing.count === 2 && preferredLogo && !existing.secondLogo) {
+            existing.secondLogo = preferredLogo;
           }
           if (!existing.originalNames.includes(group)) {
             existing.originalNames.push(group);
