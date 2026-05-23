@@ -6,6 +6,7 @@ import { useWeather } from '@/hooks/useWeather';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { translateGroupName } from '@/lib/countryUtils';
 import { useTMDBPosters } from '@/hooks/useTMDBPosters';
+import { useAICategoryLogo } from '@/hooks/useAICategoryLogo';
 import {
   Select,
   SelectContent,
@@ -434,6 +435,52 @@ const getCategoryLogo = (groupName: string, category?: 'movies' | 'series'): str
   return getMovieCategoryLogo(groupName);
 };
 
+
+// Sidebar category tile logo with AI fallback (Brandfetch → Nano Banana)
+const CategoryTileLogo = ({
+  rawNames,
+  displayName,
+  firstLogo,
+  category,
+}: {
+  rawNames: string[];
+  displayName: string;
+  firstLogo?: string;
+  category: 'movies' | 'series';
+}) => {
+  // 1. Try curated local logo
+  let localLogo: string | null = null;
+  for (const rn of rawNames) {
+    localLogo = getCategoryLogo(rn, category);
+    if (localLogo) break;
+  }
+
+  // 2. AI fallback only when no local logo AND no firstLogo
+  const aiLogo = useAICategoryLogo(displayName, category, !localLogo && !firstLogo);
+
+  if (localLogo) {
+    return <img src={localLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
+  }
+  if (firstLogo) {
+    return (
+      <img
+        src={firstLogo}
+        alt={displayName}
+        className="relative w-[78%] h-[78%] object-contain drop-shadow-[0_0_6px_hsl(var(--accent)/0.5)]"
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+          e.currentTarget.parentElement!.innerHTML = `<span class="relative text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
+        }}
+      />
+    );
+  }
+  if (aiLogo) {
+    return <img src={aiLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
+  }
+  return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
+};
+
+
 const WeatherIcon = ({ icon }: { icon: string }) => {
   switch (icon) {
     case 'sun': return <Sun className="w-5 h-5" />;
@@ -646,6 +693,8 @@ export const MiMediaGrid = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const weather = useWeather();
   const isMobile = useIsMobile();
+  const [aiCanonical, setAiCanonical] = useState<Record<string, string>>({});
+
 
   // Voice search handler
   const toggleVoiceSearch = () => {
@@ -911,6 +960,28 @@ export const MiMediaGrid = ({
     }
   }, [groups, selectedGroup]);
 
+  // AI canonicalization — clean up raw category names lazily, persist in DB
+  useEffect(() => {
+    if (groups.length === 0) return;
+    const names = groups.map((g) => g.name).filter((n) => !aiCanonical[n]);
+    if (names.length === 0) return;
+    const timer = setTimeout(async () => {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data, error } = await supabase.functions.invoke('categorize-playlist', {
+          body: { names, kind: category },
+        });
+        if (!error && data?.mapping) {
+          setAiCanonical((prev) => ({ ...prev, ...data.mapping }));
+        }
+      } catch (e) {
+        console.warn('[AI categorize] failed', e);
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [groups, category, aiCanonical]);
+
+
   const filteredItems = useMemo(() => {
     // Find which raw group names belong to the selected merged group
     const selectedMergedGroup = groups.find(g => g.name === selectedGroup);
@@ -1075,41 +1146,23 @@ export const MiMediaGrid = ({
               `}>
                 {/* Inner glow */}
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10" />
-                {(() => {
-                  const rawNames: string[] = (group as any).rawNames || [group.name];
-                  // Try all raw names to find the best logo match
-                  let logo: string | null = null;
-                  for (const rawName of rawNames) {
-                    logo = getCategoryLogo(rawName, category);
-                    if (logo) break;
-                  }
-                  if (logo) {
-                    return <img src={logo} alt={group.name} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
-                  }
-                  if (group.firstLogo) {
-                    return (
-                      <img 
-                        src={group.firstLogo} 
-                        alt={group.name} 
-                        className="relative w-[78%] h-[78%] object-contain drop-shadow-[0_0_6px_hsl(var(--accent)/0.5)]"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = `<span class="relative text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
-                        }}
-                      />
-                    );
-                  }
-                  return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
-                })()}
+                <CategoryTileLogo
+                  rawNames={(group as any).rawNames || [group.name]}
+                  displayName={aiCanonical[group.name] || group.name}
+                  firstLogo={group.firstLogo}
+                  category={category}
+                />
+
               </div>
               <div className="flex-1 text-left">
                 <p className={`text-sm truncate ${selectedGroup === group.name ? 'font-semibold text-foreground' : ''}`}>
-                  {group.name}
+                  {aiCanonical[group.name] || group.name}
                 </p>
                 {selectedGroup === group.name && (
                   <p className="text-xs text-muted-foreground">{group.count} {title}</p>
                 )}
               </div>
+
             </button>
           ))}
         </div>
