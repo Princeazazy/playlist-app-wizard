@@ -389,8 +389,8 @@ export const MiHomeScreen = React.memo(({
                       <Tv className="w-8 h-8 text-primary" />
                     </PulsingIcon>
                     <div>
-                      <p className="text-4xl font-bold text-foreground tabular-nums">Live TV</p>
-                      <p className="text-muted-foreground mt-1">
+                      <p className="text-4xl font-display font-bold text-foreground tracking-tight">Live TV</p>
+                      <p className="text-muted-foreground mt-1 font-mono text-xs tracking-widest uppercase">
                         {loading ? (
                           <span className="animate-pulse">Loading...</span>
                         ) : (
@@ -398,6 +398,7 @@ export const MiHomeScreen = React.memo(({
                         )}
                       </p>
                     </div>
+
                   </div>
                 </TileCard>
 
