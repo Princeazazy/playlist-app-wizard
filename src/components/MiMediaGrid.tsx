@@ -455,30 +455,20 @@ const CategoryTileLogo = ({
     if (localLogo) break;
   }
 
-  // 2. AI fallback only when no local logo AND no firstLogo
-  const aiLogo = useAICategoryLogo(displayName, category, !localLogo && !firstLogo);
+  // 2. AI fallback when no curated logo. We deliberately do NOT fall back to
+  // `firstLogo` because that's the first item's poster (a movie/series still),
+  // not a category brand mark — using it produces visually-wrong category tiles.
+  const aiLogo = useAICategoryLogo(displayName, category, !localLogo);
 
   if (localLogo) {
     return <img src={localLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
-  }
-  if (firstLogo) {
-    return (
-      <img
-        src={firstLogo}
-        alt={displayName}
-        className="relative w-[78%] h-[78%] object-contain drop-shadow-[0_0_6px_hsl(var(--accent)/0.5)]"
-        onError={(e) => {
-          e.currentTarget.style.display = 'none';
-          e.currentTarget.parentElement!.innerHTML = `<span class="relative text-2xl">${getCategoryEmoji(rawNames[0])}</span>`;
-        }}
-      />
-    );
   }
   if (aiLogo) {
     return <img src={aiLogo} alt={displayName} className="relative w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />;
   }
   return <span className="relative text-2xl">{getCategoryEmoji(rawNames[0])}</span>;
 };
+
 
 
 const WeatherIcon = ({ icon }: { icon: string }) => {
