@@ -17,3 +17,10 @@ verify_jwt = false
 
 [functions.fetch-live-matches]
 verify_jwt = false
+
+[functions.resolve-category-logo]
+verify_jwt = false
+
+[functions.categorize-playlist]
+verify_jwt = false
+
