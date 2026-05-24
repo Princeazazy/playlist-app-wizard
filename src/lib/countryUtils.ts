@@ -948,7 +948,7 @@ export const mergeAndSortGroups = (
 
   // Convert to array, filter out groups with fewer than 3 channels, and sort
   return Array.from(mergedGroups.entries())
-    .filter(([_, data]) => data.count >= 3) // Remove groups with fewer than 3 channels
+    .filter(([key, data]) => key === '247_ar' || key === '247_en' || data.count >= 3) // Remove groups with fewer than 3 channels (except 24/7 splits)
     .map(([name, data]) => ({
       name,
       displayName: data.displayName,
