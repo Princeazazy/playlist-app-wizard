@@ -671,7 +671,10 @@ export const normalizeGroupName = (group: string): string => {
   const countryInfo = getCountryInfo(group);
   // Special case: split 24/7 groups by language (Arabic vs English)
   if (countryInfo?.code === '247') {
-    const isArabic = /[\u0600-\u06FF]/.test(group);
+    const hasArabicChars = /[\u0600-\u06FF]/.test(group);
+    // Detect Arabic via prefix tokens like "AR |", "ARABIC |", "AR-", "ARB |"
+    const hasArabicPrefix = /(^|[\s|:\-])(ar|arb|arabic|ara)([\s|:\-]|$)/i.test(group);
+    const isArabic = hasArabicChars || hasArabicPrefix;
     return isArabic ? '247_ar' : '247_en';
   }
   if (!countryInfo) {
