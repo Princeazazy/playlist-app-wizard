@@ -669,6 +669,11 @@ const _getCountryInfoUncached = (group: string): CountryInfo | null => {
 // e.g., "AM | USA | PREMIUM" → "us_premium", "UK General" → "gb_general"
 export const normalizeGroupName = (group: string): string => {
   const countryInfo = getCountryInfo(group);
+  // Special case: split 24/7 groups by language (Arabic vs English)
+  if (countryInfo?.code === '247') {
+    const isArabic = /[\u0600-\u06FF]/.test(group);
+    return isArabic ? '247_ar' : '247_en';
+  }
   if (!countryInfo) {
     // Not a country - return the original group name lowercased for consistency
     return group.toLowerCase().trim();
