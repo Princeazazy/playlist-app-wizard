@@ -20,15 +20,13 @@ import {
 
 const SKY_ENTERTAINMENT_LOGO = '/images/sky-entertainment-logo.png?v=uploaded-sky-entertainment';
 const SKY_DOCUMENTARY_LOGO = '/images/sky-documentary-logo.png?v=uploaded-sky-documentary';
-const WIKI_COMMONS_LOGO = (file: string) => `https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(file)}?width=512`;
-const WIKI_EN_LOGO = (file: string) => `https://en.wikipedia.org/wiki/Special:Redirect/file/${encodeURIComponent(file)}?width=512`;
-const MLB_NETWORK_LOGO = WIKI_EN_LOGO('MLBNetworkLogo.svg');
-const NBA_TV_LOGO = WIKI_EN_LOGO('NBA_TV.svg');
-const NFL_NETWORK_LOGO = WIKI_EN_LOGO('NFL_Network_logo.svg');
-const F1_LOGO = WIKI_COMMONS_LOGO('F1.svg');
-const UFC_LOGO = WIKI_COMMONS_LOGO('UFC_Logo.svg');
-const ICC_LOGO = WIKI_COMMONS_LOGO('ICC_logo.png');
-const ON_LOGO = WIKI_COMMONS_LOGO('ON_logo.png');
+const MLB_NETWORK_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/a/ac/MLBNetworkLogo.svg/960px-MLBNetworkLogo.svg.png';
+const NBA_TV_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d2/NBA_TV.svg/960px-NBA_TV.svg.png';
+const NFL_NETWORK_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/NFL_Network_logo.svg/960px-NFL_Network_logo.svg.png';
+const F1_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/F1.svg/960px-F1.svg.png';
+const UFC_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/UFC_Logo.svg/960px-UFC_Logo.svg.png';
+const ICC_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/ICC_logo.png/960px-ICC_logo.png';
+const ON_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/ON_logo.png/960px-ON_logo.png';
 
 // Live Preview Channel Tile with video preview on hover
 const LivePreviewChannelTile = memo(({
