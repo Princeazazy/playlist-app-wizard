@@ -21,6 +21,17 @@ const WE = (pathOrFile: string) => wikiRedirect('en.wikipedia.org', pathOrFile);
 const CB = (domain: string) => `https://logo.clearbit.com/${domain}`;
 const SKY_ENTERTAINMENT_LOGO = '/images/sky-entertainment-logo.png?v=uploaded-sky-entertainment';
 const SKY_DOCUMENTARY_LOGO = '/images/sky-documentary-logo.png?v=uploaded-sky-documentary';
+const APPLE_TV_PLUS_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Apple_TV_Plus_Logo.svg/960px-Apple_TV_Plus_Logo.svg.png';
+const MLB_NETWORK_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/a/ac/MLBNetworkLogo.svg/960px-MLBNetworkLogo.svg.png';
+const NBA_TV_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d2/NBA_TV.svg/960px-NBA_TV.svg.png';
+const NFL_NETWORK_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/NFL_Network_logo.svg/960px-NFL_Network_logo.svg.png';
+const NHL_LOGO = 'https://media.d3.nhle.com/image/private/t_ratio16_9-size50/v1697743790/prd/assets/nhl/logos/nhl_2568x1144.png';
+const F1_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/F1.svg/960px-F1.svg.png';
+const UFC_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/UFC_Logo.svg/960px-UFC_Logo.svg.png';
+const ICC_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/ICC_logo.png/960px-ICC_logo.png';
+const CW_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/The_CW_2024.svg/960px-The_CW_2024.svg.png';
+const TELEMUNDO_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Telemundo_logo_2018.svg/960px-Telemundo_logo_2018.svg.png';
+const ON_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/ON_logo.png/960px-ON_logo.png';
 
 const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   // ── Streaming Platforms ──
@@ -31,7 +42,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'disney channel': { logo: CB('disneychannel.com'), aliases: ['disney xd', 'disney jr', 'disney junior'] },
   hulu: { logo: CB('hulu.com'), aliases: ['هولو'] },
   'amazon prime': { logo: '/images/prime-video-custom-v2.png', aliases: ['prime video', 'amazon', 'amazon prime video', 'أمازون', 'امازون', 'برايم'] },
-  'apple tv': { logo: '/images/apple-tv-logo.png', aliases: ['apple tv+', 'appletv', 'apple', 'ابل تي في', 'آبل تي في'] },
+  'apple tv': { logo: APPLE_TV_PLUS_LOGO, aliases: ['apple tv+', 'appletv', 'apple tv plus', 'ابل تي في', 'آبل تي في'] },
   paramount: { logo: '/images/paramount-plus-custom-v2.png', aliases: ['paramount+', 'paramount plus', 'paramountplus', 'باراماونت'] },
   peacock: { logo: '/images/peacock-logo.png', aliases: ['بيكوك'] },
   starz: { logo: '/images/starzplay-logo.png', aliases: ['starzplay', 'ستارز'] },
@@ -60,15 +71,15 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'champions league': { logo: '/images/champions-league-logo.png', aliases: ['uefa champions league', 'ucl', 'دوري الابطال'] },
   'europa league': { logo: CB('uefa.com'), aliases: ['uel', 'الدوري الأوروبي'] },
   uefa: { logo: '/images/uefa-logo.png', aliases: ['يويفا'] },
-  nba: { logo: '/images/nba-round-logo.png', aliases: ['nba tv', 'الدوري الأمريكي'] },
-  nfl: { logo: '/images/nfl-round-logo.png', aliases: ['nfl network'] },
-  nhl: { logo: '/images/nhl-round-logo.png', aliases: ['nhl network'] },
-  mlb: { logo: '/images/mlb-round-logo.png', aliases: ['mlb network', 'us milb', 'milb', 'minor league baseball'] },
+  nba: { logo: NBA_TV_LOGO, aliases: ['nba tv', 'الدوري الأمريكي'] },
+  nfl: { logo: NFL_NETWORK_LOGO, aliases: ['nfl network'] },
+  nhl: { logo: NHL_LOGO, aliases: ['nhl network'] },
+  mlb: { logo: MLB_NETWORK_LOGO, aliases: ['mlb network', 'us milb', 'milb', 'minor league baseball'] },
   motogp: { logo: CB('motogp.com'), aliases: ['moto gp'] },
   nascar: { logo: CB('nascar.com'), aliases: [] },
   'national league': { logo: '/images/national-league-logo.png', aliases: ['vanarama national league', 'efl national'] },
   'pdc': { logo: WC('World_Series_of_Darts_-_Logo.svg'), aliases: ['pdc darts', 'darts', 'professional darts corporation', 'world darts'] },
-  cricket: { logo: WE('International_Cricket_Council_Logo.svg'), aliases: ['icc', 'world cricket'] },
+  cricket: { logo: ICC_LOGO, aliases: ['icc', 'world cricket'] },
   rugby: { logo: WE('World_Rugby_logo.svg'), aliases: ['world rugby', 'six nations'] },
   tennis: { logo: WE('ATP_Tour_logo.svg'), aliases: ['atp', 'wta', 'tennis channel'] },
   golf: { logo: WE('PGA_Tour_logo.svg'), aliases: ['pga', 'pga tour', 'european tour'] },
@@ -87,7 +98,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'al mayadeen': { logo: WC('Al-Mayadeen_logo.svg'), aliases: ['الميادين'] },
   'sky news arabia': { logo: CB('skynewsarabia.com'), aliases: ['سكاي نيوز عربية'] },
   dmc: { logo: CB('dmc.eg'), aliases: ['دي ام سي'] },
-  ontv: { logo: CB('ontvegypt.tv'), aliases: ['on tv', 'on e', 'اون تي في'] },
+  ontv: { logo: ON_LOGO, aliases: ['on tv', 'on e', 'on', 'اون تي في'] },
   cbc: { logo: CB('cbc-eg.com'), aliases: ['سي بي سي'] },
   'al nahar': { logo: CB('alnaharegypt.com'), aliases: ['النهار'] },
   ssc: { logo: WC('Saudi_Sports_Company_logo.svg'), aliases: ['ssc sports', 'saudi sports', 'ssc1', 'ssc2', 'ssc3', 'ssc4', 'ssc5'] },
@@ -171,18 +182,18 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'big ten network': { logo: '/images/big-ten-round-logo.svg', aliases: ['big ten', 'btn', 'us btn'] },
   'sec network': { logo: WC('1/1c/SEC_Network_logo.svg/512px-SEC_Network_logo.svg.png'), aliases: ['sec'] },
   'acc network': { logo: WC('5/5e/ACC_Network_logo.svg/512px-ACC_Network_logo.svg.png'), aliases: ['accn', 'acc'] },
-  'mlb network': { logo: '/images/mlb-round-logo.png', aliases: ['mlbn'] },
-  'nfl network': { logo: '/images/nfl-round-logo.png', aliases: ['nfln'] },
-  'nhl network': { logo: '/images/nhl-round-logo.png', aliases: ['nhln'] },
-  'nba tv': { logo: '/images/nba-round-logo.png', aliases: ['nbatv'] },
+  'mlb network': { logo: MLB_NETWORK_LOGO, aliases: ['mlbn'] },
+  'nfl network': { logo: NFL_NETWORK_LOGO, aliases: ['nfln'] },
+  'nhl network': { logo: NHL_LOGO, aliases: ['nhln'] },
+  'nba tv': { logo: NBA_TV_LOGO, aliases: ['nbatv'] },
   'golf channel': { logo: WC('a/a1/Golf_Channel_logo_2019.svg/512px-Golf_Channel_logo_2019.svg.png'), aliases: [] },
   'tennis channel': { logo: WC('8/87/Tennis_Channel_logo.svg/512px-Tennis_Channel_logo.svg.png'), aliases: [] },
   willow: { logo: CB('willow.tv'), aliases: ['willow cricket'] },
   univision: { logo: '/images/univision-round-logo.svg', aliases: ['univ'] },
   unimas: { logo: '/images/unimas-round-logo.svg', aliases: ['uni mas', 'uni-mas', 'unimás', 'us unimas'] },
-  telemundo: { logo: '/images/telemundo-round-logo.png', aliases: [] },
+  telemundo: { logo: TELEMUNDO_LOGO, aliases: [] },
   'spectrum news': { logo: '/images/spectrum-news-round-logo.svg', aliases: ['spectrum', 'us spectrum', 'us spectrum news'] },
-  'the cw': { logo: '/images/cw-round-logo.png', aliases: ['cw', 'cw network'] },
+  'the cw': { logo: CW_LOGO, aliases: ['cw', 'cw network'] },
   cinemania: { logo: '/images/cinemania-round-logo.svg', aliases: ['us cm', 'cinemania'] },
   'alwan entertainment': { logo: '/images/alwan-round-logo.png', aliases: ['alwan', 'alwan ent', 'ألوان', 'الوان'] },
   'us victory': { logo: '/images/us-victory-round-logo.png', aliases: ['victory channel', 'victory', 'us vc', 'us victory channel'] },
@@ -222,9 +233,9 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   warner: { logo: CB('warnerbros.com'), aliases: ['warner bros', 'wb'] },
   universal: { logo: CB('universalpictures.com'), aliases: ['universal pictures'] },
   wwe: { logo: CB('wwe.com'), aliases: ['دبليو دبليو اي'] },
-  ufc: { logo: CB('ufc.com'), aliases: ['يو اف سي'] },
+  ufc: { logo: UFC_LOGO, aliases: ['ufc & mma', 'mma', 'يو اف سي'] },
   aew: { logo: CB('allelitewrestling.com'), aliases: ['all elite wrestling'] },
-  'formula 1': { logo: CB('formula1.com'), aliases: ['f1', 'formula1', 'فورمولا'] },
+  'formula 1': { logo: F1_LOGO, aliases: ['f1', 'formula1', 'فورمولا'] },
 };
 
 // Build reverse lookup maps (computed once at module load)

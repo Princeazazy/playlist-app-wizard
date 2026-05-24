@@ -20,6 +20,13 @@ import {
 
 const SKY_ENTERTAINMENT_LOGO = '/images/sky-entertainment-logo.png?v=uploaded-sky-entertainment';
 const SKY_DOCUMENTARY_LOGO = '/images/sky-documentary-logo.png?v=uploaded-sky-documentary';
+const MLB_NETWORK_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/a/ac/MLBNetworkLogo.svg/960px-MLBNetworkLogo.svg.png';
+const NBA_TV_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d2/NBA_TV.svg/960px-NBA_TV.svg.png';
+const NFL_NETWORK_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/NFL_Network_logo.svg/960px-NFL_Network_logo.svg.png';
+const F1_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/F1.svg/960px-F1.svg.png';
+const UFC_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/UFC_Logo.svg/960px-UFC_Logo.svg.png';
+const ICC_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/ICC_logo.png/960px-ICC_logo.png';
+const ON_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/ON_logo.png/960px-ON_logo.png';
 
 // Live Preview Channel Tile with video preview on hover
 const LivePreviewChannelTile = memo(({
@@ -395,8 +402,12 @@ export const MiLiveTVList = ({
     if (/rotana/i.test(name)) return 'Rotana';
     // StarzPlay
     if (/starz/i.test(name)) return 'StarzPlay';
+    if (/apple\s*tv\+?|appletv/i.test(name) || /apple\s*tv\+?|appletv/i.test(group)) return 'Apple TV+';
     // DAZN
     if (/dazn/i.test(name)) return 'DAZN';
+    if (/\bufc\b|\bmma\b/i.test(name)) return 'UFC & MMA';
+    if (/formula\s*1|\bf1\b/i.test(name)) return 'Formula 1';
+    if (/cricket|\bicc\b|willow/i.test(name)) return 'Cricket';
     // Sky Sports
     if (/sky\s*sport/i.test(name)) return 'Sky Sports';
     // ESPN
@@ -487,10 +498,14 @@ export const MiLiveTVList = ({
     'BT Sport': { flagUrl: matchBrandLogo('bt sport') || '', priority: 35, isService: true },
     'StarzPlay': { flagUrl: matchBrandLogo('starz') || '', priority: 36, isService: true },
     'PPV': { flagUrl: '', priority: 37, isService: true },
-    'MLB Network': { flagUrl: '/images/mlb-round-logo.png', priority: 38, isService: true },
-    'NBA TV': { flagUrl: '/images/nba-round-logo.png', priority: 39, isService: true },
-    'NFL Network': { flagUrl: '/images/nfl-round-logo.png', priority: 40, isService: true },
-    'NHL Network': { flagUrl: '/images/nhl-round-logo.png', priority: 41, isService: true },
+    'MLB Network': { flagUrl: MLB_NETWORK_LOGO, priority: 38, isService: true },
+    'NBA TV': { flagUrl: NBA_TV_LOGO, priority: 39, isService: true },
+    'NFL Network': { flagUrl: NFL_NETWORK_LOGO, priority: 40, isService: true },
+    'NHL Network': { flagUrl: matchBrandLogo('nhl network') || '', priority: 41, isService: true },
+    'UFC & MMA': { flagUrl: UFC_LOGO, priority: 42, isService: true },
+    'Formula 1': { flagUrl: F1_LOGO, priority: 43, isService: true },
+    'Cricket': { flagUrl: ICC_LOGO, priority: 44, isService: true },
+    'Apple TV+': { flagUrl: matchBrandLogo('apple tv') || '', priority: 45, isService: true },
   };
 
   // Build a mapping from channel id → sports group name (only for sports mode)
@@ -651,10 +666,10 @@ export const MiLiveTVList = ({
         { regex: /\bespn\b/i, brand: 'ESPN', logo: CB('espn.com') },
         { regex: /\beurosport\b/i, brand: 'Eurosport', logo: CB('eurosport.com') },
         { regex: /\btnt\s*sports?|bt\s*sport\b/i, brand: 'TNT Sports', logo: CB('tntsports.co.uk') },
-        { regex: /\bnba\b/i, brand: 'NBA', logo: '/images/nba-round-logo.png' },
-        { regex: /\bnfl\b/i, brand: 'NFL', logo: '/images/nfl-round-logo.png' },
-        { regex: /\bnhl\b/i, brand: 'NHL', logo: '/images/nhl-round-logo.png' },
-        { regex: /\bmlb\b/i, brand: 'MLB', logo: '/images/mlb-round-logo.png' },
+        { regex: /\bnba\b/i, brand: 'NBA TV', logo: NBA_TV_LOGO },
+        { regex: /\bnfl\b/i, brand: 'NFL Network', logo: NFL_NETWORK_LOGO },
+        { regex: /\bnhl\b/i, brand: 'NHL Network', logo: matchBrandLogo('nhl network') || undefined },
+        { regex: /\bmlb\b/i, brand: 'MLB Network', logo: MLB_NETWORK_LOGO },
         { regex: /\bmoto\s*gp\b/i, brand: 'MotoGP', logo: CB('motogp.com') },
         { regex: /\bworld\s*cup|كأس\s*العالم|مونديال/i, brand: 'World Cup', logo: '/images/world-cup-logo.png' },
         { regex: /\bchampions\s*league|دوري\s*الابطال/i, brand: 'Champions League', logo: '/images/champions-league-logo.png' },
@@ -675,7 +690,7 @@ export const MiLiveTVList = ({
         { regex: /\brotana\b|روتانا/i, brand: 'Rotana', logo: '/images/rotana-logo.png' },
         { regex: /\bosn\b/i, brand: 'OSN', logo: '/images/osn-logo.png' },
         { regex: /\bdmc\b/i, brand: 'DMC', logo: CB('dmc.eg') },
-        { regex: /\bon[\s-]?(tv|e)\b/i, brand: 'ON', logo: CB('ontvegypt.tv') },
+        { regex: /\bon[\s-]?(tv|e)?\b/i, brand: 'ON', logo: ON_LOGO },
         { regex: /\bcbc\b/i, brand: 'CBC', logo: CB('cbc-eg.com') },
         { regex: /\bal[\s-]?nahar|النهار/i, brand: 'Al Nahar', logo: CB('alnaharegypt.com') },
         { regex: /\bssc\b/i, brand: 'SSC', logo: matchBrandLogo('ssc') || undefined },
@@ -683,14 +698,14 @@ export const MiLiveTVList = ({
 
         // Niche sports
         { regex: /\bpdc\b|\bdarts?\b/i, brand: 'PDC Darts', logo: matchBrandLogo('pdc') || undefined },
-        { regex: /\bcricket\b|\bicc\b|\bwillow\b/i, brand: 'Cricket', logo: matchBrandLogo('cricket') || undefined },
+        { regex: /\bcricket\b|\bicc\b|\bwillow\b/i, brand: 'Cricket', logo: ICC_LOGO },
         { regex: /\brugby\b|six\s*nations/i, brand: 'Rugby', logo: matchBrandLogo('rugby') || undefined },
         { regex: /\btennis\b|\batp\b|\bwta\b/i, brand: 'Tennis', logo: matchBrandLogo('tennis') || undefined },
         { regex: /\bgolf\b|\bpga\b/i, brand: 'Golf', logo: CB('golfchannel.com') },
         { regex: /\bboxing\b|\bwbc\b/i, brand: 'Boxing', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/World_Boxing_Council_logo.svg/512px-World_Boxing_Council_logo.svg.png' },
         { regex: /\bwwe\b|wrestling/i, brand: 'WWE', logo: CB('wwe.com') },
-        { regex: /\bufc\b/i, brand: 'UFC', logo: CB('ufc.com') },
-        { regex: /\bformula\s*1|\bf1\b/i, brand: 'Formula 1', logo: CB('formula1.com') },
+        { regex: /\bufc\b|\bmma\b/i, brand: 'UFC & MMA', logo: UFC_LOGO },
+        { regex: /\bformula\s*1|\bf1\b/i, brand: 'Formula 1', logo: F1_LOGO },
         // US extras
         { regex: /\bahc\b|american\s*heroes/i, brand: 'American Heroes', logo: matchBrandLogo('american heroes') || undefined },
         { regex: /\bhallmark\b/i, brand: 'Hallmark', logo: CB('hallmarkchannel.com') },
@@ -1296,7 +1311,7 @@ export const MiLiveTVList = ({
             const renderGroupButton = (group: typeof groups[number]) => {
               const groupLogo = getGroupLogo(group);
               const isFlagLogo = isGroupFlagLogo(group, groupLogo);
-              const isFillLogo = !!groupLogo && /round-logo|mbc-(group-)?logo|mbc-logo|alwan|us-lat-logo|us-victory|sky-entertainment-logo/i.test(groupLogo);
+              const needsReadableBadge = !!groupLogo && /(The_CW_2024|Telemundo_logo_2018|Apple_TV_Plus_Logo|MLBNetworkLogo|NBA_TV|NFL_Network_logo|F1\.svg|UFC_Logo|ICC_logo|ON_logo|nhl_2568x1144)/i.test(groupLogo);
               return (
                 <button
                   key={`${group.name}-${groupLogo ?? 'none'}`}
@@ -1314,7 +1329,7 @@ export const MiLiveTVList = ({
                         alt={group.displayName}
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        className="absolute inset-0 z-10 w-full h-full object-cover bg-muted"
+                        className={`absolute inset-0 z-10 w-full h-full ${needsReadableBadge ? 'object-contain bg-white p-1.5' : 'object-cover bg-muted'}`}
                         onError={(event) => {
 
                           event.currentTarget.style.display = 'none';
