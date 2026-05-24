@@ -894,6 +894,11 @@ export const mergeAndSortGroups = (
   const largeGroups: string[] = [];
   
   for (const [key, data] of mergedGroups.entries()) {
+    // Never merge 24/7 language splits into other groups - keep them as standalone
+    if (key === '247_ar' || key === '247_en') {
+      largeGroups.push(key);
+      continue;
+    }
     if (data.count <= SMALL_GROUP_THRESHOLD) {
       smallGroups.push(key);
     } else {
@@ -943,7 +948,7 @@ export const mergeAndSortGroups = (
 
   // Convert to array, filter out groups with fewer than 3 channels, and sort
   return Array.from(mergedGroups.entries())
-    .filter(([_, data]) => data.count >= 3) // Remove groups with fewer than 3 channels
+    .filter(([key, data]) => key === '247_ar' || key === '247_en' || data.count >= 3) // Remove groups with fewer than 3 channels (except 24/7 splits)
     .map(([name, data]) => ({
       name,
       displayName: data.displayName,
