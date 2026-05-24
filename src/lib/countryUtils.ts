@@ -894,6 +894,11 @@ export const mergeAndSortGroups = (
   const largeGroups: string[] = [];
   
   for (const [key, data] of mergedGroups.entries()) {
+    // Never merge 24/7 language splits into other groups - keep them as standalone
+    if (key === '247_ar' || key === '247_en') {
+      largeGroups.push(key);
+      continue;
+    }
     if (data.count <= SMALL_GROUP_THRESHOLD) {
       smallGroups.push(key);
     } else {
