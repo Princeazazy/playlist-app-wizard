@@ -21,16 +21,17 @@ const WE = (pathOrFile: string) => wikiRedirect('en.wikipedia.org', pathOrFile);
 const CB = (domain: string) => `https://logo.clearbit.com/${domain}`;
 const SKY_ENTERTAINMENT_LOGO = '/images/sky-entertainment-logo.png?v=uploaded-sky-entertainment';
 const SKY_DOCUMENTARY_LOGO = '/images/sky-documentary-logo.png?v=uploaded-sky-documentary';
-const APPLE_TV_PLUS_LOGO = WC('Apple_TV_Plus_Logo.svg');
-const MLB_NETWORK_LOGO = WE('MLBNetworkLogo.svg');
-const NBA_TV_LOGO = WE('NBA_TV.svg');
-const NFL_NETWORK_LOGO = WE('NFL_Network_logo.svg');
-const F1_LOGO = WC('F1.svg');
-const UFC_LOGO = WC('UFC_Logo.svg');
-const ICC_LOGO = WC('ICC_logo.png');
-const CW_LOGO = WE('The_CW_2024.svg');
-const TELEMUNDO_LOGO = WC('Telemundo_logo_2018.svg');
-const ON_LOGO = WC('ON_logo.png');
+const APPLE_TV_PLUS_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Apple_TV_Plus_Logo.svg/960px-Apple_TV_Plus_Logo.svg.png';
+const MLB_NETWORK_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/a/ac/MLBNetworkLogo.svg/960px-MLBNetworkLogo.svg.png';
+const NBA_TV_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d2/NBA_TV.svg/960px-NBA_TV.svg.png';
+const NFL_NETWORK_LOGO = 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/NFL_Network_logo.svg/960px-NFL_Network_logo.svg.png';
+const NHL_LOGO = 'https://media.d3.nhle.com/image/private/t_ratio16_9-size50/v1697743790/prd/assets/nhl/logos/nhl_2568x1144.png';
+const F1_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/F1.svg/960px-F1.svg.png';
+const UFC_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/UFC_Logo.svg/960px-UFC_Logo.svg.png';
+const ICC_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/ICC_logo.png/960px-ICC_logo.png';
+const CW_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/The_CW_2024.svg/960px-The_CW_2024.svg.png';
+const TELEMUNDO_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Telemundo_logo_2018.svg/960px-Telemundo_logo_2018.svg.png';
+const ON_LOGO = 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/ON_logo.png/960px-ON_logo.png';
 
 const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   // ── Streaming Platforms ──
@@ -72,7 +73,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   uefa: { logo: '/images/uefa-logo.png', aliases: ['يويفا'] },
   nba: { logo: NBA_TV_LOGO, aliases: ['nba tv', 'الدوري الأمريكي'] },
   nfl: { logo: NFL_NETWORK_LOGO, aliases: ['nfl network'] },
-  nhl: { logo: CB('nhl.com'), aliases: ['nhl network'] },
+  nhl: { logo: NHL_LOGO, aliases: ['nhl network'] },
   mlb: { logo: MLB_NETWORK_LOGO, aliases: ['mlb network', 'us milb', 'milb', 'minor league baseball'] },
   motogp: { logo: CB('motogp.com'), aliases: ['moto gp'] },
   nascar: { logo: CB('nascar.com'), aliases: [] },
@@ -183,7 +184,7 @@ const BRAND_LOGOS: Record<string, { logo: string; aliases: string[] }> = {
   'acc network': { logo: WC('5/5e/ACC_Network_logo.svg/512px-ACC_Network_logo.svg.png'), aliases: ['accn', 'acc'] },
   'mlb network': { logo: MLB_NETWORK_LOGO, aliases: ['mlbn'] },
   'nfl network': { logo: NFL_NETWORK_LOGO, aliases: ['nfln'] },
-  'nhl network': { logo: CB('nhl.com'), aliases: ['nhln'] },
+  'nhl network': { logo: NHL_LOGO, aliases: ['nhln'] },
   'nba tv': { logo: NBA_TV_LOGO, aliases: ['nbatv'] },
   'golf channel': { logo: WC('a/a1/Golf_Channel_logo_2019.svg/512px-Golf_Channel_logo_2019.svg.png'), aliases: [] },
   'tennis channel': { logo: WC('8/87/Tennis_Channel_logo.svg/512px-Tennis_Channel_logo.svg.png'), aliases: [] },
