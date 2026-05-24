@@ -668,7 +668,7 @@ export const MiLiveTVList = ({
         { regex: /\btnt\s*sports?|bt\s*sport\b/i, brand: 'TNT Sports', logo: CB('tntsports.co.uk') },
         { regex: /\bnba\b/i, brand: 'NBA TV', logo: NBA_TV_LOGO },
         { regex: /\bnfl\b/i, brand: 'NFL Network', logo: NFL_NETWORK_LOGO },
-        { regex: /\bnhl\b/i, brand: 'NHL Network', logo: matchBrandLogo('nhl network') || CB('nhl.com') },
+        { regex: /\bnhl\b/i, brand: 'NHL Network', logo: matchBrandLogo('nhl network') || undefined },
         { regex: /\bmlb\b/i, brand: 'MLB Network', logo: MLB_NETWORK_LOGO },
         { regex: /\bmoto\s*gp\b/i, brand: 'MotoGP', logo: CB('motogp.com') },
         { regex: /\bworld\s*cup|كأس\s*العالم|مونديال/i, brand: 'World Cup', logo: '/images/world-cup-logo.png' },
@@ -1311,7 +1311,7 @@ export const MiLiveTVList = ({
             const renderGroupButton = (group: typeof groups[number]) => {
               const groupLogo = getGroupLogo(group);
               const isFlagLogo = isGroupFlagLogo(group, groupLogo);
-              const needsReadableBadge = !!groupLogo && /(The_CW_2024|Telemundo_logo_2018|Apple_TV_Plus_Logo|MLBNetworkLogo|NBA_TV|NFL_Network_logo|F1\.svg|UFC_Logo|ICC_logo|ON_logo|logo\.clearbit\.com\/nhl\.com)/i.test(groupLogo);
+              const needsReadableBadge = !!groupLogo && /(The_CW_2024|Telemundo_logo_2018|Apple_TV_Plus_Logo|MLBNetworkLogo|NBA_TV|NFL_Network_logo|F1\.svg|UFC_Logo|ICC_logo|ON_logo|nhl_2568x1144)/i.test(groupLogo);
               return (
                 <button
                   key={`${group.name}-${groupLogo ?? 'none'}`}
