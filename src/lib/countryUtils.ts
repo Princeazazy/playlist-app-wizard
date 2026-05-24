@@ -669,6 +669,11 @@ const _getCountryInfoUncached = (group: string): CountryInfo | null => {
 // e.g., "AM | USA | PREMIUM" → "us_premium", "UK General" → "gb_general"
 export const normalizeGroupName = (group: string): string => {
   const countryInfo = getCountryInfo(group);
+  // Special case: split 24/7 groups by language (Arabic vs English)
+  if (countryInfo?.code === '247') {
+    const isArabic = /[\u0600-\u06FF]/.test(group);
+    return isArabic ? '247_ar' : '247_en';
+  }
   if (!countryInfo) {
     // Not a country - return the original group name lowercased for consistency
     return group.toLowerCase().trim();
@@ -834,20 +839,27 @@ export const mergeAndSortGroups = (
     // For streaming service sub-groups (e.g. "24/7 ENG"), preserve the suffix in the display name
     let resolvedDisplayName = data.displayNameOverride || countryInfo?.name || getDisplayName(sourceName);
     if (countryInfo?.isStreamingService && normalizedKey.includes('_')) {
-      // Dedupe brand tokens: e.g. "uefa_uefa_ppv" → suffix "Ppv" (not "Uefa Ppv")
-      const brandTokens = new Set(
-        countryInfo.name.toLowerCase().split(/\s+/).filter(Boolean)
-      );
-      const suffixWords = normalizedKey
-        .split('_')
-        .slice(1)
-        .filter(w => w && !brandTokens.has(w.toLowerCase()))
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-      const suffix = suffixWords.join(' ');
-      if (suffix) {
-        resolvedDisplayName = `${countryInfo.name} ${suffix}`;
+      // Special case 24/7 language split
+      if (normalizedKey === '247_ar') {
+        resolvedDisplayName = '24/7 Arabic';
+      } else if (normalizedKey === '247_en') {
+        resolvedDisplayName = '24/7 English';
       } else {
-        resolvedDisplayName = countryInfo.name;
+        // Dedupe brand tokens: e.g. "uefa_uefa_ppv" → suffix "Ppv" (not "Uefa Ppv")
+        const brandTokens = new Set(
+          countryInfo.name.toLowerCase().split(/\s+/).filter(Boolean)
+        );
+        const suffixWords = normalizedKey
+          .split('_')
+          .slice(1)
+          .filter(w => w && !brandTokens.has(w.toLowerCase()))
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+        const suffix = suffixWords.join(' ');
+        if (suffix) {
+          resolvedDisplayName = `${countryInfo.name} ${suffix}`;
+        } else {
+          resolvedDisplayName = countryInfo.name;
+        }
       }
     }
     
